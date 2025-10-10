@@ -1,0 +1,44 @@
+.checkout-page {
+    padding: 40px 0;
+    min-height: calc(100vh - 64px - 70px);
+}
+
+.checkout-card {
+    margin-bottom: 24px;
+}
+
+.payment-radio {
+    width: 100%;
+    padding: 16px;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    transition: all 0.3s;
+}
+
+.payment-radio:hover {
+    border-color: #ff6b35;
+    background: #fff7f5;
+}
+
+.payment-option {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.order-summary {
+    position: sticky;
+    top: 80px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.summary-total {
+    margin-top: 16px;
+}

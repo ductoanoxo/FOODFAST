@@ -1,0 +1,21 @@
+{
+    "name": "foodfast-drone-delivery",
+    "version": "1.0.0",
+    "description": "Food delivery system with drone management",
+    "scripts": {
+        "install-all": "cd client_app && npm install && cd ../restaurant_app && npm install && cd ../admin_app && npm install && cd ../drone_manage && npm install && cd ../server_app && npm install",
+        "dev": "concurrently \"npm run dev:client\" \"npm run dev:restaurant\" \"npm run dev:admin\" \"npm run dev:drone\" \"npm run dev:server\"",
+        "dev:client": "cd client_app && npm run dev",
+        "dev:restaurant": "cd restaurant_app && npm run dev",
+        "dev:admin": "cd admin_app && npm run dev",
+        "dev:drone": "cd drone_manage && npm run dev",
+        "dev:server": "cd server_app && npm run dev",
+        "seed": "cd server_app && npm run seed"
+    },
+    "keywords": ["food-delivery", "drone", "react", "nodejs"],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

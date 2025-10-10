@@ -1,0 +1,37 @@
+{
+    "name": "server_app",
+    "version": "1.0.0",
+    "description": "FoodFast Drone Delivery Backend API",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "nodemon index.js",
+        "seed": "node seed.js"
+    },
+    "keywords": ["express", "mongodb", "api", "food-delivery"],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "express": "^4.18.2",
+        "mongoose": "^8.1.0",
+        "dotenv": "^16.4.1",
+        "cors": "^2.8.5",
+        "bcryptjs": "^2.4.3",
+        "jsonwebtoken": "^9.0.2",
+        "express-validator": "^7.0.1",
+        "multer": "^1.4.5-lts.1",
+        "cloudinary": "^2.0.1",
+        "socket.io": "^4.6.1",
+        "nodemailer": "^6.9.9",
+        "node-cron": "^3.0.3",
+        "helmet": "^7.1.0",
+        "express-rate-limit": "^7.1.5",
+        "morgan": "^1.10.0",
+        "winston": "^3.11.0",
+        "compression": "^1.7.4",
+        "cookie-parser": "^1.4.6"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.3"
+    }
+}

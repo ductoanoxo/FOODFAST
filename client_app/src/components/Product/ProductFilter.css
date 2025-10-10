@@ -1,0 +1,16 @@
+.product-filter {
+    border-radius: 12px;
+    position: sticky;
+    top: 80px;
+}
+
+.filter-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.product-filter .ant-card-body {
+    padding: 20px;
+}

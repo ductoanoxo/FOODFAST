@@ -1,0 +1,8 @@
+.menu-page {
+    padding: 40px 0;
+    min-height: calc(100vh - 64px - 70px);
+}
+
+.page-title {
+    margin-bottom: 32px;
+}

@@ -1,0 +1,74 @@
+.home-page {
+    width: 100%;
+}
+
+.hero-carousel {
+    margin-top: 0;
+}
+
+.carousel-item {
+    height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+}
+
+.carousel-content {
+    max-width: 800px;
+}
+
+.features-section {
+    margin: 80px auto;
+}
+
+.feature-card {
+    text-align: center;
+    border-radius: 12px;
+    transition: all 0.3s;
+    height: 100%;
+}
+
+.feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.feature-icon {
+    margin-bottom: 20px;
+}
+
+.section {
+    margin: 60px auto;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.cta-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 80px 0;
+    margin-top: 80px;
+}
+
+.cta-card {
+    background: transparent;
+    border: none;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .carousel-item {
+        height: 400px;
+    }
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+}

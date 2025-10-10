@@ -1,0 +1,44 @@
+.profile-page {
+    padding: 40px 0;
+    min-height: calc(100vh - 64px - 70px);
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.upload-avatar-btn {
+    margin-top: 8px;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-info h2 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.profile-info p {
+    margin: 4px 0 0 0;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+}

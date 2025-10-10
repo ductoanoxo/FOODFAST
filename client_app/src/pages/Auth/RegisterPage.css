@@ -1,0 +1,60 @@
+.register-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.register-card {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.register-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.register-logo {
+    height: 60px;
+    margin-bottom: 16px;
+}
+
+.register-header h2 {
+    margin-bottom: 8px;
+}
+
+.social-btn {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.google-btn {
+    border-color: #DB4437;
+    color: #DB4437;
+}
+
+.google-btn:hover {
+    background: #DB4437;
+    color: #fff;
+    border-color: #DB4437;
+}
+
+.facebook-btn {
+    border-color: #4267B2;
+    color: #4267B2;
+}
+
+.facebook-btn:hover {
+    background: #4267B2;
+    color: #fff;
+    border-color: #4267B2;
+}
+
+.register-footer {
+    margin-top: 24px;
+    text-align: center;
+}

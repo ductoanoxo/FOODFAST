@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:latest
+    container_name: foodfast_mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - foodfast_network
+
+  # Backend Server
+  server_app:
+    build: ./server_app
+    container_name: foodfast_server
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://admin:admin123@mongodb:27017/foodfast_drone_delivery?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - foodfast_network
+
+  # Client App
+  client_app:
+    build: ./client_app
+    container_name: foodfast_client
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - server_app
+    networks:
+      - foodfast_network
+
+  # Restaurant App
+  restaurant_app:
+    build: ./restaurant_app
+    container_name: foodfast_restaurant
+    restart: always
+    ports:
+      - "3001:80"
+    depends_on:
+      - server_app
+    networks:
+      - foodfast_network
+
+  # Admin App
+  admin_app:
+    build: ./admin_app
+    container_name: foodfast_admin
+    restart: always
+    ports:
+      - "3002:80"
+    depends_on:
+      - server_app
+    networks:
+      - foodfast_network
+
+  # Drone Management App
+  drone_manage:
+    build: ./drone_manage
+    container_name: foodfast_drone
+    restart: always
+    ports:
+      - "3003:80"
+    depends_on:
+      - server_app
+    networks:
+      - foodfast_network
+
+volumes:
+  mongodb_data:
+
+networks:
+  foodfast_network:
+    driver: bridge
