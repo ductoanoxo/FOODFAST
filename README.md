@@ -2,6 +2,26 @@
 
 > Hệ thống đặt đồ ăn với giao hàng bằng drone - Food delivery system with drone management
 
+---
+
+## ⚡ QUICK START (BẮT ĐẦU NGAY!)
+
+**Vừa clone về? Chỉ cần 3 lệnh:**
+
+```powershell
+.\setup.ps1   # Cài đặt tự động (5 phút)
+.\seed.ps1    # Tạo dữ liệu mẫu
+.\start.ps1   # Chạy tất cả apps
+```
+
+**Mở trình duyệt:** http://localhost:3000  
+**Login:** `user@foodfast.com` / `user123`
+
+> 💡 **Lưu ý:** Cần cập nhật `MONGO_URI` trong file `.env` trước khi seed!  
+> 📖 **Chi tiết:** Đọc [SETUP_GUIDE.md](./SETUP_GUIDE.md)
+
+---
+
 ## 📋 Tổng quan dự án
 
 FOODFAST DRONE DELIVERY là một hệ thống đặt đồ ăn hiện đại, cho phép khách hàng đặt món từ nhiều nhà hàng và cửa hàng khác nhau, với tính năng giao hàng tự động bằng drone.
