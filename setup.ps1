@@ -15,7 +15,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "Please install Node.js from https://nodejs.org/" -ForegroundColor Red
     exit 1
 }
-Write-Host "✓ Node.js version: $nodeVersion" -ForegroundColor Green
+Write-Host "--- Node.js version: $nodeVersion" -ForegroundColor Green
 Write-Host ""
 
 # Check if .env exists
@@ -24,7 +24,7 @@ if (-Not (Test-Path ".env")) {
     Write-Host "WARNING: .env file not found!" -ForegroundColor Red
     Write-Host "Creating .env file from template..." -ForegroundColor Yellow
     
-    $envContent = @"
+    $envContent = @'
 # MongoDB Connection (IMPORTANT: Update this with your MongoDB Atlas URI)
 MONGO_URI=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/FOODFASTDRONEDELIVERY?retryWrites=true&w=majority&appName=KTPM
 
@@ -42,10 +42,10 @@ CLIENT_URL=http://localhost:3000
 RESTAURANT_URL=http://localhost:3001
 ADMIN_URL=http://localhost:3002
 DRONE_URL=http://localhost:3003
-"@
+'@
     
     Set-Content -Path ".env" -Value $envContent
-    Write-Host "✓ .env file created!" -ForegroundColor Green
+    Write-Host "--- .env file created!" -ForegroundColor Green
     Write-Host ""
     Write-Host "IMPORTANT: Please update the following in .env file:" -ForegroundColor Yellow
     Write-Host "  1. MONGO_URI - Your MongoDB Atlas connection string" -ForegroundColor Yellow
@@ -55,7 +55,7 @@ DRONE_URL=http://localhost:3003
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     Write-Host ""
 } else {
-    Write-Host "✓ .env file exists" -ForegroundColor Green
+    Write-Host "--- .env file exists" -ForegroundColor Green
     Write-Host ""
 }
 
@@ -68,7 +68,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Failed to install root dependencies!" -ForegroundColor Red
     exit 1
 }
-Write-Host "✓ Root dependencies installed" -ForegroundColor Green
+Write-Host "--- Root dependencies installed" -ForegroundColor Green
 Write-Host ""
 
 # Install client_app dependencies
@@ -83,7 +83,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 Set-Location ..
-Write-Host "✓ Client App dependencies installed" -ForegroundColor Green
+Write-Host "--- Client App dependencies installed" -ForegroundColor Green
 Write-Host ""
 
 # Install restaurant_app dependencies
@@ -98,7 +98,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 Set-Location ..
-Write-Host "✓ Restaurant App dependencies installed" -ForegroundColor Green
+Write-Host "--- Restaurant App dependencies installed" -ForegroundColor Green
 Write-Host ""
 
 # Install admin_app dependencies
@@ -113,7 +113,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 Set-Location ..
-Write-Host "✓ Admin App dependencies installed" -ForegroundColor Green
+Write-Host "--- Admin App dependencies installed" -ForegroundColor Green
 Write-Host ""
 
 # Install drone_app dependencies
@@ -128,7 +128,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 Set-Location ..
-Write-Host "✓ Drone App dependencies installed" -ForegroundColor Green
+Write-Host "--- Drone App dependencies installed" -ForegroundColor Green
 Write-Host ""
 
 # Install server_app dependencies
@@ -143,12 +143,12 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 Set-Location ..
-Write-Host "✓ Server App dependencies installed" -ForegroundColor Green
+Write-Host "--- Server App dependencies installed" -ForegroundColor Green
 Write-Host ""
 
 # Success message
 Write-Host "========================================" -ForegroundColor Green
-Write-Host "  ✓ SETUP COMPLETED SUCCESSFULLY!" -ForegroundColor Green
+Write-Host "  SETUP COMPLETED SUCCESSFULLY!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "NEXT STEPS:" -ForegroundColor Cyan
