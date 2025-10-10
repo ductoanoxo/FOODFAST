@@ -1,5 +1,39 @@
 # 🚀 Hướng dẫn cài đặt và chạy dự án FOODFAST DRONE DELIVERY
 
+## ⚡ QUICK START (Cho người mới clone)
+
+**Chỉ cần 3 bước:**
+
+### 1️⃣ Clone project
+```bash
+git clone https://github.com/ductoanoxo/FOODFAST.git
+cd FOODFAST
+```
+
+### 2️⃣ Chạy script setup tự động
+```powershell
+.\setup.ps1
+```
+Script này sẽ:
+- Kiểm tra Node.js
+- Tạo file `.env` (nếu chưa có)
+- Cài đặt dependencies cho tất cả 5 apps
+
+### 3️⃣ Cập nhật MongoDB URI trong `.env`
+```env
+MONGO_URI=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/FOODFASTDRONEDELIVERY
+```
+
+### 4️⃣ Seed database và start
+```powershell
+.\seed.ps1   # Tạo dữ liệu mẫu
+.\start.ps1  # Chạy tất cả apps
+```
+
+**Xong! Mở http://localhost:3000** 🎉
+
+---
+
 ## 📋 Yêu cầu hệ thống
 
 - Node.js >= 18.x
