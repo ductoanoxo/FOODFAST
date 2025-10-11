@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
+import { useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { 
   Layout, 
@@ -35,14 +36,36 @@ const Header = () => {
   const { totalItems } = useSelector((state) => state.cart)
   const [searchValue, setSearchValue] = useState('')
 
+  const [searchParams, setSearchParams] = useSearchParams()
+  const debounceRef = useRef(null)
+
+  // Keep header search input in sync with URL search param
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || ''
+    setSearchValue(urlSearch)
+  }, [location.search, searchParams])
+
   const handleLogout = () => {
     dispatch(logout())
     navigate('/login')
   }
 
   const handleSearch = (value) => {
-    if (value.trim()) {
-      navigate(`/menu?search=${encodeURIComponent(value)}`)
+    if (value == null) return
+    const trimmed = String(value).trim()
+    // Navigate to menu and update the search query param (empty will clear param)
+    if (trimmed) {
+      navigate(`/menu?search=${encodeURIComponent(trimmed)}`)
+      return
+    }
+
+    // Empty search: remove 'search' param and go to /menu
+    const newParams = new URLSearchParams(searchParams)
+    newParams.delete('search')
+    if (location.pathname === '/menu') {
+      setSearchParams(newParams, { replace: true })
+    } else {
+      navigate('/menu')
     }
   }
 
@@ -92,7 +115,32 @@ const Header = () => {
           allowClear
           size="large"
           value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value
+            setSearchValue(val)
+            // Debounce live sync to URL so Menu/ProductFilter update live
+            if (debounceRef.current) clearTimeout(debounceRef.current)
+            debounceRef.current = setTimeout(() => {
+              const trimmed = String(val).trim()
+              if (trimmed) {
+                // if currently on /menu, just update params, otherwise navigate to /menu
+                if (location.pathname === '/menu') {
+                  setSearchParams({ search: trimmed }, { replace: true })
+                } else {
+                  navigate(`/menu?search=${encodeURIComponent(trimmed)}`)
+                }
+              } else {
+                // clear param
+                if (location.pathname === '/menu') {
+                  const newParams = new URLSearchParams(searchParams)
+                  newParams.delete('search')
+                  setSearchParams(newParams, { replace: true })
+                } else {
+                  navigate('/menu')
+                }
+              }
+            }, 300)
+          }}
           onSearch={handleSearch}
           prefix={<SearchOutlined />}
         />

@@ -81,13 +81,34 @@ const createOrder = asyncHandler(async(req, res) => {
     })
 })
 
-// @desc    Get user orders
-// @route   GET /api/orders
+// @desc    Get user orders or restaurant orders
+// @route   GET /api/orders or GET /api/orders/restaurant
 // @access  Private
 const getOrders = asyncHandler(async(req, res) => {
-    const orders = await Order.find({ user: req.user._id })
+    let query = {}
+    
+    // If restaurant role, get orders for their restaurant
+    if (req.user.role === 'restaurant') {
+        if (!req.user.restaurantId) {
+            res.status(400)
+            throw new Error('Restaurant ID not found for this user')
+        }
+        query = { restaurant: req.user.restaurantId }
+    } else if (req.user.role === 'admin') {
+        // Admin can see all orders, optionally filtered by status
+        if (req.query.status) {
+            query.status = req.query.status
+        }
+    } else {
+        // Regular user sees their own orders
+        query = { user: req.user._id }
+    }
+
+    const orders = await Order.find(query)
         .populate('items.product', 'name image price')
-        .populate('restaurant', 'name image')
+        .populate('restaurant', 'name image address phone')
+        .populate('user', 'name phone email')
+        .populate('drone', 'name model')
         .sort('-createdAt')
 
     res.json({

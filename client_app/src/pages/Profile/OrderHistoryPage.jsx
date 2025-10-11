@@ -59,6 +59,16 @@ const OrderHistoryPage = () => {
     return texts[status] || status
   }
 
+  // Define a logical ordering for statuses for sorting
+  const statusOrder = {
+    pending: 0,
+    confirmed: 1,
+    preparing: 2,
+    delivering: 3,
+    delivered: 4,
+    cancelled: 5,
+  }
+
   const columns = [
     {
       title: 'Mã đơn',
@@ -70,19 +80,41 @@ const OrderHistoryPage = () => {
       title: 'Ngày đặt',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
+      render: (date) => {
+        if (!date) return 'N/A'
+        try {
+          // Show full date and time (day/month/year hour:minute:second) in Vietnamese locale
+          return new Date(date).toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          })
+        } catch (err) {
+          return new Date(date).toString()
+        }
+      },
+      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+      sortDirections: ['descend', 'ascend'],
     },
     {
       title: 'Món ăn',
       dataIndex: 'items',
       key: 'items',
       render: (items) => `${items?.length || 0} món`,
+      sorter: (a, b) => (a.items?.length || 0) - (b.items?.length || 0),
+      sortDirections: ['ascend', 'descend'],
     },
     {
       title: 'Tổng tiền',
       dataIndex: 'totalAmount',
       key: 'totalAmount',
       render: (amount) => formatPrice(amount),
+      sorter: (a, b) => (a.totalAmount || 0) - (b.totalAmount || 0),
+      sortDirections: ['ascend', 'descend'],
     },
     {
       title: 'Trạng thái',
@@ -93,6 +125,13 @@ const OrderHistoryPage = () => {
           {getStatusText(status)}
         </Tag>
       ),
+      sorter: (a, b) => {
+        const av = statusOrder[a.status] !== undefined ? statusOrder[a.status] : 999
+        const bv = statusOrder[b.status] !== undefined ? statusOrder[b.status] : 999
+        if (av === bv) return (a.status || '').toString().localeCompare((b.status || '').toString())
+        return av - bv
+      },
+      sortDirections: ['ascend', 'descend'],
     },
     {
       title: 'Hành động',

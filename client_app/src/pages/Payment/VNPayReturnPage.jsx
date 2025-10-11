@@ -23,18 +23,20 @@ const VNPayReturnPage = () => {
       }
 
       // Gọi API để xác thực và xử lý kết quả
+      // Note: axios instance returns response.data by interceptor, so `response` here is the server payload
       const response = await paymentAPI.vnpayReturn(params)
-      
+
       setPaymentResult({
-        success: response.data.success,
-        message: response.data.message,
-        orderId: response.data.data?._id,
+        success: response?.success,
+        message: response?.message,
+        // server returns data.orderId in paymentController.vnpayReturn
+        orderId: response?.data?.orderId || response?.data?._id || localStorage.getItem('pendingOrderId'),
       })
     } catch (error) {
       console.error('VNPay return error:', error)
       setPaymentResult({
         success: false,
-        message: error.response?.data?.message || 'Có lỗi xảy ra khi xử lý thanh toán',
+        message: error.response?.data?.message || error.message || 'Có lỗi xảy ra khi xử lý thanh toán',
         orderId: localStorage.getItem('pendingOrderId'),
       })
     } finally {

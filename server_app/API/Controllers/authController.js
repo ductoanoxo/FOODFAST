@@ -85,10 +85,21 @@ const login = asyncHandler(async(req, res) => {
 // @access  Private
 const getProfile = asyncHandler(async(req, res) => {
     const user = await User.findById(req.user._id)
+        .populate('restaurantId', 'name description address phone email openingHours isOpen rating totalReviews image')
 
+    if (!user) {
+        res.status(404)
+        throw new Error('User not found')
+    }
+
+    const userData = user.toObject()
+    
     res.json({
         success: true,
-        data: user,
+        data: {
+            ...userData,
+            restaurant: userData.restaurantId || null, // Add restaurant info if exists
+        },
     })
 })
 

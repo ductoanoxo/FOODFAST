@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Drone App Cache</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 { color: #333; margin-bottom: 20px; }
+        button {
+            background: #1890ff;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover { background: #096dd9; }
+        .success { color: #52c41a; margin-top: 20px; }
+        .info { background: #f0f2f5; padding: 15px; border-radius: 6px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚁 Clear Drone App Cache</h1>
+        <p>Click the button below to clear all cached data and start fresh.</p>
+        
+        <button onclick="clearCache()">🗑️ Clear Cache</button>
+        <button onclick="window.location.href='http://localhost:3003'">🏠 Go to Drone App</button>
+        
+        <div id="result"></div>
+        
+        <div class="info">
+            <h3>📝 Login Credentials:</h3>
+            <p><strong>Email:</strong> dronemanager@example.com</p>
+            <p><strong>Password:</strong> 123456</p>
+        </div>
+    </div>
+
+    <script>
+        function clearCache() {
+            // Clear localStorage
+            localStorage.removeItem('drone_token');
+            localStorage.removeItem('drone_user');
+            localStorage.clear();
+            
+            // Clear sessionStorage
+            sessionStorage.clear();
+            
+            // Show success message
+            document.getElementById('result').innerHTML = 
+                '<div class="success"><h2>✅ Cache Cleared!</h2><p>You can now login again.</p></div>';
+            
+            console.log('Cache cleared successfully!');
+        }
+        
+        // Show current cache
+        window.onload = function() {
+            console.log('Current localStorage:', localStorage);
+            console.log('drone_token:', localStorage.getItem('drone_token'));
+            console.log('drone_user:', localStorage.getItem('drone_user'));
+        }
+    </script>
+</body>
+</html>

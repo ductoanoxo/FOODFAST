@@ -1,13 +1,25 @@
 const asyncHandler = require('../Middleware/asyncHandler')
 const Product = require('../Models/Product')
 
-// @desc    Get all products
-// @route   GET /api/products
-// @access  Public
+// @desc    Get all products or restaurant products
+// @route   GET /api/products or GET /api/products/restaurant
+// @access  Public / Private (Restaurant)
 const getProducts = asyncHandler(async(req, res) => {
     const { search, category, restaurant, sortBy, minPrice, maxPrice } = req.query
 
-    let query = { isAvailable: true }
+    let query = {}
+
+    // If restaurant role, only get their products
+    if (req.user && req.user.role === 'restaurant') {
+        if (!req.user.restaurantId) {
+            res.status(400)
+            throw new Error('Restaurant ID not found for this user')
+        }
+        query.restaurant = req.user.restaurantId
+    } else {
+        // Public access - only show available products
+        query.isAvailable = true
+    }
 
     // Search filter
     if (search) {
@@ -19,8 +31,8 @@ const getProducts = asyncHandler(async(req, res) => {
         query.category = category
     }
 
-    // Restaurant filter
-    if (restaurant) {
+    // Restaurant filter (for public access)
+    if (restaurant && !req.user) {
         query.restaurant = restaurant
     }
 

@@ -8,7 +8,7 @@ export const login = async (credentials) => {
 
 // Get current user
 export const getCurrentUser = async () => {
-  const response = await axios.get('/auth/me');
+  const response = await axios.get('/auth/profile');
   return response.data;
 };
 

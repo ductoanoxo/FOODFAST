@@ -1,0 +1,18 @@
+.product-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.product-card:hover {
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+  transform: translateY(-4px);
+}
+
+.product-card .ant-card-cover {
+  border-radius: 12px 12px 0 0;
+}
+
+.product-card .ant-card-actions {
+  background: #fafafa;
+}

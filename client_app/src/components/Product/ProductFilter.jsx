@@ -5,8 +5,15 @@ import './ProductFilter.css'
 
 const { Option } = Select
 
+import { useEffect } from 'react'
+
 const ProductFilter = ({ filters, onFilterChange, categories, restaurants }) => {
   const [localFilters, setLocalFilters] = useState(filters)
+
+  // Sync local state when parent filters prop changes (e.g., from URL)
+  useEffect(() => {
+    setLocalFilters(filters)
+  }, [filters])
 
   const handleChange = (key, value) => {
     const newFilters = { ...localFilters, [key]: value }

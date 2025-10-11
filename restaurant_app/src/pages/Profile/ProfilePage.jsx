@@ -23,7 +23,7 @@ const ProfilePage = () => {
 
     const fetchRestaurantProfile = async () => {
         try {
-            const token = localStorage.getItem('token')
+            const token = localStorage.getItem('restaurant_token')
 
             const config = {
                 headers: {
@@ -54,7 +54,7 @@ const ProfilePage = () => {
     const handleUpdate = async (values) => {
         try {
             setLoading(true)
-            const token = localStorage.getItem('token')
+            const token = localStorage.getItem('restaurant_token')
 
             const config = {
                 headers: {
@@ -79,7 +79,7 @@ const ProfilePage = () => {
 
     const handleToggleStatus = async () => {
         try {
-            const token = localStorage.getItem('token')
+            const token = localStorage.getItem('restaurant_token')
 
             const config = {
                 headers: {

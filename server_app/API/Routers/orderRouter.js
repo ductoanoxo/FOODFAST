@@ -12,6 +12,7 @@ const {
 const { protect, authorize } = require('../Middleware/authMiddleware')
 
 router.get('/history', protect, getOrderHistory)
+router.get('/restaurant', protect, authorize('restaurant', 'admin'), getOrders)
 
 router.route('/')
     .get(protect, getOrders)

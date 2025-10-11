@@ -40,7 +40,8 @@ const seedData = async () => {
     console.log('Cleared existing data...');
 
     // Tạo Users (User model sẽ tự động hash password qua pre-save hook)
-    const users = await User.create([
+    // Tạo admin, user, drone operator trước
+    const initialUsers = await User.create([
       {
         name: 'Admin User',
         email: 'admin@foodfast.com',
@@ -62,23 +63,23 @@ const seedData = async () => {
         },
       },
       {
-        name: 'Restaurant Owner',
-        email: 'restaurant@foodfast.com',
-        password: 'restaurant123',
-        role: 'restaurant',
-        phone: '0901234569',
-        address: '789 Restaurant Ave, HCM City',
-      },
-      {
         name: 'Drone Operator',
         email: 'drone@foodfast.com',
         password: 'drone123',
-        role: 'drone',
+        role: 'drone_operator',
         phone: '0901234570',
         address: '101 Drone Rd, HCM City',
       },
+      {
+        name: 'Drone Manager',
+        email: 'dronemanager@example.com',
+        password: '123456',
+        role: 'drone_operator',
+        phone: '0901234571',
+        address: '102 Drone Management Center, HCM City',
+      },
     ]);
-    console.log('Users created:', users.length);
+    console.log('Initial users created:', initialUsers.length);
 
     // Categories
     const categories = await Category.create([
@@ -90,7 +91,36 @@ const seedData = async () => {
     ]);
     console.log('Categories created:', categories.length);
 
-    // Restaurants
+    // Tạo 3 Restaurant Owner users - mỗi người quản lý 1 nhà hàng
+    const restaurantOwner1 = await User.create({
+      name: 'Chủ Cơm Tấm Sài Gòn',
+      email: 'restaurant@foodfast.com',
+      password: 'restaurant123',
+      role: 'restaurant',
+      phone: '0901234569',
+      address: '123 Nguyen Hue, District 1, HCM City',
+    });
+
+    const restaurantOwner2 = await User.create({
+      name: 'Chủ Phở Hà Nội',
+      email: 'pho@foodfast.com',
+      password: 'restaurant123',
+      role: 'restaurant',
+      phone: '0901234570',
+      address: '456 Le Loi, District 1, HCM City',
+    });
+
+    const restaurantOwner3 = await User.create({
+      name: 'Chủ KFC HCM',
+      email: 'kfc@foodfast.com',
+      password: 'restaurant123',
+      role: 'restaurant',
+      phone: '0901234571',
+      address: '789 Tran Hung Dao, District 5, HCM City',
+    });
+    console.log('Restaurant owners created: 3');
+
+    // Restaurants - Mỗi restaurant có 1 owner riêng
     const restaurants = await Restaurant.create([
       {
         name: 'Cơm Tấm Sài Gòn',
@@ -106,7 +136,7 @@ const seedData = async () => {
           coordinates: [106.7006, 10.7756],
         },
         openingHours: '07:00 - 22:00',
-        owner: users[2]._id, // Restaurant Owner
+        owner: restaurantOwner1._id,
       },
       {
         name: 'Phở Hà Nội',
@@ -122,7 +152,7 @@ const seedData = async () => {
           coordinates: [106.6947, 10.7731],
         },
         openingHours: '06:00 - 21:00',
-        owner: users[2]._id,
+        owner: restaurantOwner2._id,
       },
       {
         name: 'KFC HCM',
@@ -138,10 +168,30 @@ const seedData = async () => {
           coordinates: [106.6811, 10.7543],
         },
         openingHours: '08:00 - 23:00',
-        owner: users[2]._id,
+        owner: restaurantOwner3._id,
       },
     ]);
     console.log('Restaurants created:', restaurants.length);
+
+    // Cập nhật restaurantId cho từng restaurant owner
+    await User.findByIdAndUpdate(restaurantOwner1._id, {
+      restaurantId: restaurants[0]._id, // Cơm Tấm Sài Gòn
+    });
+    await User.findByIdAndUpdate(restaurantOwner2._id, {
+      restaurantId: restaurants[1]._id, // Phở Hà Nội
+    });
+    await User.findByIdAndUpdate(restaurantOwner3._id, {
+      restaurantId: restaurants[2]._id, // KFC HCM
+    });
+    console.log('Updated all restaurant owners with their restaurantId');
+
+    // Verify
+    const verified1 = await User.findById(restaurantOwner1._id);
+    const verified2 = await User.findById(restaurantOwner2._id);
+    const verified3 = await User.findById(restaurantOwner3._id);
+    console.log('✓ Owner 1 (restaurant@foodfast.com) manages:', restaurants[0].name);
+    console.log('✓ Owner 2 (pho@foodfast.com) manages:', restaurants[1].name);
+    console.log('✓ Owner 3 (kfc@foodfast.com) manages:', restaurants[2].name);
 
     // Products
     const products = await Product.create([
@@ -261,11 +311,37 @@ const seedData = async () => {
     console.log('Drones created:', drones.length);
 
     console.log('\n✅ Database seeded successfully!');
-    console.log('\nLogin credentials:');
-    console.log('Admin: admin@foodfast.com / admin123');
-    console.log('User: user@foodfast.com / user123');
-    console.log('Restaurant: restaurant@foodfast.com / restaurant123');
-    console.log('Drone: drone@foodfast.com / drone123');
+    console.log('\n👥 Login credentials:');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔑 ADMIN (Full System Access):');
+    console.log('   Email: admin@foodfast.com');
+    console.log('   Password: admin123');
+    console.log('   App: admin_app (quản lý toàn bộ hệ thống)');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🍽️  RESTAURANT OWNERS (Single Restaurant):');
+    console.log('   1. Cơm Tấm Sài Gòn:');
+    console.log('      Email: restaurant@foodfast.com');
+    console.log('      Password: restaurant123');
+    console.log('      App: restaurant_app');
+    console.log('   2. Phở Hà Nội:');
+    console.log('      Email: pho@foodfast.com');
+    console.log('      Password: restaurant123');
+    console.log('      App: restaurant_app');
+    console.log('   3. KFC HCM:');
+    console.log('      Email: kfc@foodfast.com');
+    console.log('      Password: restaurant123');
+    console.log('      App: restaurant_app');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('👤 CUSTOMER:');
+    console.log('   Email: user@foodfast.com');
+    console.log('   Password: user123');
+    console.log('   App: client_app');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🚁 DRONE OPERATORS:');
+    console.log('   1. Email: drone@foodfast.com / drone123');
+    console.log('   2. Email: dronemanager@example.com / 123456');
+    console.log('   App: drone_manage');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     await mongoose.disconnect();
     process.exit(0);

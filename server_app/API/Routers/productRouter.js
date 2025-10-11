@@ -11,6 +11,8 @@ const {
 const { protect, authorize } = require('../Middleware/authMiddleware')
 
 router.get('/popular', getPopularProducts)
+router.get('/restaurant', protect, authorize('restaurant', 'admin'), getProducts)
+
 router.route('/')
     .get(getProducts)
     .post(protect, authorize('restaurant', 'admin'), createProduct)

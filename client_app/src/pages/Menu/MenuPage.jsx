@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Row, Col, Typography, Spin, Empty, Pagination, Space, Tag } from 'antd'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { productAPI, restaurantAPI } from '../../api'
 import ProductCard from '../../components/Product/ProductCard'
 import ProductFilter from '../../components/Product/ProductFilter'
@@ -9,7 +9,8 @@ import './MenuPage.css'
 const { Title, Text } = Typography
 
 const MenuPage = () => {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [restaurants, setRestaurants] = useState([])
@@ -28,6 +29,14 @@ const MenuPage = () => {
   useEffect(() => {
     fetchData()
   }, [])
+
+  // Keep filters.search and category in sync with URL params
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || ''
+    const urlCategory = searchParams.get('category') || ''
+    setFilters((prev) => ({ ...prev, search: urlSearch, category: urlCategory }))
+    setCurrentPage(1)
+  }, [searchParams])
 
   useEffect(() => {
     fetchProducts()
@@ -71,6 +80,11 @@ const MenuPage = () => {
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters)
     setCurrentPage(1) // Reset to first page when filters change
+    // Push search and category to URL so Header and other components read the same state
+    const params = {}
+    if (newFilters.search) params.search = newFilters.search
+    if (newFilters.category) params.category = newFilters.category
+    setSearchParams(params, { replace: true })
   }
 
   const handlePageChange = (page) => {

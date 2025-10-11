@@ -100,11 +100,23 @@ const LoginPage = () => {
           </Form.Item>
         </Form>
 
-        <div style={{ textAlign: 'center', marginTop: 20 }}>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            Demo: restaurant1@fastfood.com / restaurant123
-          </Text>
-        </div>
+                    {/* Demo Credentials */}
+                    <div style={{ textAlign: 'left', background: '#f0f2f5', padding: 16, borderRadius: 8 }}>
+                        <Text strong style={{ display: 'block', marginBottom: 8 }}>
+                            🔑 Tài khoản demo:
+                        </Text>
+                        <Text type="secondary" style={{ display: 'block', fontSize: 13 }}>
+                            📧 Email: <Text copyable code>restaurant@foodfast.com</Text>
+                        </Text>
+                        <Text type="secondary" style={{ display: 'block', fontSize: 13 }}>
+                            🔒 Mật khẩu: <Text copyable code>restaurant123</Text>
+                        </Text>
+                    </div>
+
+                    {/* Footer */}
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                        © 2025 FOODFAST Drone Delivery System
+                    </Text>
       </Card>
     </div>
   );

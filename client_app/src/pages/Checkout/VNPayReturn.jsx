@@ -62,16 +62,24 @@ const VNPayReturn = () => {
         if (response.success && vnp_ResponseCode === '00') {
           setStatus('success')
           setMessage('Thanh toán thành công!')
-          
+
           // Xóa giỏ hàng
           dispatch(clearCart())
-          
-          // Xóa pendingOrderId
+
+          // Try to get order id from response (server returns data.orderId)
+          const returnedOrderId = response?.data?.orderId || response?.data?._id || localStorage.getItem('pendingOrderId')
+
+          // Remove pendingOrderId stored earlier in checkout flow
           localStorage.removeItem('pendingOrderId')
-          
-          // Chuyển đến trang tracking sau 3 giây
+
+          // Navigate to tracking page if we have a valid id, otherwise go to profile
           setTimeout(() => {
-            navigate(`/order-tracking/${response.data._id}`)
+            if (returnedOrderId) {
+              navigate(`/order-tracking/${returnedOrderId}`)
+            } else {
+              // fallback
+              navigate('/profile')
+            }
           }, 3000)
         } else {
           setStatus('error')

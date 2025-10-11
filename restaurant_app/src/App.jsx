@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MainLayout from './components/Layout/MainLayout';
@@ -8,6 +9,7 @@ import DashboardPage from './pages/Dashboard/DashboardPage';
 import OrdersPage from './pages/Orders/OrdersPage';
 import MenuPage from './pages/Menu/MenuPage';
 import ProfilePage from './pages/Profile/ProfilePage';
+import { initSocket, disconnectSocket } from './utils/socket';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -17,6 +19,18 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   const { isAuthenticated } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      initSocket();
+    }
+
+    return () => {
+      if (isAuthenticated) {
+        disconnectSocket();
+      }
+    };
+  }, [isAuthenticated]);
 
   return (
     <Router>
