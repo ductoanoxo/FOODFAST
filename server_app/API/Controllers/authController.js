@@ -33,14 +33,16 @@ const register = asyncHandler(async(req, res) => {
     if (user) {
         res.status(201).json({
             success: true,
-            data: {
+            user: {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
                 role: user.role,
-                token: generateToken(user._id),
+                avatar: user.avatar,
+                address: user.address,
             },
+            token: generateToken(user._id),
         })
     } else {
         res.status(400)
@@ -60,18 +62,17 @@ const login = asyncHandler(async(req, res) => {
     if (user && (await user.matchPassword(password))) {
         res.json({
             success: true,
-            data: {
-                user: {
-                    _id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    phone: user.phone,
-                    role: user.role,
-                    avatar: user.avatar,
-                    address: user.address,
-                },
-                token: generateToken(user._id),
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                avatar: user.avatar,
+                address: user.address,
+                restaurantId: user.restaurantId,
             },
+            token: generateToken(user._id),
         })
     } else {
         res.status(401)

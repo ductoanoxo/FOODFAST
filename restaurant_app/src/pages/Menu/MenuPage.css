@@ -1,0 +1,9 @@
+.menu-page {
+    padding: 24px;
+}
+
+@media (max-width: 768px) {
+    .menu-page {
+        padding: 16px;
+    }
+}

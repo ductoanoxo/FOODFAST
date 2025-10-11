@@ -1,40 +1,41 @@
 const express = require('express')
 const router = express.Router()
-const asyncHandler = require('../Middleware/asyncHandler')
+const {
+    createVNPayPayment,
+    vnpayReturn,
+    vnpayIPN,
+    queryVNPayTransaction,
+    refundVNPayTransaction,
+    createMomoPayment,
+    momoCallback,
+    getPaymentInfo,
+} = require('../Controllers/paymentController')
 const { protect } = require('../Middleware/authMiddleware')
 
-// Create payment
-router.post('/create', protect, asyncHandler(async(req, res) => {
-    const { orderId, paymentMethod, amount } = req.body
+// VNPay routes
+router.post('/vnpay/create', protect, createVNPayPayment)
+router.get('/vnpay/return', vnpayReturn)
+router.get('/vnpay/ipn', vnpayIPN)
+router.post('/vnpay/querydr', protect, queryVNPayTransaction)
+router.post('/vnpay/refund', protect, refundVNPayTransaction)
 
-    // TODO: Implement payment gateway integration
-    // VNPay, Momo, etc.
+// Momo routes
+router.post('/momo/create', protect, createMomoPayment)
+router.post('/momo/callback', momoCallback)
 
-    res.json({
-        success: true,
-        data: {
-            paymentUrl: 'https://payment-gateway.com/pay',
-            message: 'Payment gateway integration coming soon',
-        },
-    })
-}))
-
-// Payment return (VNPay)
-router.get('/vnpay-return', asyncHandler(async(req, res) => {
-    // TODO: Handle VNPay return
-    res.redirect(`${process.env.CLIENT_URL}/payment-result?status=success`)
-}))
+// Get payment info
+router.get('/:orderId', protect, getPaymentInfo)
 
 // Payment methods
-router.get('/methods', asyncHandler(async(req, res) => {
+router.get('/methods', (req, res) => {
     res.json({
         success: true,
         data: [
-            { id: 'COD', name: 'Cash on Delivery', icon: 'wallet' },
+            { id: 'COD', name: 'Thanh toán khi nhận hàng', icon: 'wallet' },
             { id: 'VNPAY', name: 'VNPay', icon: 'credit-card' },
             { id: 'MOMO', name: 'Momo', icon: 'mobile' },
         ],
     })
-}))
+})
 
 module.exports = router

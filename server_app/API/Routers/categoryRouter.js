@@ -1,16 +1,24 @@
 const express = require('express')
 const router = express.Router()
-const asyncHandler = require('../Middleware/asyncHandler')
-const Category = require('../Models/Category')
+const {
+    getCategories,
+    getCategoryById,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    getCategoryProducts,
+} = require('../Controllers/categoryController')
+const { protect, authorize } = require('../Middleware/authMiddleware')
 
-// Get all categories
-router.get('/', asyncHandler(async(req, res) => {
-    const categories = await Category.find({ isActive: true })
+router.route('/')
+    .get(getCategories)
+    .post(protect, authorize('admin'), createCategory)
 
-    res.json({
-        success: true,
-        data: categories,
-    })
-}))
+router.route('/:id')
+    .get(getCategoryById)
+    .put(protect, authorize('admin'), updateCategory)
+    .delete(protect, authorize('admin'), deleteCategory)
+
+router.get('/:id/products', getCategoryProducts)
 
 module.exports = router

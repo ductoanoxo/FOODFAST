@@ -1,0 +1,14 @@
+.missions-page {
+    padding: 24px;
+}
+
+.missions-page h1 {
+    margin-bottom: 24px;
+    color: #52c41a;
+}
+
+@media (max-width: 768px) {
+    .missions-page {
+        padding: 16px;
+    }
+}

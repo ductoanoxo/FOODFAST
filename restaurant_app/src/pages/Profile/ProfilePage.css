@@ -1,0 +1,37 @@
+.profile-page {
+    padding: 24px;
+}
+
+.profile-page h1 {
+    margin-bottom: 24px;
+    color: #1890ff;
+}
+
+.status-section {
+    padding: 16px 0;
+}
+
+.status-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.stats-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.stats-item:last-child {
+    border-bottom: none;
+}
+
+@media (max-width: 768px) {
+    .profile-page {
+        padding: 16px;
+    }
+}

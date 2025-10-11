@@ -1,0 +1,13 @@
+.orders-page {
+    padding: 24px;
+}
+
+.orders-page h1 {
+    margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+    .orders-page {
+        padding: 16px;
+    }
+}

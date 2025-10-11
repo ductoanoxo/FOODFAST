@@ -13,38 +13,56 @@ const createOrder = asyncHandler(async(req, res) => {
         note,
     } = req.body
 
+    console.log('Create order request:', { items, deliveryInfo, paymentMethod, note })
+
     if (!items || items.length === 0) {
         res.status(400)
         throw new Error('No order items')
     }
 
-    // Calculate subtotal
+    // Validate deliveryInfo
+    if (!deliveryInfo || !deliveryInfo.name || !deliveryInfo.phone || !deliveryInfo.address) {
+        res.status(400)
+        throw new Error('Delivery information is required')
+    }
+
+    // Calculate subtotal and validate products
     let subtotal = 0
+    let restaurantId = null
+
     for (let item of items) {
-        const product = await Product.findById(item.product)
+        const product = await Product.findById(item.product).populate('restaurant')
         if (!product) {
             res.status(404)
             throw new Error(`Product not found: ${item.product}`)
         }
+        
+        // Set restaurant from first product
+        if (!restaurantId) {
+            restaurantId = product.restaurant._id
+        }
+        
         subtotal += product.price * item.quantity
     }
 
-    // Get restaurant from first item
-    const firstProduct = await Product.findById(items[0].product)
+    if (!restaurantId) {
+        res.status(400)
+        throw new Error('Restaurant not found')
+    }
 
-    const deliveryFee = 15000
+    const deliveryFee = req.body.deliveryFee || 15000
     const totalAmount = subtotal + deliveryFee
 
     const order = await Order.create({
         user: req.user._id,
         items,
-        restaurant: firstProduct.restaurant,
+        restaurant: restaurantId,
         deliveryInfo,
-        note,
+        note: note || '',
         subtotal,
         deliveryFee,
         totalAmount,
-        paymentMethod,
+        paymentMethod: paymentMethod || 'COD',
         estimatedDeliveryTime: new Date(Date.now() + 30 * 60000), // 30 minutes
     })
 
@@ -54,6 +72,8 @@ const createOrder = asyncHandler(async(req, res) => {
             $inc: { soldCount: item.quantity },
         })
     }
+
+    console.log('Order created successfully:', order._id)
 
     res.status(201).json({
         success: true,

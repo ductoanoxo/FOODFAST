@@ -74,6 +74,11 @@ const orderSchema = new mongoose.Schema({
         enum: ['pending', 'paid', 'failed', 'refunded'],
         default: 'pending',
     },
+    paymentInfo: {
+        method: String,
+        transactionId: String,
+        paidAt: Date,
+    },
     status: {
         type: String,
         enum: ['pending', 'confirmed', 'preparing', 'ready', 'delivering', 'delivered', 'cancelled'],
@@ -91,6 +96,13 @@ const orderSchema = new mongoose.Schema({
     cancelledAt: Date,
     cancelReason: String,
     estimatedDeliveryTime: Date,
+    paidAt: Date,
+    rating: {
+        type: Number,
+        min: 1,
+        max: 5,
+    },
+    review: String,
 }, {
     timestamps: true,
 })

@@ -1,34 +1,28 @@
 const express = require('express')
 const router = express.Router()
-const asyncHandler = require('../Middleware/asyncHandler')
-const Restaurant = require('../Models/Restaurant')
+const {
+    getRestaurants,
+    getRestaurantById,
+    getNearbyRestaurants,
+    createRestaurant,
+    updateRestaurant,
+    deleteRestaurant,
+    getRestaurantMenu,
+    getRestaurantOrders,
+    toggleRestaurantStatus,
+    getRestaurantStats,
+} = require('../Controllers/restaurantController')
+const { protect, authorize } = require('../Middleware/authMiddleware')
 
-// Get all restaurants
-router.get('/', asyncHandler(async(req, res) => {
-    const restaurants = await Restaurant.find({ isActive: true })
-        .populate('owner', 'name email phone')
-        .sort('-rating')
-
-    res.json({
-        success: true,
-        data: restaurants,
-    })
-}))
-
-// Get restaurant by ID
-router.get('/:id', asyncHandler(async(req, res) => {
-    const restaurant = await Restaurant.findById(req.params.id)
-        .populate('owner', 'name email phone')
-
-    if (!restaurant) {
-        res.status(404)
-        throw new Error('Restaurant not found')
-    }
-
-    res.json({
-        success: true,
-        data: restaurant,
-    })
-}))
+router.get('/nearby', getNearbyRestaurants)
+router.get('/', getRestaurants)
+router.post('/', protect, authorize('admin'), createRestaurant)
+router.get('/:id', getRestaurantById)
+router.put('/:id', protect, authorize('restaurant', 'admin'), updateRestaurant)
+router.delete('/:id', protect, authorize('admin'), deleteRestaurant)
+router.get('/:id/menu', getRestaurantMenu)
+router.get('/:id/orders', protect, authorize('restaurant', 'admin'), getRestaurantOrders)
+router.patch('/:id/toggle-status', protect, authorize('restaurant', 'admin'), toggleRestaurantStatus)
+router.get('/:id/stats', protect, authorize('restaurant', 'admin'), getRestaurantStats)
 
 module.exports = router

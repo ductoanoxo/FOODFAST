@@ -40,9 +40,11 @@ const LoginPage = () => {
       dispatch(loginStart())
       const response = await authAPI.login(values)
       
+      console.log('Login response:', response) // Debug log
+      
       dispatch(loginSuccess({
-        user: response.data.user,
-        token: response.data.token
+        user: response.user,
+        token: response.token
       }))
       
       message.success('Đăng nhập thành công!')
@@ -57,7 +59,7 @@ const LoginPage = () => {
     <div className="login-page">
       <Card className="login-card">
         <div className="login-header">
-          <img src="/logo.png" alt="FoodFast" className="login-logo" />
+          <img src="http://localhost:5000/uploads/logo.jpg" alt="FoodFast" className="login-logo" />
           <Title level={2}>Đăng nhập</Title>
           <Text type="secondary">Chào mừng bạn quay lại!</Text>
         </div>

@@ -75,7 +75,7 @@ const Header = () => {
       <div className="header-container">
         {/* Logo */}
         <Link to="/" className="logo">
-          <img src="/logo.png" alt="FoodFast" style={{ height: 40 }} />
+          <img src="http://localhost:5000/uploads/logo.jpg" alt="FoodFast" style={{ height: 40 }} />
           <span className="logo-text">FoodFast</span>
         </Link>
 

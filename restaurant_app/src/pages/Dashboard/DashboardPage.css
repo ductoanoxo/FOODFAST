@@ -1,0 +1,13 @@
+.dashboard-page {
+    padding: 24px;
+}
+
+.dashboard-page h1 {
+    margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+    .dashboard-page {
+        padding: 16px;
+    }
+}

@@ -1,0 +1,14 @@
+.users-page {
+    padding: 24px;
+}
+
+.users-page h1 {
+    margin: 0;
+    color: #ff4d4f;
+}
+
+@media (max-width: 768px) {
+    .users-page {
+        padding: 16px;
+    }
+}

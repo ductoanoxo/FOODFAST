@@ -2,6 +2,13 @@
     width: 100%;
 }
 
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+}
+
 .hero-carousel {
     margin-top: 0;
 }
@@ -17,6 +24,48 @@
 
 .carousel-content {
     max-width: 800px;
+    position: relative;
+    z-index: 2;
+    color: #fff;
+}
+
+.hero-carousel .slick-slide {
+    position: relative;
+}
+
+.carousel-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.25);
+    z-index: 1;
+    border-radius: 0;
+}
+
+/* New: use an <img> as background for crisper rendering */
+.carousel-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    z-index: 0;
+    transform: translateZ(0); /* promote to its own layer for sharper rendering */
+}
+
+.carousel-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    pointer-events: none;
 }
 
 .features-section {
@@ -50,6 +99,79 @@
     margin-bottom: 32px;
 }
 
+/* Category Cards */
+.category-card {
+    padding: 20px 10px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border-radius: 12px !important;
+}
+
+.category-card:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.category-icon {
+    transition: transform 0.3s ease;
+}
+
+.category-card:hover .category-icon {
+    transform: rotate(10deg) scale(1.1);
+}
+
+.category-img {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* How It Works Section */
+.how-it-works-section {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+    padding: 80px 0;
+    margin: 80px 0;
+}
+
+.how-it-works-card {
+    text-align: center;
+    border-radius: 16px;
+    padding: 32px 20px;
+    transition: all 0.3s;
+    position: relative;
+    height: 100%;
+    background: white;
+}
+
+.how-it-works-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+.step-number {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.step-icon {
+    margin-top: 24px;
+    margin-bottom: 16px;
+}
+
 .cta-section {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 80px 0;
@@ -65,10 +187,96 @@
 @media (max-width: 768px) {
     .carousel-item {
         height: 400px;
+        padding: 20px;
     }
+    
     .section-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
     }
+    
+    .how-it-works-section {
+        padding: 60px 0;
+    }
+    
+    .category-card {
+        padding: 15px 5px;
+    }
+    
+    .category-icon {
+        font-size: 36px !important;
+    }
+}
+/* --- ONE LINE CATEGORY ROW --- */
+.category-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 18px;
+  overflow-x: auto; /* cuộn ngang nếu không đủ chỗ */
+  scroll-behavior: smooth;
+  padding: 10px 0 10px 4px;
+}
+
+.category-row::-webkit-scrollbar {
+  height: 8px;
+}
+.category-row::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 4px;
+}
+
+/* mỗi card nhỏ lại để vừa 1 hàng */
+.category-card.pretty {
+  flex: 0 0 140px; /* chiều rộng cố định mỗi card */
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  text-align: center;
+}
+
+.category-card.pretty:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.15);
+}
+
+.category-media {
+  width: 70px;
+  height: 70px;
+  margin: 8px auto;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 6px 12px rgba(0,0,0,0.05);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.category-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 10px;
+  transition: transform 0.3s ease;
+}
+.category-card.pretty:hover .category-img {
+  transform: scale(1.08);
+}
+
+.category-name {
+  font-weight: 600;
+  color: #222;
+  margin-top: 6px;
+}
+
+/* animation khi xuất hiện */
+@keyframes cat-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.category-card.pretty {
+  opacity: 0;
+  animation: cat-fade-up 0.4s ease forwards;
 }

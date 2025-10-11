@@ -1,17 +1,20 @@
 const express = require('express')
 const router = express.Router()
-const asyncHandler = require('../Middleware/asyncHandler')
-const User = require('../Models/User')
+const {
+    getUsers,
+    getUserById,
+    updateUser,
+    deleteUser,
+    getUserStats,
+    getUserOrders,
+} = require('../Controllers/userController')
 const { protect, authorize } = require('../Middleware/authMiddleware')
 
-// Get all users (Admin only)
-router.get('/', protect, authorize('admin'), asyncHandler(async(req, res) => {
-    const users = await User.find({}).select('-password')
-
-    res.json({
-        success: true,
-        data: users,
-    })
-}))
+router.get('/stats', protect, authorize('admin'), getUserStats)
+router.get('/', protect, authorize('admin'), getUsers)
+router.get('/:id', protect, authorize('admin'), getUserById)
+router.put('/:id', protect, authorize('admin'), updateUser)
+router.delete('/:id', protect, authorize('admin'), deleteUser)
+router.get('/:id/orders', protect, getUserOrders)
 
 module.exports = router

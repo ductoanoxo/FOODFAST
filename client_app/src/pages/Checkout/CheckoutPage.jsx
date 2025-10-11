@@ -23,6 +23,7 @@ import {
   WalletOutlined,
 } from '@ant-design/icons'
 import { orderAPI } from '../../api/orderAPI'
+import { paymentAPI } from '../../api/paymentAPI'
 import { clearCart } from '../../redux/slices/cartSlice'
 import './CheckoutPage.css'
 
@@ -53,25 +54,61 @@ const CheckoutPage = () => {
     try {
       setLoading(true)
       const orderData = {
-        ...values,
         items: items.map(item => ({
           product: item._id,
           quantity: item.quantity,
           price: item.price,
         })),
+        deliveryInfo: {
+          name: values.name,
+          phone: values.phone,
+          address: values.address,
+        },
+        note: values.note || '',
         paymentMethod,
         totalAmount,
         deliveryFee,
       }
 
       const response = await orderAPI.createOrder(orderData)
-      
-      dispatch(clearCart())
-      message.success('Đặt hàng thành công!')
-      navigate(`/order-tracking/${response.data._id}`)
+      const orderId = response.data._id
+
+      // Xử lý thanh toán theo phương thức
+      if (paymentMethod === 'VNPAY') {
+        // Thanh toán VNPay
+        try {
+          const paymentResponse = await paymentAPI.createVNPayPayment({
+            orderId: orderId,
+            amount: totalAmount,
+            orderInfo: `Thanh toan don hang #${orderId}`,
+          })
+          
+          // Lưu orderId vào localStorage để xử lý sau khi return
+          localStorage.setItem('pendingOrderId', orderId)
+          
+          // Chuyển hướng đến VNPay
+          window.location.href = paymentResponse.data.paymentUrl
+        } catch (paymentError) {
+          console.error('VNPay payment error:', paymentError)
+          message.error('Không thể tạo thanh toán VNPay!')
+          // Vẫn cho phép xem đơn hàng
+          dispatch(clearCart())
+          navigate(`/order-tracking/${orderId}`)
+        }
+      } else if (paymentMethod === 'MOMO') {
+        // Thanh toán Momo - Tương tự VNPay
+        message.info('Tính năng Momo đang được phát triển!')
+        dispatch(clearCart())
+        navigate(`/order-tracking/${orderId}`)
+      } else {
+        // Thanh toán COD
+        dispatch(clearCart())
+        message.success('Đặt hàng thành công!')
+        navigate(`/order-tracking/${orderId}`)
+      }
     } catch (error) {
       console.error('Error creating order:', error)
-      message.error(error.message || 'Đặt hàng thất bại!')
+      message.error(error.response?.data?.message || 'Đặt hàng thất bại!')
     } finally {
       setLoading(false)
     }

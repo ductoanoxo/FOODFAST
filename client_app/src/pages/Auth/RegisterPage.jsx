@@ -43,9 +43,11 @@ const RegisterPage = () => {
       dispatch(loginStart())
       const response = await authAPI.register(values)
       
+      console.log('Register response:', response) // Debug log
+      
       dispatch(loginSuccess({
-        user: response.data.user,
-        token: response.data.token
+        user: response.user,
+        token: response.token
       }))
       
       message.success('Đăng ký thành công!')
@@ -60,7 +62,7 @@ const RegisterPage = () => {
     <div className="register-page">
       <Card className="register-card">
         <div className="register-header">
-          <img src="/logo.png" alt="FoodFast" className="register-logo" />
+          <img src="http://localhost:5000/uploads/logo.jpg" alt="FoodFast" className="register-logo" />
           <Title level={2}>Đăng ký</Title>
           <Text type="secondary">Tạo tài khoản mới để bắt đầu</Text>
         </div>

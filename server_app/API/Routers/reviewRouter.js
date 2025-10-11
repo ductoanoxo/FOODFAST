@@ -1,9 +1,18 @@
 const express = require('express')
 const router = express.Router()
+const {
+    createReview,
+    getProductReviews,
+    getUserReviews,
+    updateReview,
+    deleteReview,
+} = require('../Controllers/reviewController')
+const { protect } = require('../Middleware/authMiddleware')
 
-// Placeholder for review routes
-router.get('/', (req, res) => {
-    res.json({ success: true, data: [] })
-})
+router.post('/', protect, createReview)
+router.get('/product/:productId', getProductReviews)
+router.get('/user/:userId', getUserReviews)
+router.put('/:id', protect, updateReview)
+router.delete('/:id', protect, deleteReview)
 
 module.exports = router

@@ -13,6 +13,7 @@ import StorePage from './pages/Store/StorePage'
 import ProductDetailPage from './pages/Product/ProductDetailPage'
 import CartPage from './pages/Cart/CartPage'
 import CheckoutPage from './pages/Checkout/CheckoutPage'
+import VNPayReturn from './pages/Checkout/VNPayReturn'
 import OrderTrackingPage from './pages/OrderTracking/OrderTrackingPage'
 import ProfilePage from './pages/Profile/ProfilePage'
 import OrderHistoryPage from './pages/Profile/OrderHistoryPage'
@@ -57,6 +58,7 @@ function App() {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/payment/vnpay/return" element={<VNPayReturn />} />
             <Route path="/order-tracking/:orderId" element={<OrderTrackingPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/order-history" element={<OrderHistoryPage />} />

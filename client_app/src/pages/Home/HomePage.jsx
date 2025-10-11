@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Row, Col, Typography, Carousel, Card, Button, Space, Spin } from 'antd'
-import { RocketOutlined, SafetyOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { 
+  RocketOutlined, 
+  SafetyOutlined, 
+  ThunderboltOutlined,
+  ShoppingOutlined,
+  CheckCircleOutlined,
+  SendOutlined
+} from '@ant-design/icons'
 import { productAPI, restaurantAPI } from '../../api'
 import ProductCard from '../../components/Product/ProductCard'
 import RestaurantCard from '../../components/Restaurant/RestaurantCard'
@@ -11,21 +18,75 @@ const { Title, Paragraph } = Typography
 const HomePage = () => {
   const [popularProducts, setPopularProducts] = useState([])
   const [restaurants, setRestaurants] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+    const fetchData = async () => {
     try {
       setLoading(true)
-      const [productsRes, restaurantsRes] = await Promise.all([
+      const [productsRes, restaurantsRes, categoriesRes] = await Promise.all([
         productAPI.getPopularProducts(),
-        restaurantAPI.getRestaurants({ limit: 8 })
+        restaurantAPI.getRestaurants({ limit: 6 }),
+        productAPI.getCategories()
       ])
-      setPopularProducts(productsRes.data || [])
-      setRestaurants(restaurantsRes.data || [])
+
+      const extractArray = (res) => {
+        if (!res) return []
+        if (Array.isArray(res)) return res
+        if (res.data && Array.isArray(res.data)) return res.data
+        if (res.success && Array.isArray(res.data)) return res.data
+        return []
+      }
+
+      const productsData = extractArray(productsRes)
+      const restaurantsData = extractArray(restaurantsRes)
+      const categoriesData = extractArray(categoriesRes)
+
+      setPopularProducts(productsData)
+      setRestaurants(restaurantsData)
+
+      // ❌ Bỏ mảng replacements cũ vì không dùng
+      const mapped = (categoriesData || []).map((cat) => {
+        const name = (cat.name || '').toLowerCase()
+
+        if (name.includes('đồ ăn nhanh') || name.includes('fastfood'))
+          return { ...cat, icon: 'http://localhost:5000/uploads/iconfastfood.jpg' }
+
+        if (name.includes('pizza'))
+          return { ...cat, icon: 'http://localhost:5000/uploads/pizza.jpg' }
+
+        if (name.includes('đồ uống'))
+          return { ...cat, icon: 'http://localhost:5000/uploads/nuocgiakhat.jpg' }
+
+        if (name.includes('phở'))
+          return { ...cat, icon: 'http://localhost:5000/uploads/iconpho.jpg' }
+
+        if (name.includes('bún'))
+          return { ...cat, icon: 'http://localhost:5000/uploads/bun.jpg' }
+
+        if (name.includes('cơm'))
+          return { ...cat, icon: 'http://localhost:5000/uploads/com.jpg' }
+
+        if (name.includes('tráng miệng'))
+          return { ...cat, icon: 'http://localhost:5000/uploads/banhkem.jpg' }
+
+        if (name.includes('lẩu'))
+          return { ...cat, icon: 'http://localhost:5000/uploads/lau.jpg' }
+
+        if (name.includes('hải sản'))
+          return { ...cat, icon: 'http://localhost:5000/uploads/haisan.jpg' }
+
+        if (name.includes('chay'))
+          return { ...cat, icon: 'http://localhost:5000/uploads/doanchay.jpg' }
+
+        return cat
+      })
+
+      setCategories(mapped.length ? mapped : (categoriesData || []))
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -35,19 +96,19 @@ const HomePage = () => {
 
   const carouselItems = [
     {
-      image: '/banner1.jpg',
+      image: 'http://localhost:5000/uploads/drone.jpg',
       title: 'Giao hàng nhanh bằng Drone',
       description: 'Nhận đồ ăn trong 15-20 phút với công nghệ drone hiện đại',
       color: '#ff6b35'
     },
     {
-      image: '/banner2.jpg',
+      image: 'http://localhost:5000/uploads/khamphamonan.jpg',
       title: 'Hàng ngàn món ngon',
       description: 'Khám phá đa dạng món ăn từ các nhà hàng hàng đầu',
       color: '#4ecdc4'
     },
     {
-      image: '/banner3.jpg',
+      image: 'http://localhost:5000/uploads/sale.jpg',
       title: 'Ưu đãi mỗi ngày',
       description: 'Giảm giá lên đến 50% cho đơn hàng đầu tiên',
       color: '#f7b731'
@@ -72,6 +133,75 @@ const HomePage = () => {
     }
   ]
 
+  const defaultCategories = [
+    {
+      _id: '1',
+      name: 'Đồ ăn nhanh',
+      icon: 'http://localhost:5000/uploads/iconcom.jpg',
+      color: '#ff6b35',
+    },
+    {
+      _id: '2',
+      name: 'Pizza',
+      icon: '🍕',
+      color: '#f7b731',
+    },
+    {
+      _id: '3',
+      name: 'Đồ uống',
+      icon: "http://localhost:5000/uploads/nuocgiakhat.jpg",
+      color: '#4ecdc4',
+    },
+    {
+      _id: '4',
+      name: 'Món Á',
+      icon: '🍜',
+      color: '#a8e6cf',
+    },
+    {
+      _id: '5',
+      name: 'Tráng miệng',
+      icon: '🍰',
+      color: '#ff85a1',
+    },
+    {
+      _id: '6',
+      name: 'Lẩu',
+      icon: '🍲',
+      color: '#ff6b9d',
+    },
+    {
+      _id: '7',
+      name: 'Hải sản',
+      icon: '🦐',
+      color: '#ffa07a',
+    },
+    {
+      _id: '8',
+      name: 'Chay',
+      icon: '🥗',
+      color: '#90ee90',
+    },
+  ]
+
+  const howItWorksSteps = [
+    {
+      title: 'Đặt món',
+      description: 'Chọn món ăn yêu thích từ hàng trăm nhà hàng',
+      icon: <ShoppingOutlined style={{ fontSize: 48, color: '#ff6b35' }} />
+    },
+    {
+      title: 'Xác nhận',
+      description: 'Nhà hàng chuẩn bị món ăn của bạn',
+      icon: <CheckCircleOutlined style={{ fontSize: 48, color: '#4ecdc4' }} />
+    },
+    {
+      title: 'Giao tận nơi',
+      description: 'Drone giao hàng nhanh chóng đến tay bạn',
+      icon: <SendOutlined style={{ fontSize: 48, color: '#f7b731' }} />
+    }
+  ]
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -86,12 +216,12 @@ const HomePage = () => {
       <Carousel autoplay className="hero-carousel">
         {carouselItems.map((item, index) => (
           <div key={index}>
-            <div 
-              className="carousel-item"
-              style={{ 
-                background: `linear-gradient(135deg, ${item.color}dd 0%, ${item.color}99 100%)`
-              }}
-            >
+            <div className="carousel-item">
+              <img src={item.image} alt={item.title} className="carousel-bg" />
+              <div
+                className="carousel-overlay"
+                style={{ background: `linear-gradient(135deg, ${item.color}33 0%, ${item.color}2 100%)` }}
+              />
               <div className="carousel-content">
                 <Title level={1} style={{ color: '#fff', marginBottom: 16 }}>
                   {item.title}
@@ -122,6 +252,46 @@ const HomePage = () => {
           ))}
         </Row>
       </div>
+
+      {/* Categories */}
+      <div className="container section">
+        <div className="section-header">
+          <Title level={2}>Danh mục món ăn 🍽️</Title>
+        </div>
+
+<div className="category-row">
+  {(categories.length > 0 ? categories : defaultCategories)
+    .slice(0, 8)
+    .map((category, index) => (
+      <div
+        className="category-card pretty"
+        key={category._id}
+        onClick={() => window.location.href = `/menu?category=${category._id}`}
+        style={{
+          background: category.color || 'linear-gradient(135deg,#f8f9fa 0%, #f1f3f5 100%)',
+          animationDelay: `${index * 60}ms`,
+        }}
+      >
+        <div className="category-media">
+          {category.icon && (typeof category.icon === 'string' && /^https?:\/\//i.test(category.icon) ? (
+            <img
+              src={category.icon}
+              alt={category.name}
+              className="category-img"
+              onError={(e) => { e.currentTarget.src = 'http://localhost:5000/uploads/iconfastfood.jpg' }}
+            />
+          ) : (
+            <span className="category-emoji">{category.icon || '🍽️'}</span>
+          ))}
+          <span className="category-ring" />
+        </div>
+        <Paragraph strong className="category-name">{category.name}</Paragraph>
+      </div>
+  ))}
+</div>
+
+      </div>
+
 
       {/* Popular Products */}
       <div className="container section">
@@ -155,6 +325,29 @@ const HomePage = () => {
             </Col>
           ))}
         </Row>
+      </div>
+
+      {/* How It Works */}
+      <div className="how-it-works-section">
+        <div className="container">
+          <Title level={2} style={{ textAlign: 'center', marginBottom: 48 }}>
+            Cách thức hoạt động ⚡
+          </Title>
+          <Row gutter={[48, 48]} justify="center">
+            {howItWorksSteps.map((step, index) => (
+              <Col xs={24} md={8} key={index}>
+                <Card className="how-it-works-card" bordered={false}>
+                  <div className="step-number">{index + 1}</div>
+                  <div className="step-icon">{step.icon}</div>
+                  <Title level={3} style={{ marginTop: 16 }}>{step.title}</Title>
+                  <Paragraph type="secondary" style={{ fontSize: 15 }}>
+                    {step.description}
+                  </Paragraph>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </div>
       </div>
 
       {/* CTA Section */}

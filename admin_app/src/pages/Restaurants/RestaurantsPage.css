@@ -1,0 +1,14 @@
+.restaurants-page {
+    padding: 24px;
+}
+
+.restaurants-page h1 {
+    margin-bottom: 24px;
+    color: #ff4d4f;
+}
+
+@media (max-width: 768px) {
+    .restaurants-page {
+        padding: 16px;
+    }
+}
