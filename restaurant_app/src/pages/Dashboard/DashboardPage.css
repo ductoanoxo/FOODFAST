@@ -1,13 +1,135 @@
 .dashboard-page {
     padding: 24px;
+    background: #f5f5f5;
+    min-height: 100vh;
 }
 
 .dashboard-page h1 {
     margin-bottom: 24px;
 }
 
+/* Custom Tooltip Styles */
+.custom-tooltip {
+    background: rgba(255, 255, 255, 0.98);
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e8e8e8;
+}
+
+.custom-tooltip .label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #262626;
+    font-size: 14px;
+}
+
+.custom-tooltip p {
+    margin: 4px 0;
+    font-size: 13px;
+}
+
+/* Card Hover Effects */
+.dashboard-page .ant-card {
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.dashboard-page .ant-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+/* Statistic Cards */
+.dashboard-page .ant-statistic {
+    text-align: center;
+}
+
+.dashboard-page .ant-statistic-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #8c8c8c;
+}
+
+.dashboard-page .ant-statistic-content {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+/* Chart Container Improvements */
+.dashboard-page .recharts-wrapper {
+    margin: 0 auto;
+}
+
+.dashboard-page .recharts-surface {
+    border-radius: 8px;
+}
+
+/* Responsive Table */
+.dashboard-page .ant-table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dashboard-page .ant-table-thead > tr > th {
+    background: #fafafa;
+    font-weight: 600;
+    color: #262626;
+}
+
+/* Time Range Selector */
+.dashboard-page .ant-select-selector {
+    border-radius: 6px !important;
+}
+
+/* Mobile Responsive */
 @media (max-width: 768px) {
     .dashboard-page {
         padding: 16px;
+        background: #fff;
     }
+
+    .dashboard-page .ant-statistic-content {
+        font-size: 24px;
+    }
+
+    .dashboard-page .ant-card {
+        margin-bottom: 16px;
+    }
+
+    .custom-tooltip {
+        padding: 8px 12px;
+    }
+
+    .custom-tooltip .label {
+        font-size: 12px;
+    }
+
+    .custom-tooltip p {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-page .ant-statistic-content {
+        font-size: 20px;
+    }
+
+    .dashboard-page .ant-card-head-title {
+        font-size: 14px;
+    }
+}
+
+/* Loading State */
+.dashboard-page .ant-spin-container {
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Empty State */
+.dashboard-page .ant-empty {
+    padding: 40px 0;
 }

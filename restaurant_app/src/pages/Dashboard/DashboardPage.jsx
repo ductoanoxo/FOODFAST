@@ -1,82 +1,223 @@
 import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Row, Col, Card, Statistic, Typography, Spin, Empty, Table } from 'antd';
+import { Row, Col, Card, Statistic, Typography, Spin, Empty, Table, Select, Space, message } from 'antd';
 import {
   ShoppingOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
   DollarOutlined,
   RiseOutlined,
+  FallOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
 } from '@ant-design/icons';
-import { fetchOrders } from '../../redux/slices/orderSlice';
-import { fetchProducts } from '../../redux/slices/productSlice';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell,
+  LineChart,
+  Line,
+  Area,
+  AreaChart,
+  ComposedChart
+} from 'recharts';
 import dayjs from 'dayjs';
+import { getRestaurantStats, getRestaurantOrders, getRestaurantMenu } from '../../api/restaurantAPI';
 import './DashboardPage.css';
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 const DashboardPage = () => {
-  const dispatch = useDispatch();
-  const { orders, stats, loading: ordersLoading } = useSelector((state) => state.orders);
-  const { products, loading: productsLoading } = useSelector((state) => state.products);
+  const [loading, setLoading] = useState(false);
+  const [timeRange, setTimeRange] = useState('7days'); // 7days, 30days, thisMonth
+  const [recentOrdersLimit, setRecentOrdersLimit] = useState(5); // Number of recent orders to show
+  
+  // State for data from database
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    pendingOrders: 0,
+    totalRevenue: 0,
+    totalProducts: 0,
+    todayOrders: 0,
+    todayRevenue: 0,
+    avgOrderValue: 0,
+    revenueChange: 0,
+    ordersByStatus: {},
+  });
   const [revenueData, setRevenueData] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [revenueGrowth, setRevenueGrowth] = useState(0);
+  const [yesterdayRevenue, setYesterdayRevenue] = useState(0);
 
   useEffect(() => {
-    dispatch(fetchOrders());
-    dispatch(fetchProducts());
-  }, [dispatch]);
+    loadDashboardData();
+  }, [timeRange, recentOrdersLimit]);
 
-  useEffect(() => {
-    if (orders.length > 0) {
-      // Calculate revenue by day (last 7 days)
-      const last7Days = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = dayjs().subtract(i, 'day');
-        const dayOrders = orders.filter(
-          (order) =>
-            dayjs(order.createdAt).format('YYYY-MM-DD') === date.format('YYYY-MM-DD') &&
-            order.status === 'completed'
-        );
-        const revenue = dayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-        
-        last7Days.push({
-          date: date.format('DD/MM'),
-          revenue: revenue,
-          orders: dayOrders.length,
-        });
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+
+      // Calculate date range based on timeRange
+      let days = 7;
+      if (timeRange === '7days') days = 7;
+      else if (timeRange === '30days') days = 30;
+      else if (timeRange === 'thisMonth') days = dayjs().date();
+
+      const startDate = dayjs().subtract(days - 1, 'day').format('YYYY-MM-DD');
+      const endDate = dayjs().format('YYYY-MM-DD');
+
+      // Get yesterday's date for comparison
+      const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD');
+      const yesterdayParams = { startDate: yesterday, endDate: yesterday };
+
+      // Get stats from backend - parallel calls
+      const statsParams = { startDate, endDate };
+      const [statsRes, ordersRes, menuRes, yesterdayStatsRes] = await Promise.all([
+        getRestaurantStats(statsParams),
+        getRestaurantOrders(statsParams),
+        getRestaurantMenu(),
+        getRestaurantStats(yesterdayParams), // Get yesterday's stats
+      ]);
+
+      // Set stats from backend
+      if (statsRes?.data) {
+        setStats(statsRes.data);
       }
-      setRevenueData(last7Days);
+
+      // Set yesterday's revenue from backend
+      if (yesterdayStatsRes?.data) {
+        setYesterdayRevenue(yesterdayStatsRes.data.totalRevenue || 0);
+      }
+
+      // Process orders for chart
+      if (ordersRes?.data) {
+        const orders = ordersRes.data;
+        
+        // Set recent orders
+        setRecentOrders(orders.slice(0, recentOrdersLimit));
+
+        // Calculate revenue by day
+        const revenueMap = {};
+        const ordersMap = {};
+
+        for (let i = days - 1; i >= 0; i--) {
+          const date = dayjs().subtract(i, 'day');
+          const dateKey = date.format('DD/MM');
+          const dateStr = date.format('YYYY-MM-DD');
+
+          const dayOrders = orders.filter((order) => {
+            const orderDate = dayjs(order.createdAt).format('YYYY-MM-DD');
+            return orderDate === dateStr;
+          });
+
+          const completedOrders = dayOrders.filter(
+            (o) => o.status === 'completed' || o.status === 'delivered'
+          );
+
+          const revenue = completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+          revenueMap[dateKey] = revenue;
+          ordersMap[dateKey] = dayOrders.length;
+        }
+
+        // Convert to array for chart
+        const chartData = Object.keys(revenueMap).map((dateKey) => ({
+          date: dateKey,
+          revenue: revenueMap[dateKey],
+          orders: ordersMap[dateKey],
+          avgOrderValue: ordersMap[dateKey] > 0 
+            ? Math.round(revenueMap[dateKey] / ordersMap[dateKey]) 
+            : 0,
+        }));
+
+        setRevenueData(chartData);
+
+        // Calculate growth rate
+        const midPoint = Math.floor(chartData.length / 2);
+        const firstHalf = chartData.slice(0, midPoint);
+        const secondHalf = chartData.slice(midPoint);
+
+        const firstHalfRevenue = firstHalf.reduce((sum, d) => sum + d.revenue, 0);
+        const secondHalfRevenue = secondHalf.reduce((sum, d) => sum + d.revenue, 0);
+
+        if (firstHalfRevenue > 0) {
+          const growth = ((secondHalfRevenue - firstHalfRevenue) / firstHalfRevenue) * 100;
+          setRevenueGrowth(growth);
+        } else {
+          setRevenueGrowth(secondHalfRevenue > 0 ? 100 : 0);
+        }
+      }
+
+    } catch (error) {
+      message.error('Không thể tải dữ liệu dashboard: ' + (error.message || error));
+      console.error('Error loading dashboard:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [orders]);
+  };
 
-  const totalRevenue = orders
-    .filter((o) => o.status === 'completed')
-    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
-
-  const todayRevenue = orders
-    .filter(
-      (o) =>
-        o.status === 'completed' &&
-        dayjs(o.createdAt).format('YYYY-MM-DD') === dayjs().format('YYYY-MM-DD')
-    )
-    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const todayGrowth = yesterdayRevenue > 0 
+    ? ((stats.todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 
+    : stats.todayRevenue > 0 ? 100 : 0;
 
   const statusColors = {
     pending: '#faad14',
+    confirmed: '#1890ff',
     preparing: '#1890ff',
+    ready: '#722ed1',
     delivering: '#722ed1',
     completed: '#52c41a',
+    delivered: '#52c41a',
   };
 
+  // Prepare pie chart data from backend stats
   const pieData = [
-    { name: 'Chờ xác nhận', value: stats.pending, color: statusColors.pending },
-    { name: 'Đang chuẩn bị', value: stats.preparing, color: statusColors.preparing },
-    { name: 'Đang giao', value: stats.delivering, color: statusColors.delivering },
-    { name: 'Hoàn thành', value: stats.completed, color: statusColors.completed },
+    { 
+      name: 'Chờ xác nhận', 
+      value: (stats.ordersByStatus?.pending || 0) + (stats.ordersByStatus?.confirmed || 0), 
+      color: statusColors.pending 
+    },
+    { 
+      name: 'Đang chuẩn bị', 
+      value: (stats.ordersByStatus?.preparing || 0) + (stats.ordersByStatus?.ready || 0), 
+      color: statusColors.preparing 
+    },
+    { 
+      name: 'Đang giao', 
+      value: stats.ordersByStatus?.delivering || 0, 
+      color: statusColors.delivering 
+    },
+    { 
+      name: 'Hoàn thành', 
+      value: (stats.ordersByStatus?.completed || 0) + (stats.ordersByStatus?.delivered || 0), 
+      color: statusColors.completed 
+    },
   ].filter(item => item.value > 0);
 
-  const recentOrders = orders.slice(0, 5);
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="custom-tooltip">
+          <p className="label">{`Ngày: ${label}`}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color }}>
+              {`${entry.name}: ${entry.value.toLocaleString('vi-VN')}${entry.name.includes('Doanh thu') || entry.name.includes('Giá trị') ? '₫' : ''}`}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
   const orderColumns = [
     {
@@ -120,7 +261,7 @@ const DashboardPage = () => {
     },
   ];
 
-  if (ordersLoading || productsLoading) {
+  if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '100px 0' }}>
         <Spin size="large" />
@@ -139,7 +280,7 @@ const DashboardPage = () => {
           <Card>
             <Statistic
               title="Tổng đơn hàng"
-              value={stats.total}
+              value={stats.totalOrders}
               prefix={<ShoppingOutlined />}
               valueStyle={{ color: '#667eea' }}
             />
@@ -149,7 +290,7 @@ const DashboardPage = () => {
           <Card>
             <Statistic
               title="Đang xử lý"
-              value={stats.pending + stats.preparing}
+              value={stats.pendingOrders}
               prefix={<ClockCircleOutlined />}
               valueStyle={{ color: '#faad14' }}
             />
@@ -159,7 +300,7 @@ const DashboardPage = () => {
           <Card>
             <Statistic
               title="Hoàn thành"
-              value={stats.completed}
+              value={(stats.ordersByStatus?.completed || 0) + (stats.ordersByStatus?.delivered || 0)}
               prefix={<CheckCircleOutlined />}
               valueStyle={{ color: '#52c41a' }}
             />
@@ -169,11 +310,22 @@ const DashboardPage = () => {
           <Card>
             <Statistic
               title="Doanh thu hôm nay"
-              value={todayRevenue}
+              value={stats.todayRevenue}
               prefix={<DollarOutlined />}
               suffix="₫"
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{ color: todayGrowth >= 0 ? '#52c41a' : '#ff4d4f' }}
             />
+            <div style={{ marginTop: 8 }}>
+              {todayGrowth >= 0 ? (
+                <Text type="success">
+                  <ArrowUpOutlined /> {todayGrowth.toFixed(1)}% so với hôm qua
+                </Text>
+              ) : (
+                <Text type="danger">
+                  <ArrowDownOutlined /> {Math.abs(todayGrowth).toFixed(1)}% so với hôm qua
+                </Text>
+              )}
+            </div>
           </Card>
         </Col>
       </Row>
@@ -181,29 +333,133 @@ const DashboardPage = () => {
       {/* Charts */}
       <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
         {/* Revenue Chart */}
-        <Col xs={24} lg={14}>
-          <Card title="Doanh thu 7 ngày qua">
+        <Col xs={24} lg={16}>
+          <Card 
+            title={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span>Biểu đồ doanh thu</span>
+                <Select 
+                  value={timeRange} 
+                  onChange={setTimeRange}
+                  style={{ width: 150 }}
+                >
+                  <Option value="7days">7 ngày qua</Option>
+                  <Option value="30days">30 ngày qua</Option>
+                  <Option value="thisMonth">Tháng này</Option>
+                </Select>
+              </div>
+            }
+            extra={
+              revenueGrowth !== 0 && (
+                <Space>
+                  {revenueGrowth >= 0 ? (
+                    <Text type="success">
+                      <RiseOutlined /> Tăng trưởng {revenueGrowth.toFixed(1)}%
+                    </Text>
+                  ) : (
+                    <Text type="danger">
+                      <FallOutlined /> Giảm {Math.abs(revenueGrowth).toFixed(1)}%
+                    </Text>
+                  )}
+                </Space>
+              )
+            }
+          >
             {revenueData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value) => `${value.toLocaleString('vi-VN')}₫`}
-                  />
-                  <Legend />
-                  <Bar dataKey="revenue" name="Doanh thu" fill="#667eea" />
-                </BarChart>
-              </ResponsiveContainer>
+              <>
+                <ResponsiveContainer width="100%" height={300}>
+                  <ComposedChart data={revenueData}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#667eea" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#667eea" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12 }}
+                      tickMargin={10}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Area 
+                      type="monotone" 
+                      dataKey="revenue" 
+                      name="Doanh thu" 
+                      fill="url(#colorRevenue)" 
+                      stroke="#667eea"
+                      strokeWidth={2}
+                    />
+                    <Bar 
+                      dataKey="orders" 
+                      name="Số đơn hàng" 
+                      fill="#f59e0b"
+                      radius={[8, 8, 0, 0]}
+                      maxBarSize={40}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="avgOrderValue" 
+                      name="Giá trị TB/đơn" 
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      dot={{ fill: '#10b981', r: 4 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+                
+                {/* Revenue Summary */}
+                <Row gutter={16} style={{ marginTop: 16 }}>
+                  <Col span={8}>
+                    <Card size="small" style={{ background: '#f0f5ff', border: 'none' }}>
+                      <Statistic 
+                        title="Tổng doanh thu"
+                        value={revenueData.reduce((sum, d) => sum + d.revenue, 0)}
+                        suffix="₫"
+                        valueStyle={{ fontSize: 18, color: '#667eea' }}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card size="small" style={{ background: '#fff7e6', border: 'none' }}>
+                      <Statistic 
+                        title="Tổng đơn hàng"
+                        value={revenueData.reduce((sum, d) => sum + d.orders, 0)}
+                        valueStyle={{ fontSize: 18, color: '#f59e0b' }}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={8}>
+                    <Card size="small" style={{ background: '#f0fdf4', border: 'none' }}>
+                      <Statistic 
+                        title="TB/đơn hàng"
+                        value={
+                          revenueData.reduce((sum, d) => sum + d.orders, 0) > 0
+                            ? revenueData.reduce((sum, d) => sum + d.revenue, 0) / 
+                              revenueData.reduce((sum, d) => sum + d.orders, 0)
+                            : 0
+                        }
+                        suffix="₫"
+                        precision={0}
+                        valueStyle={{ fontSize: 18, color: '#10b981' }}
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+              </>
             ) : (
-              <Empty description="Chưa có dữ liệu" />
+              <Empty description="Chưa có dữ liệu doanh thu" />
             )}
           </Card>
         </Col>
 
         {/* Status Pie Chart */}
-        <Col xs={24} lg={10}>
+        <Col xs={24} lg={8}>
           <Card title="Trạng thái đơn hàng">
             {pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
@@ -235,7 +491,23 @@ const DashboardPage = () => {
       {/* Recent Orders */}
       <Row style={{ marginTop: 24 }}>
         <Col span={24}>
-          <Card title="Đơn hàng gần đây">
+          <Card 
+            title={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span>Đơn hàng gần đây</span>
+                <Select 
+                  value={recentOrdersLimit} 
+                  onChange={setRecentOrdersLimit}
+                  style={{ width: 120 }}
+                >
+                  <Option value={5}>5 đơn</Option>
+                  <Option value={10}>10 đơn</Option>
+                  <Option value={15}>15 đơn</Option>
+                  <Option value={20}>20 đơn</Option>
+                </Select>
+              </div>
+            }
+          >
             <Table
               dataSource={recentOrders}
               columns={orderColumns}
@@ -252,22 +524,33 @@ const DashboardPage = () => {
           <Card>
             <Statistic
               title="Tổng doanh thu"
-              value={totalRevenue}
+              value={stats.totalRevenue}
               prefix={<RiseOutlined />}
               suffix="₫"
               valueStyle={{ color: '#667eea', fontSize: 28 }}
             />
+            <div style={{ marginTop: 8 }}>
+              {stats.revenueChange >= 0 ? (
+                <Text type="success">
+                  <ArrowUpOutlined /> {stats.revenueChange.toFixed(1)}% so với kỳ trước
+                </Text>
+              ) : (
+                <Text type="danger">
+                  <ArrowDownOutlined /> {Math.abs(stats.revenueChange).toFixed(1)}% so với kỳ trước
+                </Text>
+              )}
+            </div>
           </Card>
         </Col>
         <Col xs={24} md={12}>
           <Card>
             <Statistic
               title="Tổng món ăn"
-              value={products.length}
+              value={stats.totalProducts}
               valueStyle={{ color: '#667eea', fontSize: 28 }}
             />
             <Text type="secondary">
-              Còn hàng: {products.filter((p) => p.available).length}
+              Giá trị TB/đơn: {stats.avgOrderValue?.toLocaleString('vi-VN')}₫
             </Text>
           </Card>
         </Col>

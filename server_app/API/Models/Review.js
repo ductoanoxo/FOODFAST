@@ -33,11 +33,18 @@ const reviewSchema = new mongoose.Schema({
         type: Boolean,
         default: false, // Verified if from actual order
     },
+    restaurantReply: {
+        type: String,
+        default: '',
+    },
+    repliedAt: {
+        type: Date,
+    },
 }, {
     timestamps: true,
 })
 
-// Prevent duplicate reviews for same product by same user
-reviewSchema.index({ user: 1, product: 1 }, { unique: true })
+// Index để tìm kiếm nhanh (không unique - cho phép nhiều review)
+reviewSchema.index({ user: 1, product: 1 })
 
 module.exports = mongoose.model('Review', reviewSchema)

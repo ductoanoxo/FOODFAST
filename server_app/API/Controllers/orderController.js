@@ -1,6 +1,10 @@
 const asyncHandler = require('../Middleware/asyncHandler')
 const Order = require('../Models/Order')
 const Product = require('../Models/Product')
+const Restaurant = require('../Models/Restaurant')
+const PromoUsage = require('../Models/PromoUsage')
+const Voucher = require('../Models/Voucher')
+const VoucherUsage = require('../Models/VoucherUsage')
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -11,9 +15,10 @@ const createOrder = asyncHandler(async(req, res) => {
         deliveryInfo,
         paymentMethod,
         note,
+        voucherCode, // Mã voucher (optional)
     } = req.body
 
-    console.log('Create order request:', { items, deliveryInfo, paymentMethod, note })
+    console.log('Create order request:', { items, deliveryInfo, paymentMethod, note, voucherCode })
 
     if (!items || items.length === 0) {
         res.status(400)
@@ -41,6 +46,11 @@ const createOrder = asyncHandler(async(req, res) => {
         if (!restaurantId) {
             restaurantId = product.restaurant._id
         }
+        // If any product's restaurant is closed, prevent ordering
+        if (product.restaurant && product.restaurant.isOpen === false) {
+            res.status(400)
+            throw new Error('Nhà hàng hiện đang đóng cửa, không thể đặt hàng')
+        }
         
         subtotal += product.price * item.quantity
     }
@@ -51,7 +61,65 @@ const createOrder = asyncHandler(async(req, res) => {
     }
 
     const deliveryFee = req.body.deliveryFee || 15000
-    const totalAmount = subtotal + deliveryFee
+
+    // Handle voucher discount
+    let discountAmount = 0
+    let appliedVoucher = null
+    let voucherObj = null
+
+    if (voucherCode) {
+        try {
+            // Find voucher
+            voucherObj = await Voucher.findOne({
+                code: voucherCode.toUpperCase(),
+                restaurant: restaurantId,
+            })
+
+            if (!voucherObj) {
+                res.status(404)
+                throw new Error('Mã voucher không tồn tại')
+            }
+
+            if (!voucherObj.isValid()) {
+                res.status(400)
+                throw new Error('Voucher không hợp lệ hoặc đã hết hạn')
+            }
+
+            // Check if user already used this voucher
+            const existingUsage = await VoucherUsage.findOne({
+                voucher: voucherObj._id,
+                user: req.user._id,
+            })
+
+            if (existingUsage) {
+                res.status(400)
+                throw new Error('Bạn đã sử dụng voucher này rồi')
+            }
+
+            // Check min order
+            if (subtotal < voucherObj.minOrder) {
+                res.status(400)
+                throw new Error(`Đơn hàng tối thiểu ${voucherObj.minOrder.toLocaleString('vi-VN')}đ`)
+            }
+
+            // Calculate discount
+            discountAmount = voucherObj.calculateDiscount(subtotal)
+
+            appliedVoucher = {
+                id: voucherObj._id.toString(),
+                code: voucherObj.code,
+                name: voucherObj.name,
+                discountType: voucherObj.discountType,
+                discountValue: voucherObj.discountValue,
+            }
+        } catch (error) {
+            console.error('Voucher error:', error)
+            // Nếu voucher error, throw để không tạo order
+            throw error
+        }
+    }
+
+    const totalAmount = subtotal - discountAmount + deliveryFee
 
     const order = await Order.create({
         user: req.user._id,
@@ -61,10 +129,48 @@ const createOrder = asyncHandler(async(req, res) => {
         note: note || '',
         subtotal,
         deliveryFee,
+        discount: discountAmount,
+        appliedPromo: appliedVoucher, // Store voucher info
         totalAmount,
         paymentMethod: paymentMethod || 'COD',
         estimatedDeliveryTime: new Date(Date.now() + 30 * 60000), // 30 minutes
     })
+
+    // Debug logs: show voucher application details
+    try {
+        console.log('Voucher debug:', {
+            voucherCodeProvided: voucherCode || null,
+            computedDiscountAmount: discountAmount,
+            appliedVoucherSnapshot: appliedVoucher,
+            orderDiscountStored: order.discount,
+            orderAppliedPromo: order.appliedPromo,
+        })
+    } catch (e) {
+        console.error('Failed to log voucher debug info', e)
+    }
+
+    // Record voucher usage
+    if (voucherObj && discountAmount > 0) {
+        try {
+            await VoucherUsage.create({
+                voucher: voucherObj._id,
+                user: req.user._id,
+                order: order._id,
+                discountAmount,
+            })
+
+            // Increment usage count
+            await Voucher.findByIdAndUpdate(voucherObj._id, {
+                $inc: { usageCount: 1 },
+            })
+        } catch (error) {
+            console.error('Failed to record voucher usage:', error)
+            // Rollback order if voucher recording fails
+            await Order.findByIdAndDelete(order._id)
+            res.status(500)
+            throw new Error('Không thể áp dụng voucher')
+        }
+    }
 
     // Update product sold count
     for (let item of items) {
@@ -74,6 +180,28 @@ const createOrder = asyncHandler(async(req, res) => {
     }
 
     console.log('Order created successfully:', order._id)
+
+    // Emit new-order to the restaurant room so restaurant clients get notified
+    try {
+        const io = req.app.get('io')
+        // Populate user info for notification
+        const populatedOrder = await Order.findById(order._id).populate('user', 'name phone')
+        console.log('Emitting new-order to restaurant room:', `restaurant-${restaurantId}`, {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            user: populatedOrder.user,
+        })
+        io.to(`restaurant-${restaurantId}`).emit('new-order', {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            restaurantId: restaurantId,
+            totalAmount: order.totalAmount,
+            user: populatedOrder.user,
+            timestamp: new Date(),
+        })
+    } catch (e) {
+        console.error('Failed to emit new-order:', e)
+    }
 
     res.status(201).json({
         success: true,
@@ -177,6 +305,14 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
     const io = req.app.get('io')
     io.to(`order-${order._id}`).emit('order-status-updated', {
         orderId: order._id,
+        status: order.status,
+        timestamp: now,
+    })
+
+    // Also emit to restaurant room for restaurant notifications
+    io.to(`restaurant-${order.restaurant}`).emit('order-status-updated', {
+        orderId: order._id,
+        orderNumber: order.orderNumber,
         status: order.status,
         timestamp: now,
     })

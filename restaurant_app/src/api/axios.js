@@ -15,6 +15,12 @@ instance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Auto-detect FormData and set appropriate Content-Type
+    if (config.data instanceof FormData) {
+      config.headers['Content-Type'] = 'multipart/form-data';
+    }
+    
     return config;
   },
   (error) => {

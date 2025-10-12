@@ -65,15 +65,15 @@ const orderSlice = createSlice({
       .addCase(fetchOrders.fulfilled, (state, action) => {
         state.loading = false;
         state.orders = action.payload.data || action.payload;
-        
-        // Calculate stats
+
+        // Calculate stats (treat 'delivered' as completed for compatibility with backend)
         const orders = state.orders;
         state.stats = {
           total: orders.length,
           pending: orders.filter(o => o.status === 'pending').length,
           preparing: orders.filter(o => o.status === 'preparing').length,
           delivering: orders.filter(o => o.status === 'delivering').length,
-          completed: orders.filter(o => o.status === 'completed').length,
+          completed: orders.filter(o => o.status === 'completed' || o.status === 'delivered').length,
         };
       })
       .addCase(fetchOrders.rejected, (state, action) => {
@@ -91,15 +91,15 @@ const orderSlice = createSlice({
         if (index !== -1) {
           state.orders[index] = updatedOrder;
         }
-        
-        // Recalculate stats
+
+        // Recalculate stats (include 'delivered' as completed)
         const orders = state.orders;
         state.stats = {
           total: orders.length,
           pending: orders.filter(o => o.status === 'pending').length,
           preparing: orders.filter(o => o.status === 'preparing').length,
           delivering: orders.filter(o => o.status === 'delivering').length,
-          completed: orders.filter(o => o.status === 'completed').length,
+          completed: orders.filter(o => o.status === 'completed' || o.status === 'delivered').length,
         };
       })
       .addCase(updateOrderStatus.rejected, (state, action) => {

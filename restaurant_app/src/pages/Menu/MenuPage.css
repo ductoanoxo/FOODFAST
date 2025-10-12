@@ -1,9 +1,98 @@
 .menu-page {
     padding: 24px;
+    background: #f5f5f5;
+    min-height: 100vh;
 }
 
+.menu-page .ant-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+}
+
+.menu-page .ant-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.menu-page .ant-statistic-title {
+    font-size: 13px;
+    color: #8c8c8c;
+    margin-bottom: 8px;
+}
+
+.menu-page .ant-statistic-content {
+    font-size: 24px;
+}
+
+.menu-page .ant-table-thead > tr > th {
+    background: #fafafa;
+    font-weight: 600;
+}
+
+.menu-page .ant-table-row:hover {
+    background: #f0f5ff;
+}
+
+.menu-page .ant-segmented {
+    background: white;
+    padding: 2px;
+    border-radius: 8px;
+}
+
+.menu-page .ant-input-affix-wrapper {
+    border-radius: 8px;
+}
+
+.menu-page .ant-select-selector {
+    border-radius: 8px !important;
+}
+
+.menu-page .ant-btn {
+    border-radius: 8px;
+}
+
+.menu-page .ant-switch {
+    min-width: 60px;
+}
+
+.menu-page .ant-switch-checked {
+    background-color: #52c41a;
+}
+
+.menu-page .ant-image {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Bulk action banner */
+.menu-page .bulk-actions-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+/* Pagination controls */
+.menu-page .pagination-controls {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Responsive styles */
 @media (max-width: 768px) {
     .menu-page {
         padding: 16px;
+    }
+
+    .menu-page .ant-statistic-content {
+        font-size: 20px;
+    }
+
+    .menu-page .ant-table {
+        font-size: 12px;
     }
 }

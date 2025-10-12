@@ -1,68 +1,22 @@
 const asyncHandler = require('../Middleware/asyncHandler')
-const mongoose = require('mongoose')
-
-// Review Schema (embedded in Product or separate collection)
-const reviewSchema = new mongoose.Schema(
-    {
-        user: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            required: true,
-        },
-        product: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Product',
-            required: true,
-        },
-        order: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Order',
-        },
-        rating: {
-            type: Number,
-            required: true,
-            min: 1,
-            max: 5,
-        },
-        comment: {
-            type: String,
-            required: true,
-            maxlength: 500,
-        },
-        images: [String],
-    },
-    {
-        timestamps: true,
-    }
-)
-
-const Review = mongoose.model('Review', reviewSchema)
+const Review = require('../Models/Review')
+const Product = require('../Models/Product')
 
 // @desc    Create review
 // @route   POST /api/reviews
 // @access  Private
 const createReview = asyncHandler(async (req, res) => {
-    const { product, rating, comment, order, images } = req.body
-    const Product = require('../Models/Product')
+    const { product, rating, comment, order, images, isVerified } = req.body
 
-    // Check if user already reviewed this product
-    const existingReview = await Review.findOne({
-        user: req.user._id,
-        product,
-    })
-
-    if (existingReview) {
-        res.status(400)
-        throw new Error('You already reviewed this product')
-    }
-
+    // Cho phép đánh giá nhiều lần - không check duplicate nữa
     const review = await Review.create({
         user: req.user._id,
         product,
         order,
         rating,
         comment,
-        images,
+        images: images || [],
+        isVerified: isVerified || false,
     })
 
     // Update product rating
@@ -72,7 +26,7 @@ const createReview = asyncHandler(async (req, res) => {
 
     await Product.findByIdAndUpdate(product, {
         rating: avgRating.toFixed(1),
-        totalReviews: reviews.length,
+        reviewCount: reviews.length,
     })
 
     const populatedReview = await Review.findById(review._id).populate(
@@ -116,6 +70,29 @@ const getUserReviews = asyncHandler(async (req, res) => {
     })
 })
 
+// @desc    Get restaurant reviews
+// @route   GET /api/reviews/restaurant/:restaurantId
+// @access  Public
+const getRestaurantReviews = asyncHandler(async (req, res) => {
+    const Product = require('../Models/Product')
+    
+    // Lấy tất cả sản phẩm của nhà hàng
+    const products = await Product.find({ restaurant: req.params.restaurantId })
+    const productIds = products.map(p => p._id)
+    
+    // Lấy tất cả reviews của các sản phẩm đó
+    const reviews = await Review.find({ product: { $in: productIds } })
+        .populate('user', 'name avatar')
+        .populate('product', 'name image')
+        .sort('-createdAt')
+
+    res.json({
+        success: true,
+        count: reviews.length,
+        data: reviews,
+    })
+})
+
 // @desc    Update review
 // @route   PUT /api/reviews/:id
 // @access  Private
@@ -127,26 +104,49 @@ const updateReview = asyncHandler(async (req, res) => {
         throw new Error('Review not found')
     }
 
-    // Check ownership
-    if (review.user.toString() !== req.user._id.toString()) {
+    // Allow user to update their own review OR restaurant owner to add reply
+    const isOwner = review.user.toString() === req.user._id.toString();
+    const isRestaurantReply = req.body.restaurantReply !== undefined;
+    
+    if (!isOwner && !isRestaurantReply) {
         res.status(403)
         throw new Error('Not authorized')
     }
 
-    review = await Review.findByIdAndUpdate(req.params.id, req.body, {
-        new: true,
-        runValidators: true,
-    }).populate('user', 'name avatar')
+    // Nếu là restaurant reply, chỉ cho phép update restaurantReply và repliedAt
+    if (isRestaurantReply && !isOwner) {
+        const updateData = {
+            restaurantReply: req.body.restaurantReply,
+            repliedAt: req.body.repliedAt || new Date(),
+        };
+        
+        review = await Review.findByIdAndUpdate(req.params.id, updateData, {
+            new: true,
+            runValidators: true,
+        })
+        .populate('user', 'name avatar')
+        .populate('product', 'name image');
+    } else {
+        // User update own review
+        review = await Review.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+            runValidators: true,
+        })
+        .populate('user', 'name avatar')
+        .populate('product', 'name image');
 
-    // Update product rating
-    const Product = require('../Models/Product')
-    const reviews = await Review.find({ product: review.product })
-    const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0)
-    const avgRating = totalRating / reviews.length
+        // Update product rating nếu có thay đổi rating
+        if (req.body.rating) {
+            const reviews = await Review.find({ product: review.product })
+            const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0)
+            const avgRating = totalRating / reviews.length
 
-    await Product.findByIdAndUpdate(review.product, {
-        rating: avgRating.toFixed(1),
-    })
+            await Product.findByIdAndUpdate(review.product, {
+                rating: avgRating.toFixed(1),
+                reviewCount: reviews.length,
+            })
+        }
+    }
 
     res.json({
         success: true,
@@ -179,7 +179,6 @@ const deleteReview = asyncHandler(async (req, res) => {
     await review.deleteOne()
 
     // Update product rating
-    const Product = require('../Models/Product')
     const reviews = await Review.find({ product: productId })
 
     if (reviews.length > 0) {
@@ -188,12 +187,12 @@ const deleteReview = asyncHandler(async (req, res) => {
 
         await Product.findByIdAndUpdate(productId, {
             rating: avgRating.toFixed(1),
-            totalReviews: reviews.length,
+            reviewCount: reviews.length,
         })
     } else {
         await Product.findByIdAndUpdate(productId, {
             rating: 0,
-            totalReviews: 0,
+            reviewCount: 0,
         })
     }
 
@@ -203,11 +202,12 @@ const deleteReview = asyncHandler(async (req, res) => {
     })
 })
 
+
 module.exports = {
     createReview,
     getProductReviews,
     getUserReviews,
+    getRestaurantReviews,
     updateReview,
     deleteReview,
-    Review,
 }

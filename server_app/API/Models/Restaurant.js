@@ -68,8 +68,10 @@ const restaurantSchema = new mongoose.Schema({
         default: '20-30',
     },
     promo: {
-        type: String,
-        default: '',
+        type: mongoose.Schema.Types.Mixed,
+        default: null,
+        // Có thể là string (backward compatible) hoặc object:
+        // { text: String, discountPercent: Number, validUntil: Date, minOrder: Number }
     },
     isActive: {
         type: Boolean,

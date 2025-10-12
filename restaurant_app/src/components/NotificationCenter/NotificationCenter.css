@@ -1,0 +1,11 @@
+.notification-center {
+  position: relative;
+}
+
+.notification-list-item {
+  transition: all 0.3s;
+}
+
+.notification-list-item:hover {
+  background: #f5f5f5;
+}

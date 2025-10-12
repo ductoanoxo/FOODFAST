@@ -1,0 +1,154 @@
+.reports-page {
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.reports-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.reports-page .ant-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.reports-page .ant-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.reports-page .ant-statistic-title {
+  font-size: 14px;
+  color: #8c8c8c;
+  font-weight: 500;
+}
+
+.reports-page .ant-statistic-content {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+/* Custom Tooltip for Charts */
+.custom-tooltip {
+  background: rgba(255, 255, 255, 0.98);
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e8e8e8;
+  min-width: 180px;
+}
+
+.custom-tooltip .label {
+  font-weight: 600;
+  color: #262626;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.custom-tooltip p {
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+/* Date Picker & Select */
+.reports-page .ant-picker,
+.reports-page .ant-select-selector {
+  border-radius: 6px;
+}
+
+/* Chart Enhancements */
+.reports-page .recharts-wrapper {
+  margin: 0 auto;
+}
+
+.reports-page .recharts-surface {
+  border-radius: 8px;
+}
+
+/* Statistic Cards Enhancement */
+.reports-page .ant-statistic {
+  text-align: center;
+}
+
+/* Loading State */
+.reports-page .ant-spin-container {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Empty State */
+.reports-page .ant-empty {
+  padding: 60px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .reports-header {
+    flex-direction: column;
+  }
+  
+  .reports-page {
+    padding: 16px;
+    background: #fff;
+  }
+
+  .reports-page .ant-statistic-content {
+    font-size: 22px;
+  }
+
+  .reports-page .ant-card {
+    margin-bottom: 16px;
+  }
+
+  .custom-tooltip {
+    padding: 10px 14px;
+    min-width: 150px;
+  }
+
+  .custom-tooltip .label {
+    font-size: 13px;
+  }
+
+  .custom-tooltip p {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .reports-page .ant-statistic-content {
+    font-size: 20px;
+  }
+
+  .reports-page .ant-card-head-title {
+    font-size: 14px;
+  }
+
+  .reports-header {
+    gap: 12px;
+  }
+}
+
+/* Animation for Cards */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reports-page .ant-card {
+  animation: fadeIn 0.4s ease-out;
+}

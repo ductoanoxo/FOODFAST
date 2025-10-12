@@ -11,6 +11,7 @@ const statusConfig = {
   ready: { color: 'cyan', text: 'Sẵn sàng giao' },
   delivering: { color: 'purple', text: 'Đang giao' },
   completed: { color: 'green', text: 'Hoàn thành' },
+  delivered: { color: 'green', text: 'Hoàn thành' },
   cancelled: { color: 'red', text: 'Đã hủy' },
 };
 

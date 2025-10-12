@@ -60,6 +60,14 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+    appliedPromo: {
+        // snapshot of the promo object or promo id used for this order
+        id: { type: String },
+        text: { type: String },
+        discountPercent: { type: Number },
+        minOrder: { type: Number },
+        validUntil: { type: Date },
+    },
     totalAmount: {
         type: Number,
         required: true,

@@ -1,0 +1,22 @@
+.settings-page {
+  padding: 24px;
+}
+
+.settings-header {
+  margin-bottom: 24px;
+}
+
+.settings-page .ant-card {
+  border-radius: 8px;
+}
+
+.settings-page .ant-upload-list-picture-card-container {
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  .settings-page {
+    padding: 16px;
+  }
+}

@@ -1,6 +1,7 @@
 import { Modal, Form, Input, InputNumber, Select, Upload, Button, message } from 'antd';
 import { UploadOutlined, PlusOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getCategories } from '../api/productAPI';
 
 const { TextArea } = Input;
 
@@ -9,29 +10,52 @@ const ProductFormModal = ({ visible, product, onClose, onSubmit }) => {
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState([]);
 
-  // Set initial values when editing
-  useState(() => {
+  // Set initial values when editing — only when modal is visible (form mounted)
+  useEffect(() => {
+    if (!visible) {
+      form.resetFields()
+      setFileList([])
+      return
+    }
+
     if (product) {
       form.setFieldsValue({
         name: product.name,
         description: product.description,
         price: product.price,
-        category: product.category,
-        available: product.available,
-      });
+        // category might be stored as an object ({ _id, name }) or a string key
+        category: product.category?._id || product.category || undefined,
+        isAvailable: product.isAvailable,
+      })
       if (product.image) {
         setFileList([{
           uid: '-1',
           name: 'image.png',
           status: 'done',
           url: product.image,
-        }]);
+        }])
       }
     } else {
-      form.resetFields();
-      setFileList([]);
+      form.resetFields()
+      setFileList([])
     }
-  }, [product]);
+  }, [product, form, visible]);
+
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await getCategories();
+        // productAPI returns response.data which may be { success, count, data: [...] }
+        const list = Array.isArray(res) ? res : (res && res.data) ? res.data : []
+        setCategories(Array.isArray(list) ? list : [])
+      } catch (err) {
+        console.error('Failed to load categories', err)
+      }
+    }
+    load()
+  }, [])
 
   const handleSubmit = async (values) => {
     try {
@@ -42,7 +66,7 @@ const ProductFormModal = ({ visible, product, onClose, onSubmit }) => {
       formData.append('description', values.description || '');
       formData.append('price', values.price);
       formData.append('category', values.category);
-      formData.append('available', values.available ?? true);
+      formData.append('isAvailable', values.isAvailable ?? true);
 
       if (fileList.length > 0 && fileList[0].originFileObj) {
         formData.append('image', fileList[0].originFileObj);
@@ -93,7 +117,7 @@ const ProductFormModal = ({ visible, product, onClose, onSubmit }) => {
         layout="vertical"
         onFinish={handleSubmit}
         initialValues={{
-          available: true,
+          isAvailable: true,
         }}
       >
         <Form.Item
@@ -133,17 +157,28 @@ const ProductFormModal = ({ visible, product, onClose, onSubmit }) => {
           rules={[{ required: true, message: 'Vui lòng chọn danh mục!' }]}
         >
           <Select placeholder="Chọn danh mục">
-            <Select.Option value="rice">Cơm</Select.Option>
-            <Select.Option value="noodles">Mì/Phở</Select.Option>
-            <Select.Option value="drinks">Đồ uống</Select.Option>
-            <Select.Option value="snacks">Đồ ăn vặt</Select.Option>
-            <Select.Option value="desserts">Tráng miệng</Select.Option>
-            <Select.Option value="other">Khác</Select.Option>
+            {categories.length === 0 ? (
+              // fallback static options
+              <>
+                <Select.Option value="rice">Cơm</Select.Option>
+                <Select.Option value="noodles">Mì/Phở</Select.Option>
+                <Select.Option value="drinks">Đồ uống</Select.Option>
+                <Select.Option value="snacks">Đồ ăn vặt</Select.Option>
+                <Select.Option value="desserts">Tráng miệng</Select.Option>
+                <Select.Option value="other">Khác</Select.Option>
+              </>
+            ) : (
+              categories.map((c) => (
+                <Select.Option key={c._id} value={c._id}>
+                  {c.name}
+                </Select.Option>
+              ))
+            )}
           </Select>
         </Form.Item>
 
         <Form.Item
-          name="available"
+          name="isAvailable"
           label="Trạng thái"
           rules={[{ required: true }]}
         >

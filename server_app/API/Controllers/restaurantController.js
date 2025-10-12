@@ -116,9 +116,64 @@ const updateRestaurant = asyncHandler(async (req, res) => {
         throw new Error('Not authorized to update this restaurant')
     }
 
+    // Parse JSON fields from FormData
+    const updateData = { ...req.body }
+    
+    // Parse categories if it's a string
+    if (updateData.categories && typeof updateData.categories === 'string') {
+        try {
+            updateData.categories = JSON.parse(updateData.categories)
+        } catch (e) {
+            // If it's not JSON, split by comma
+            updateData.categories = updateData.categories.split(',').map(c => c.trim())
+        }
+    }
+
+    // Parse promo if it's a JSON string (object format)
+    if (updateData.promo && typeof updateData.promo === 'string') {
+        try {
+            // Try to parse as JSON object
+            const parsed = JSON.parse(updateData.promo)
+            if (typeof parsed === 'object') {
+                updateData.promo = parsed
+            }
+            // If it's just a string in quotes, keep as string
+        } catch (e) {
+            // If not JSON, keep as plain string (backward compatible)
+            // Do nothing, updateData.promo already is string
+        }
+    }
+
+    // Validate promo object structure if it's an object
+    if (updateData.promo && typeof updateData.promo === 'object') {
+        const { text, discountPercent, validUntil, minOrder } = updateData.promo
+        // Ensure required fields
+        if (!text) {
+            updateData.promo.text = 'Khuyến mãi đặc biệt'
+        }
+        // Validate discountPercent
+        if (discountPercent !== undefined) {
+            updateData.promo.discountPercent = Math.min(100, Math.max(0, Number(discountPercent)))
+        }
+        // Parse validUntil as Date if it's a string
+        if (validUntil && typeof validUntil === 'string') {
+            updateData.promo.validUntil = new Date(validUntil)
+        }
+        // Ensure promo has an identifier so we can track usage per-promo
+        if (!updateData.promo.promoId) {
+            // generate a simple stable id (prefix + timestamp)
+            updateData.promo.promoId = `PROMO_${Date.now()}`
+        }
+    }
+
+    // Handle image upload
+    if (req.file) {
+        updateData.image = `/uploads/${req.file.filename}`
+    }
+
     restaurant = await Restaurant.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        updateData,
         {
             new: true,
             runValidators: true,
@@ -272,9 +327,23 @@ const getRestaurantStats = asyncHandler(async (req, res) => {
         throw new Error('Not authorized')
     }
 
+    // Get date range from query params
+    const { startDate, endDate } = req.query
+    const dateFilter = {}
+    if (startDate || endDate) {
+        dateFilter.createdAt = {}
+        if (startDate) dateFilter.createdAt.$gte = new Date(startDate)
+        if (endDate) {
+            const end = new Date(endDate)
+            end.setHours(23, 59, 59, 999)
+            dateFilter.createdAt.$lte = end
+        }
+    }
+
     // Total orders
     const totalOrders = await Order.countDocuments({
         restaurant: req.params.id,
+        ...dateFilter,
     })
 
     // Pending orders
@@ -283,23 +352,85 @@ const getRestaurantStats = asyncHandler(async (req, res) => {
         status: { $in: ['pending', 'confirmed', 'preparing'] },
     })
 
+    // Orders by status
+    const ordersByStatus = await Order.aggregate([
+        {
+            $match: {
+                restaurant: restaurant._id,
+                ...dateFilter,
+            },
+        },
+        {
+            $group: {
+                _id: '$status',
+                count: { $sum: 1 },
+            },
+        },
+    ])
+
+    const statusBreakdown = {}
+    ordersByStatus.forEach(item => {
+        statusBreakdown[item._id] = item.count
+    })
+
     // Total revenue
     const revenueData = await Order.aggregate([
         {
             $match: {
                 restaurant: restaurant._id,
                 status: 'delivered',
+                ...dateFilter,
             },
         },
         {
             $group: {
                 _id: null,
                 total: { $sum: '$totalAmount' },
+                count: { $sum: 1 },
             },
         },
     ])
 
     const totalRevenue = revenueData.length > 0 ? revenueData[0].total : 0
+    const deliveredOrders = revenueData.length > 0 ? revenueData[0].count : 0
+    const avgOrderValue = deliveredOrders > 0 ? totalRevenue / deliveredOrders : 0
+
+    // Calculate revenue change (compare with previous period)
+    let revenueChange = 0
+    if (startDate && endDate) {
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24))
+        
+        const prevStart = new Date(start)
+        prevStart.setDate(prevStart.getDate() - daysDiff)
+        const prevEnd = new Date(start)
+        prevEnd.setDate(prevEnd.getDate() - 1)
+
+        const prevRevenueData = await Order.aggregate([
+            {
+                $match: {
+                    restaurant: restaurant._id,
+                    status: 'delivered',
+                    createdAt: {
+                        $gte: prevStart,
+                        $lte: prevEnd,
+                    },
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: '$totalAmount' },
+                },
+            },
+        ])
+
+        const prevRevenue = prevRevenueData.length > 0 ? prevRevenueData[0].total : 0
+        if (prevRevenue > 0) {
+            revenueChange = ((totalRevenue - prevRevenue) / prevRevenue) * 100
+        }
+    }
 
     // Total products
     const totalProducts = await Product.countDocuments({
@@ -344,6 +475,9 @@ const getRestaurantStats = asyncHandler(async (req, res) => {
             totalProducts,
             todayOrders,
             todayRevenue,
+            avgOrderValue: Math.round(avgOrderValue),
+            revenueChange: Math.round(revenueChange * 100) / 100,
+            ordersByStatus: statusBreakdown,
         },
     })
 })

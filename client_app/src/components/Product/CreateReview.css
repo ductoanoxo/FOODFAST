@@ -1,0 +1,26 @@
+.create-review-modal .ant-modal-header {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.create-review-modal .ant-form-item-label > label {
+    font-weight: 500;
+    font-size: 15px;
+}
+
+.create-review-modal .ant-rate {
+    color: #faad14;
+}
+
+.create-review-modal .ant-upload-picture-card-wrapper {
+    display: block;
+}
+
+.create-review-modal .ant-upload.ant-upload-select-picture-card {
+    width: 100px;
+    height: 100px;
+}
+
+.create-review-modal .ant-upload-list-picture-card .ant-upload-list-item {
+    width: 100px;
+    height: 100px;
+}

@@ -179,7 +179,7 @@ restaurant_app/
 
 ### Authentication
 - `POST /api/auth/login` - Đăng nhập
-- `GET /api/auth/me` - Lấy thông tin user
+- `GET /api/auth/profile` - Đăng thông tin user (endpoint hiện có trên server)
 
 ### Orders
 - `GET /api/orders/restaurant` - Lấy danh sách đơn hàng

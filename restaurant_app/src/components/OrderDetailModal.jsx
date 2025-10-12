@@ -19,6 +19,7 @@ const statusConfig = {
   ready: { color: 'cyan', text: 'Sẵn sàng giao', icon: <CheckCircleOutlined /> },
   delivering: { color: 'purple', text: 'Đang giao', icon: <SyncOutlined spin /> },
   completed: { color: 'green', text: 'Hoàn thành', icon: <CheckCircleOutlined /> },
+  delivered: { color: 'green', text: 'Hoàn thành', icon: <CheckCircleOutlined /> },
   cancelled: { color: 'red', text: 'Đã hủy', icon: <CloseCircleOutlined /> },
 };
 
@@ -100,7 +101,7 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <Text>Tổng tiền hàng:</Text>
-              <Text>{order.totalAmount?.toLocaleString('vi-VN')}₫</Text>
+              <Text>{(order.subtotal ?? 0).toLocaleString('vi-VN')}₫</Text>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <Text>Phí vận chuyển:</Text>
@@ -110,7 +111,7 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <Text strong style={{ fontSize: 16 }}>Tổng cộng:</Text>
               <Text strong style={{ fontSize: 18, color: '#667eea' }}>
-                <DollarOutlined /> {((order.totalAmount || 0) + (order.deliveryFee || 0)).toLocaleString('vi-VN')}₫
+                <DollarOutlined /> {(order.totalAmount ?? ((order.subtotal ?? 0) + (order.deliveryFee ?? 0))).toLocaleString('vi-VN')}₫
               </Text>
             </div>
             <div style={{ marginTop: 8 }}>

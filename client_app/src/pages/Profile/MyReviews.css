@@ -1,0 +1,28 @@
+.my-reviews-page {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.my-reviews-list .review-item {
+    padding: 24px 0 !important;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.my-reviews-list .review-item:last-child {
+    border-bottom: none;
+}
+
+.restaurant-reply {
+    background: #f6f8fa;
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 16px;
+    border-left: 3px solid #1890ff;
+}
+
+@media (max-width: 768px) {
+    .my-reviews-page {
+        padding: 16px;
+    }
+}

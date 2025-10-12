@@ -11,7 +11,20 @@ export const initSocket = () => {
     });
 
     socket.on('connect', () => {
-      console.log('Socket connected');
+      console.log('Socket connected:', socket.id);
+      // If restaurant user is available in localStorage, auto join restaurant room
+      try {
+        const user = JSON.parse(localStorage.getItem('restaurant_user') || 'null');
+        console.log('Restaurant user from localStorage:', user);
+        if (user && user.restaurantId) {
+          socket.emit('join-restaurant', user.restaurantId);
+          console.log('Joining restaurant room:', user.restaurantId);
+        } else {
+          console.log('No restaurant user or restaurantId found');
+        }
+      } catch (e) {
+        console.warn('Failed to parse restaurant_user for socket join', e);
+      }
     });
 
     socket.on('disconnect', () => {

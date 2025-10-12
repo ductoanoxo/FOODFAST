@@ -1,5 +1,7 @@
 const asyncHandler = require('../Middleware/asyncHandler')
 const Category = require('../Models/Category')
+const Product = require('../Models/Product')
+const Restaurant = require('../Models/Restaurant')
 
 // @desc    Get all categories
 // @route   GET /api/categories
@@ -113,6 +115,34 @@ const getCategoryProducts = asyncHandler(async (req, res) => {
     })
 })
 
+// @desc    Get categories with products for a restaurant
+// @route   GET /api/categories/restaurant/with-products
+// @access  Private (Restaurant)
+const getCategoriesWithProducts = asyncHandler(async (req, res) => {
+    // Get restaurant from authenticated user
+    const restaurant = await Restaurant.findOne({ owner: req.user._id })
+    
+    if (!restaurant) {
+        res.status(404)
+        throw new Error('Restaurant not found')
+    }
+
+    // Get all categories that have products from this restaurant
+    const products = await Product.find({ 
+        restaurant: restaurant._id 
+    }).distinct('category')
+
+    const categories = await Category.find({
+        _id: { $in: products }
+    }).sort('name')
+
+    res.json({
+        success: true,
+        count: categories.length,
+        data: categories,
+    })
+})
+
 module.exports = {
     getCategories,
     getCategoryById,
@@ -120,4 +150,5 @@ module.exports = {
     updateCategory,
     deleteCategory,
     getCategoryProducts,
+    getCategoriesWithProducts,
 }

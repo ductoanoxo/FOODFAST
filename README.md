@@ -1,4 +1,4 @@
-# 🍔🚁 FOODFAST DRONE DELIVERY
+P# 🍔🚁 FOODFAST DRONE DELIVERY
 
 > Hệ thống đặt đồ ăn với giao hàng bằng drone - Food delivery system with drone management
 
@@ -8,10 +8,12 @@
 
 **Vừa clone về? Chỉ cần 3 lệnh:**
 
-```powershell
-.\setup.ps1   # Cài đặt tự động (5 phút)
-.\seed.ps1    # Tạo dữ liệu mẫu
-.\start.ps1   # Chạy tất cả apps
+## Chạy ở file root
+```bash
+
+npm run install-all
+npm run seed
+npm run dev
 ```
 
 **Mở trình duyệt:** http://localhost:3000  

@@ -1,5 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { 
   Card, 
   List, 
@@ -22,6 +23,7 @@ import {
 } from '@ant-design/icons'
 import { removeFromCart, updateQuantity, clearCart } from '../../redux/slices/cartSlice'
 import './CartPage.css'
+import { restaurantAPI } from '../../api/restaurantAPI'
 
 const { Title, Text } = Typography
 
@@ -29,6 +31,8 @@ const CartPage = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const { items, totalItems, totalPrice } = useSelector((state) => state.cart)
+  const [promoRemaining, setPromoRemaining] = useState(0)
+  const [restaurantPromo, setRestaurantPromo] = useState(null)
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -54,6 +58,37 @@ const CartPage = () => {
   const handleCheckout = () => {
     navigate('/checkout')
   }
+
+  useEffect(() => {
+    const loadPromo = async () => {
+      try {
+        setPromoRemaining(0)
+        setRestaurantPromo(null)
+        if (!items || items.length === 0) return
+        const first = items[0]
+        const restaurantId = first.restaurant?._id || first.restaurant
+        if (!restaurantId) return
+        const resp = await restaurantAPI.getRestaurantById(restaurantId)
+        const data = resp.data?.data || resp.data
+        const promo = data?.promo
+        setRestaurantPromo(promo || null)
+        if (promo && typeof promo === 'object') {
+          const minOrder = Number(promo.minOrder) || 0
+          const validUntil = promo.validUntil ? new Date(promo.validUntil) : null
+          const now = new Date()
+          const isValid = !validUntil || validUntil >= now
+          if (isValid && minOrder > totalPrice) {
+            setPromoRemaining(minOrder - totalPrice)
+          } else {
+            setPromoRemaining(0)
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load promo for cart', e)
+      }
+    }
+    loadPromo()
+  }, [items, totalPrice])
 
   if (items.length === 0) {
     return (
@@ -170,8 +205,14 @@ const CartPage = () => {
                 <Text>Phí giao hàng:</Text>
                 <Text strong>{formatPrice(15000)}</Text>
               </div>
+              {/* Restaurant voucher remaining message */}
+              {promoRemaining > 0 && (
+                <div style={{ marginTop: 8, marginBottom: 8 }}>
+                  <Text type="secondary">Mua thêm <Text strong>{formatPrice(promoRemaining)}</Text> để nhận ưu đãi từ nhà hàng.</Text>
+                </div>
+              )}
               <Divider />
-              <div className="summary-row summary-total">
+              <div className="summary-row summary-total"> 
                 <Title level={4}>Tổng cộng:</Title>
                 <Title level={4} type="danger">
                   {formatPrice(totalPrice + 15000)}

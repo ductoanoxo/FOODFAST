@@ -64,8 +64,8 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
       <Space direction="vertical" size="small" style={{ width: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
           <Text strong style={{ fontSize: 16 }}>{product.name}</Text>
-          <Tag color={product.available ? 'green' : 'red'}>
-            {product.available ? 'Còn hàng' : 'Hết hàng'}
+          <Tag color={product.isAvailable ? 'green' : 'red'}>
+            {product.isAvailable ? 'Còn hàng' : 'Hết hàng'}
           </Tag>
         </div>
 
@@ -84,7 +84,7 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
         </Paragraph>
 
         <Text strong style={{ fontSize: 18, color: '#667eea' }}>
-          {product.price?.toLocaleString('vi-VN')}₫
+          {(product.promotion?.originalPrice ?? product.price)?.toLocaleString('vi-VN')}₫
         </Text>
       </Space>
     </Card>

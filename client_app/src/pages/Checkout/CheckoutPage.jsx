@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
@@ -24,7 +24,9 @@ import {
 } from '@ant-design/icons'
 import { orderAPI } from '../../api/orderAPI'
 import { paymentAPI } from '../../api/paymentAPI'
+import { restaurantAPI } from '../../api/restaurantAPI'
 import { clearCart } from '../../redux/slices/cartSlice'
+import VoucherSelector from '../../components/VoucherSelector/VoucherSelector'
 import './CheckoutPage.css'
 
 const { Title, Text } = Typography
@@ -39,6 +41,10 @@ const CheckoutPage = () => {
   
   const { items, totalPrice } = useSelector((state) => state.cart)
   const { user } = useSelector((state) => state.auth)
+  const [restaurantClosed, setRestaurantClosed] = useState(false)
+  const [restaurantLoading, setRestaurantLoading] = useState(true)
+  const [restaurantId, setRestaurantId] = useState(null)
+  const [appliedVoucherData, setAppliedVoucherData] = useState(null)
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -48,9 +54,19 @@ const CheckoutPage = () => {
   }
 
   const deliveryFee = 15000
-  const totalAmount = totalPrice + deliveryFee
+  const discountAmount = appliedVoucherData?.discountAmount || 0
+  const totalAmount = totalPrice + deliveryFee - discountAmount
+
+  const handleApplyVoucher = (voucherData) => {
+    console.log('Apply voucher data (client):', voucherData)
+    setAppliedVoucherData(voucherData)
+  }
 
   const onFinish = async (values) => {
+    if (restaurantClosed) {
+      message.error('Nhà hàng hiện đang đóng cửa, không thể đặt hàng.')
+      return
+    }
     try {
       setLoading(true)
       const orderData = {
@@ -68,10 +84,14 @@ const CheckoutPage = () => {
         paymentMethod,
         totalAmount,
         deliveryFee,
+        voucherCode: appliedVoucherData?.voucher?.code || undefined,
       }
 
-      const response = await orderAPI.createOrder(orderData)
-      const orderId = response.data._id
+  console.log('Creating order, payload:', orderData)
+  const response = await orderAPI.createOrder(orderData)
+  console.log('Create order response (raw):', response)
+  // Support different possible response shapes: axiosResponse.data.data or axiosResponse.data
+  const orderId = response?.data?.data?._id || response?.data?._id || response?.data
 
       // Xử lý thanh toán theo phương thức
       if (paymentMethod === 'VNPAY') {
@@ -118,6 +138,31 @@ const CheckoutPage = () => {
     navigate('/cart')
     return null
   }
+
+  // Load restaurant status from first cart item
+  useEffect(() => {
+    const loadStatus = async () => {
+      try {
+        setRestaurantLoading(true)
+        const first = items[0]
+        const resId = first.restaurant?._id || first.restaurant
+        setRestaurantId(resId)
+        if (!resId) {
+          setRestaurantClosed(false)
+          return
+        }
+        const resp = await restaurantAPI.getRestaurantById(resId)
+        const data = resp.data?.data || resp.data
+        const isOpen = data?.isOpen
+        setRestaurantClosed(isOpen === false)
+      } catch (e) {
+        console.error('Failed to load restaurant status', e)
+      } finally {
+        setRestaurantLoading(false)
+      }
+    }
+    loadStatus()
+  }, [items])
 
   return (
     <div className="checkout-page">
@@ -225,7 +270,31 @@ const CheckoutPage = () => {
                 </Radio.Group>
               </Card>
 
-              <Button type="primary" htmlType="submit" size="large" block loading={loading}>
+              {/* Voucher */}
+              {restaurantId && (
+                <Card title="Mã khuyến mãi" className="checkout-card">
+                  <VoucherSelector
+                    restaurantId={restaurantId}
+                    orderTotal={totalPrice}
+                    onApply={handleApplyVoucher}
+                    appliedVoucher={appliedVoucherData}
+                  />
+                </Card>
+              )}
+
+              {restaurantClosed && (
+                <div style={{ marginBottom: 12 }}>
+                  <Text type="danger">Nhà hàng hiện đang đóng cửa. Bạn không thể đặt hàng tại thời điểm này.</Text>
+                </div>
+              )}
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="large"
+                block
+                loading={loading}
+                disabled={restaurantClosed || restaurantLoading}
+              >
                 Đặt hàng
               </Button>
             </Form>
@@ -256,6 +325,12 @@ const CheckoutPage = () => {
                 <Text>Phí giao hàng:</Text>
                 <Text strong>{formatPrice(deliveryFee)}</Text>
               </div>
+              {discountAmount > 0 && (
+                <div className="summary-row">
+                  <Text>Giảm giá:</Text>
+                  <Text strong type="success">-{formatPrice(discountAmount)}</Text>
+                </div>
+              )}
               <Divider />
               <div className="summary-row summary-total">
                 <Title level={4}>Tổng cộng:</Title>

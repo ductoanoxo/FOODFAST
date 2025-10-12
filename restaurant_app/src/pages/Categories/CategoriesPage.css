@@ -1,0 +1,12 @@
+.categories-page {
+  padding: 24px;
+}
+
+.categories-page .ant-table-wrapper {
+  background: white;
+  border-radius: 8px;
+}
+
+.categories-page .ant-btn {
+  border-radius: 6px;
+}

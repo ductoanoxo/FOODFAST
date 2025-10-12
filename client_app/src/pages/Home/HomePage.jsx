@@ -31,7 +31,7 @@ const HomePage = () => {
       const [productsRes, restaurantsRes, categoriesRes] = await Promise.all([
         productAPI.getPopularProducts(),
         restaurantAPI.getRestaurants({ limit: 6 }),
-        productAPI.getCategories()
+        productAPI.getCategories() // ✅ Lấy trực tiếp từ Category model
       ])
 
       const extractArray = (res) => {
@@ -48,45 +48,10 @@ const HomePage = () => {
 
       setPopularProducts(productsData)
       setRestaurants(restaurantsData)
-
-      // ❌ Bỏ mảng replacements cũ vì không dùng
-      const mapped = (categoriesData || []).map((cat) => {
-        const name = (cat.name || '').toLowerCase()
-
-        if (name.includes('đồ ăn nhanh') || name.includes('fastfood'))
-          return { ...cat, icon: 'http://localhost:5000/uploads/iconfastfood.jpg' }
-
-        if (name.includes('pizza'))
-          return { ...cat, icon: 'http://localhost:5000/uploads/pizza.jpg' }
-
-        if (name.includes('đồ uống'))
-          return { ...cat, icon: 'http://localhost:5000/uploads/nuocgiakhat.jpg' }
-
-        if (name.includes('phở'))
-          return { ...cat, icon: 'http://localhost:5000/uploads/iconpho.jpg' }
-
-        if (name.includes('bún'))
-          return { ...cat, icon: 'http://localhost:5000/uploads/bun.jpg' }
-
-        if (name.includes('cơm'))
-          return { ...cat, icon: 'http://localhost:5000/uploads/com.jpg' }
-
-        if (name.includes('tráng miệng'))
-          return { ...cat, icon: 'http://localhost:5000/uploads/banhkem.jpg' }
-
-        if (name.includes('lẩu'))
-          return { ...cat, icon: 'http://localhost:5000/uploads/lau.jpg' }
-
-        if (name.includes('hải sản'))
-          return { ...cat, icon: 'http://localhost:5000/uploads/haisan.jpg' }
-
-        if (name.includes('chay'))
-          return { ...cat, icon: 'http://localhost:5000/uploads/doanchay.jpg' }
-
-        return cat
-      })
-
-      setCategories(mapped.length ? mapped : (categoriesData || []))
+      
+      // ✅ Sử dụng categories trực tiếp từ database
+      // Categories đã có đầy đủ: _id, name, icon, image, description
+      setCategories(categoriesData)
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -131,57 +96,6 @@ const HomePage = () => {
       title: 'Ưu đãi hấp dẫn',
       description: 'Nhiều chương trình khuyến mãi mỗi ngày'
     }
-  ]
-
-  const defaultCategories = [
-    {
-      _id: '1',
-      name: 'Đồ ăn nhanh',
-      icon: 'http://localhost:5000/uploads/iconcom.jpg',
-      color: '#ff6b35',
-    },
-    {
-      _id: '2',
-      name: 'Pizza',
-      icon: '🍕',
-      color: '#f7b731',
-    },
-    {
-      _id: '3',
-      name: 'Đồ uống',
-      icon: "http://localhost:5000/uploads/nuocgiakhat.jpg",
-      color: '#4ecdc4',
-    },
-    {
-      _id: '4',
-      name: 'Món Á',
-      icon: '🍜',
-      color: '#a8e6cf',
-    },
-    {
-      _id: '5',
-      name: 'Tráng miệng',
-      icon: '🍰',
-      color: '#ff85a1',
-    },
-    {
-      _id: '6',
-      name: 'Lẩu',
-      icon: '🍲',
-      color: '#ff6b9d',
-    },
-    {
-      _id: '7',
-      name: 'Hải sản',
-      icon: '🦐',
-      color: '#ffa07a',
-    },
-    {
-      _id: '8',
-      name: 'Chay',
-      icon: '🥗',
-      color: '#90ee90',
-    },
   ]
 
   const howItWorksSteps = [
@@ -257,36 +171,45 @@ const HomePage = () => {
       <div className="container section">
         <div className="section-header">
           <Title level={2}>Danh mục món ăn 🍽️</Title>
+          <Button type="link" onClick={() => window.location.href = '/menu'}>
+            Xem thêm →
+          </Button>
         </div>
 
 <div className="category-row">
-  {(categories.length > 0 ? categories : defaultCategories)
-    .slice(0, 8)
-    .map((category, index) => (
-      <div
-        className="category-card pretty"
-        key={category._id}
-        onClick={() => window.location.href = `/menu?category=${category._id}`}
-        style={{
-          background: category.color || 'linear-gradient(135deg,#f8f9fa 0%, #f1f3f5 100%)',
-          animationDelay: `${index * 60}ms`,
-        }}
-      >
-        <div className="category-media">
-          {category.icon && (typeof category.icon === 'string' && /^https?:\/\//i.test(category.icon) ? (
-            <img
-              src={category.icon}
-              alt={category.name}
-              className="category-img"
-              onError={(e) => { e.currentTarget.src = 'http://localhost:5000/uploads/iconfastfood.jpg' }}
-            />
-          ) : (
-            <span className="category-emoji">{category.icon || '🍽️'}</span>
-          ))}
-          <span className="category-ring" />
-        </div>
-        <Paragraph strong className="category-name">{category.name}</Paragraph>
+  {categories.slice(0, 5).map((category, index) => (
+    <div
+      className="category-card pretty"
+      key={category._id}
+      onClick={() => window.location.href = `/menu?category=${category._id}`}
+      style={{
+        background: category.color || 'linear-gradient(135deg,#f8f9fa 0%, #f1f3f5 100%)',
+        animationDelay: `${index * 60}ms`,
+      }}
+    >
+      <div className="category-media">
+        {/* Ưu tiên: image > icon > fallback */}
+        {category.image ? (
+          <img
+            src={category.image}
+            alt={category.name}
+            className="category-img"
+            onError={(e) => { e.currentTarget.src = 'http://localhost:5000/uploads/iconfastfood.jpg' }}
+          />
+        ) : category.icon && /^https?:\/\//i.test(category.icon) ? (
+          <img
+            src={category.icon}
+            alt={category.name}
+            className="category-img"
+            onError={(e) => { e.currentTarget.src = 'http://localhost:5000/uploads/iconfastfood.jpg' }}
+          />
+        ) : (
+          <span className="category-emoji">{category.icon || '🍽️'}</span>
+        )}
+        <span className="category-ring" />
       </div>
+      <Paragraph strong className="category-name">{category.name}</Paragraph>
+    </div>
   ))}
 </div>
 

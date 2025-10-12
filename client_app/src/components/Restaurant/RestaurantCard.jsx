@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Card, Button, Typography, Tag, Rate, Divider } from 'antd'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   EnvironmentOutlined,
   ClockCircleOutlined,
@@ -13,6 +13,7 @@ const { Meta } = Card
 const { Text } = Typography
 
 const RestaurantCard = ({ restaurant }) => {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
 
   const formatDistance = (distance) => {
@@ -73,7 +74,15 @@ const RestaurantCard = ({ restaurant }) => {
 
               {restaurant.promo && (
                 <div className="restaurant-promo">
-                  <Tag color="red">🎉 {restaurant.promo}</Tag>
+                  {typeof restaurant.promo === 'string' ? (
+                    <Tag color="red">🎉 {restaurant.promo}</Tag>
+                  ) : (
+                    <Tag color="red">
+                      🎉 {restaurant.promo.text}
+                      {restaurant.promo.discountPercent && ` - Giảm ${restaurant.promo.discountPercent}%`}
+                      {restaurant.promo.minOrder && ` (Đơn từ ${(restaurant.promo.minOrder / 1000).toFixed(0)}k)`}
+                    </Tag>
+                  )}
                 </div>
               )}
             </div>
@@ -85,7 +94,7 @@ const RestaurantCard = ({ restaurant }) => {
         type="primary"
         block
         className="view-menu-btn"
-        onClick={() => window.location.href = `/stores/${restaurant._id}`}
+        onClick={() => navigate(`/stores/${restaurant._id}`)}
       >
         <ShopOutlined /> Xem thực đơn
       </Button>

@@ -8,7 +8,12 @@ import LoginPage from './pages/Auth/LoginPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import OrdersPage from './pages/Orders/OrdersPage';
 import MenuPage from './pages/Menu/MenuPage';
-import ProfilePage from './pages/Profile/ProfilePage';
+import CategoriesPage from './pages/Categories/CategoriesPage';
+import ReportsPage from './pages/Reports/ReportsPage';
+import ReviewsPage from './pages/Reviews/ReviewsPage';
+import SettingsPage from './pages/Settings/SettingsPage';
+import VouchersPage from './pages/Vouchers/VouchersPage';
+import PromotionsPage from './pages/Promotions/PromotionsPage';
 import { initSocket, disconnectSocket } from './utils/socket';
 
 // Protected Route Component
@@ -45,7 +50,12 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/menu" element={<MenuPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/vouchers" element={<VouchersPage />} />
+          <Route path="/promotions" element={<PromotionsPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/reviews" element={<ReviewsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </Router>

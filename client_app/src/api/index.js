@@ -8,3 +8,5 @@ export { paymentAPI }
 from './paymentAPI';
 export { orderAPI }
 from './orderAPI';
+export { reviewAPI }
+from './reviewAPI';

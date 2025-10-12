@@ -14,10 +14,13 @@ import {
   Spin,
   message
 } from 'antd'
-import { ShoppingCartOutlined, ArrowLeftOutlined } from '@ant-design/icons'
-import { useDispatch } from 'react-redux'
+import { ShoppingCartOutlined, ArrowLeftOutlined, EditOutlined } from '@ant-design/icons'
+import { useDispatch, useSelector } from 'react-redux'
 import { addToCart } from '../../redux/slices/cartSlice'
 import { productAPI } from '../../api'
+import { restaurantAPI } from '../../api/restaurantAPI'
+import ReviewList from '../../components/Product/ReviewList'
+import CreateReview from '../../components/Product/CreateReview'
 import './ProductDetailPage.css'
 
 const { Title, Text, Paragraph } = Typography
@@ -26,9 +29,13 @@ const ProductDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const { user } = useSelector(state => state.auth)
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [refreshReviews, setRefreshReviews] = useState(0)
+  const [checking, setChecking] = useState(false)
 
   useEffect(() => {
     fetchProduct()
@@ -47,9 +54,34 @@ const ProductDetailPage = () => {
     }
   }
 
-  const handleAddToCart = () => {
-    dispatch(addToCart({ ...product, quantity }))
-    message.success(`Đã thêm ${quantity} ${product.name} vào giỏ hàng!`)
+  const handleAddToCart = async () => {
+    try {
+      setChecking(true)
+      let isOpen = undefined
+      const rest = product.restaurant
+      if (rest) isOpen = rest.isOpen
+      if (isOpen === undefined) {
+        const restId = rest?._id || rest
+        if (restId) {
+          const resp = await restaurantAPI.getRestaurantById(restId)
+          const data = resp.data?.data || resp.data
+          isOpen = data?.isOpen
+        }
+      }
+
+      if (isOpen === false) {
+        message.error('Nhà hàng hiện đang đóng cửa, không thể thêm món này vào giỏ.')
+        return
+      }
+
+      dispatch(addToCart({ ...product, quantity }))
+      message.success(`Đã thêm ${quantity} ${product.name} vào giỏ hàng!`)
+    } catch (err) {
+      console.error('Error checking restaurant status', err)
+      message.error('Không thể thêm vào giỏ hàng lúc này')
+    } finally {
+      setChecking(false)
+    }
   }
 
   const formatPrice = (price) => {
@@ -102,7 +134,18 @@ const ProductDetailPage = () => {
                 </div>
 
                 <div className="product-price-section">
-                  {product.discount ? (
+                  {product.promotion ? (
+                    <>
+                      <Text delete className="original-price">
+                        {formatPrice(product.promotion.originalPrice)}
+                      </Text>
+                      <Title level={3} type="danger" className="discounted-price">
+                        {formatPrice(product.price)}
+                      </Title>
+                      <Tag color="red">-{product.promotion.discountPercent}%</Tag>
+                      <Tag color="volcano">{product.promotion.name}</Tag>
+                    </>
+                  ) : product.discount ? (
                     <>
                       <Text delete className="original-price">
                         {formatPrice(product.price)}
@@ -148,14 +191,44 @@ const ProductDetailPage = () => {
                   icon={<ShoppingCartOutlined />}
                   onClick={handleAddToCart}
                   block
+                  loading={checking}
                   style={{ marginTop: 20 }}
                 >
-                  Thêm vào giỏ hàng - {formatPrice((product.price * (1 - (product.discount || 0) / 100)) * quantity)}
+                  Thêm vào giỏ hàng - {formatPrice(product.price * quantity)}
                 </Button>
+
+                {user && (
+                  <Button
+                    size="large"
+                    icon={<EditOutlined />}
+                    onClick={() => setShowReviewModal(true)}
+                    block
+                    style={{ marginTop: 12 }}
+                  >
+                    Viết đánh giá
+                  </Button>
+                )}
               </div>
             </Col>
           </Row>
+
+          {/* Phần đánh giá */}
+          <Divider style={{ marginTop: 40 }} />
+          <ReviewList 
+            productId={id} 
+            key={refreshReviews}
+          />
         </Card>
+
+        {/* Modal tạo đánh giá */}
+        <CreateReview
+          visible={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          productId={id}
+          onSuccess={() => {
+            setRefreshReviews(prev => prev + 1)
+          }}
+        />
       </div>
     </div>
   )

@@ -1,0 +1,18 @@
+.promotions-page {
+  padding: 0;
+}
+
+.promotions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .promotions-header {
+    flex-direction: column;
+  }
+}

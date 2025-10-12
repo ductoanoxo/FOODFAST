@@ -43,8 +43,11 @@ app.use(
 );
 app.use(compression());
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Increase body size limits to accommodate larger payloads (e.g., base64 image data).
+// NOTE: For file/image uploads it's better to use multipart/form-data with multer
+// rather than embedding large files in JSON.
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
 
 // ---------------------- STATIC FILES ---------------------- //
@@ -70,6 +73,8 @@ app.use('/api/drones', require('./API/Routers/droneRouter'));
 app.use('/api/payment', require('./API/Routers/paymentRouter'));
 app.use('/api/reviews', require('./API/Routers/reviewRouter'));
 app.use('/api/upload', require('./API/Routers/uploadRouter'));
+app.use('/api/vouchers', require('./API/Routers/voucherRouter'));
+app.use('/api/promotions', require('./API/Routers/promotionRouter'));
 
 // ---------------------- ERROR HANDLER ---------------------- //
 app.use(errorHandler);
@@ -101,11 +106,19 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
-
+io.of('/').adapter.on('join-room', (room, id) => {
+  console.log(`[JOIN ROOM] socket=${id} room=${room}`)
+})
   // Join order room
   socket.on('join-order', (orderId) => {
     socket.join(`order-${orderId}`);
     console.log(`Socket ${socket.id} joined order-${orderId}`);
+  });
+
+  // Join restaurant room (for restaurant-wide notifications)
+  socket.on('join-restaurant', (restaurantId) => {
+    socket.join(`restaurant-${restaurantId}`);
+    console.log(`Socket ${socket.id} joined restaurant-${restaurantId}`);
   });
 
   // Join drone room

@@ -21,6 +21,7 @@ const OrdersPage = () => {
     
     // Socket.IO event listeners
     onNewOrder((newOrder) => {
+      console.log('Received new order notification:', newOrder);
       notification.success({
         message: '🔔 Đơn hàng mới!',
         description: `Bạn có đơn hàng mới từ ${newOrder.user?.name || 'Khách hàng'}`,
@@ -32,7 +33,7 @@ const OrdersPage = () => {
     onOrderStatusUpdate((updatedOrder) => {
       notification.info({
         message: 'Đơn hàng đã cập nhật',
-        description: `Đơn hàng #${updatedOrder._id?.slice(-6).toUpperCase()} đã được cập nhật`,
+        description: `Đơn hàng #${updatedOrder.orderNumber || updatedOrder.orderId?.slice(-6).toUpperCase()} đã được cập nhật`,
         duration: 3,
       });
       dispatch(fetchOrders());
@@ -67,6 +68,7 @@ const OrdersPage = () => {
 
   const filterOrders = (status) => {
     if (status === 'all') return orders;
+    if (status === 'completed') return orders.filter((order) => order.status === 'completed' || order.status === 'delivered');
     return orders.filter((order) => order.status === status);
   };
 
@@ -93,7 +95,8 @@ const OrdersPage = () => {
     },
     {
       key: 'completed',
-      label: `Hoàn thành (${orders.filter((o) => o.status === 'completed').length})`,
+      // Count both 'completed' and 'delivered' orders as completed
+      label: `Hoàn thành (${orders.filter((o) => o.status === 'completed' || o.status === 'delivered').length})`,
     },
   ];
 
