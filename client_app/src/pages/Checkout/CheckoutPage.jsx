@@ -69,6 +69,15 @@ const CheckoutPage = () => {
     }
     try {
       setLoading(true)
+      
+      // Check if user is logged in
+      const token = localStorage.getItem('token')
+      if (!token || !user) {
+        message.error('Bạn cần đăng nhập để đặt hàng!')
+        navigate('/login', { state: { from: '/checkout' } })
+        return
+      }
+      
       const orderData = {
         items: items.map(item => ({
           product: item._id,

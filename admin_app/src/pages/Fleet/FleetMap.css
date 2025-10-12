@@ -1,0 +1,35 @@
+.fleet-map-page {
+    padding: 24px;
+    background: #f0f2f5;
+    min-height: calc(100vh - 64px);
+}
+
+.custom-drone-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.drone-list-item {
+    transition: all 0.3s;
+    border-radius: 8px;
+    padding: 8px !important;
+    margin-bottom: 8px;
+}
+
+.drone-list-item:hover {
+    background: #f0f2f5;
+}
+
+.drone-list-item.selected {
+    background: #e6f7ff;
+    border: 1px solid #1890ff;
+}
+
+
+/* Responsive */
+
+@media (max-width: 768px) {
+    .fleet-map-page {
+        padding: 12px;
+    }
+}

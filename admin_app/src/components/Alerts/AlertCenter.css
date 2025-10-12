@@ -1,0 +1,37 @@
+.alert-center-dropdown {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.alert-item {
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.alert-item:hover {
+    background: #f5f5f5;
+}
+
+.alert-item.unread {
+    background: #e6f7ff;
+    font-weight: bold;
+}
+
+
+/* Alert animations */
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 77, 79, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
+    }
+}
+
+.critical-alert {
+    animation: pulse 2s infinite;
+}

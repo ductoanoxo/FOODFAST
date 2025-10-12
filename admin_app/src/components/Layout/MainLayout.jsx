@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { Layout, Menu, Dropdown, Avatar, Typography } from 'antd';
+import { Layout, Menu, Dropdown, Avatar, Typography, Space } from 'antd';
 import {
   DashboardOutlined,
   UserOutlined,
@@ -8,11 +8,14 @@ import {
   RobotOutlined,
   LogoutOutlined,
   SafetyOutlined,
+  ThunderboltOutlined,
+  EnvironmentOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../redux/slices/authSlice';
 import { message } from 'antd';
+import AlertCenter from '../Alerts/AlertCenter';
 
 const { Header, Content, Sider } = Layout;
 const { Text } = Typography;
@@ -30,6 +33,8 @@ const MainLayout = () => {
 
   const menuItems = [
     { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
+    { key: '/assignment', icon: <ThunderboltOutlined />, label: 'Assignment' },
+    { key: '/fleet-map', icon: <EnvironmentOutlined />, label: 'Fleet Map' },
     { key: '/users', icon: <UserOutlined />, label: 'Người dùng' },
     { key: '/restaurants', icon: <ShopOutlined />, label: 'Nhà hàng' },
     { key: '/orders', icon: <ShoppingOutlined />, label: 'Đơn hàng' },
@@ -87,12 +92,15 @@ const MainLayout = () => {
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
         }}>
           <h2 style={{ margin: 0, color: '#f5576c' }}>FoodFast Admin Panel</h2>
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Avatar icon={<SafetyOutlined />} style={{ backgroundColor: '#f5576c' }} />
-              <Text strong>{user?.name || 'Admin'}</Text>
-            </div>
-          </Dropdown>
+          <Space size="large">
+            <AlertCenter />
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+              <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Avatar icon={<SafetyOutlined />} style={{ backgroundColor: '#f5576c' }} />
+                <Text strong>{user?.name || 'Admin'}</Text>
+              </div>
+            </Dropdown>
+          </Space>
         </Header>
         <Content style={{ margin: '24px', padding: 24, background: '#fff', borderRadius: 8 }}>
           <Outlet />

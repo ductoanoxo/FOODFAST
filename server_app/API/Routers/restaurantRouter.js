@@ -7,6 +7,7 @@ const {
     getRestaurantById,
     getNearbyRestaurants,
     createRestaurant,
+    createRestaurantWithAccount,
     updateRestaurant,
     deleteRestaurant,
     getRestaurantMenu,
@@ -48,6 +49,7 @@ const upload = multer({
 router.get('/nearby', getNearbyRestaurants)
 router.get('/', getRestaurants)
 router.post('/', protect, authorize('admin'), createRestaurant)
+router.post('/create-with-account', protect, authorize('admin'), createRestaurantWithAccount)
 router.get('/:id', getRestaurantById)
 router.put('/:id', protect, authorize('restaurant', 'admin'), upload.single('image'), updateRestaurant)
 router.delete('/:id', protect, authorize('admin'), deleteRestaurant)

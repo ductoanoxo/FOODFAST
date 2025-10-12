@@ -1,0 +1,132 @@
+.assignment-dashboard {
+    padding: 24px;
+    background: #f0f2f5;
+    min-height: calc(100vh - 64px);
+}
+
+.orders-list {
+    padding: 8px;
+}
+
+.orders-list.dragging-over {
+    background: #e6f7ff;
+    border: 2px dashed #1890ff;
+    border-radius: 4px;
+}
+
+.order-card {
+    background: white;
+    border: 2px solid #d9d9d9;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    cursor: grab;
+    transition: all 0.3s;
+}
+
+.order-card:hover {
+    border-color: #1890ff;
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+}
+
+.order-card.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+    transform: rotate(3deg);
+}
+
+.order-card.selected {
+    border-color: #1890ff;
+    background: #e6f7ff;
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.order-detail {
+    margin: 8px 0;
+    font-size: 13px;
+    color: #595959;
+}
+
+.order-detail small {
+    color: #8c8c8c;
+}
+
+.order-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.drone-card {
+    background: white;
+    border: 2px solid #d9d9d9;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.drone-card:hover {
+    border-color: #52c41a;
+    box-shadow: 0 2px 8px rgba(82, 196, 26, 0.2);
+}
+
+.drone-card.drop-target {
+    border-color: #52c41a;
+    background: #f6ffed;
+    box-shadow: 0 4px 12px rgba(82, 196, 26, 0.4);
+    transform: scale(1.02);
+}
+
+.drone-card.selected {
+    border-color: #52c41a;
+    background: #f6ffed;
+    box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
+}
+
+.drone-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+
+/* Animations */
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.order-card.dragging {
+    animation: pulse 1s infinite;
+}
+
+
+/* Responsive */
+
+@media (max-width: 768px) {
+    .assignment-dashboard {
+        padding: 12px;
+    }
+    .order-card,
+    .drone-card {
+        padding: 8px;
+    }
+}

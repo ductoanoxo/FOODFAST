@@ -1,14 +1,161 @@
 .dashboard-page {
     padding: 24px;
+    background: #f0f2f5;
+    min-height: 100vh;
 }
 
 .dashboard-page h1 {
     margin-bottom: 24px;
     color: #ff4d4f;
+    font-size: 28px;
+    font-weight: 600;
 }
 
+/* Stat Cards */
+.stat-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card .ant-statistic-title {
+    color: rgba(0, 0, 0, 0.65);
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.stat-card .ant-statistic-content {
+    font-size: 32px;
+    font-weight: 600;
+}
+
+.stat-detail {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.45);
+    margin-top: 4px;
+}
+
+/* Colored stat cards */
+.stat-card-users {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card-users .ant-statistic-title,
+.stat-card-users .ant-statistic-content,
+.stat-card-users .stat-detail {
+    color: white !important;
+}
+
+.stat-card-restaurants {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card-restaurants .ant-statistic-title,
+.stat-card-restaurants .ant-statistic-content,
+.stat-card-restaurants .stat-detail {
+    color: white !important;
+}
+
+.stat-card-orders {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card-orders .ant-statistic-title,
+.stat-card-orders .ant-statistic-content,
+.stat-card-orders .stat-detail {
+    color: white !important;
+}
+
+.stat-card-drones {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.stat-card-drones .ant-statistic-title,
+.stat-card-drones .ant-statistic-content,
+.stat-card-drones .stat-detail {
+    color: white !important;
+}
+
+/* Revenue Card */
+.revenue-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.revenue-card .ant-card-head {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.revenue-card .ant-card-head-title {
+    color: white;
+}
+
+/* Tables */
+.dashboard-page .ant-table {
+    border-radius: 8px;
+}
+
+.dashboard-page .ant-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-page .ant-card-head {
+    border-bottom: 1px solid #f0f0f0;
+    font-weight: 600;
+}
+
+/* List items */
+.dashboard-page .ant-list-item {
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dashboard-page .ant-list-item:last-child {
+    border-bottom: none;
+}
+
+/* Progress */
+.dashboard-page .ant-progress-text {
+    font-weight: 600;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
     .dashboard-page {
         padding: 16px;
     }
+
+    .dashboard-page h1 {
+        font-size: 24px;
+        margin-bottom: 16px;
+    }
+
+    .stat-card .ant-statistic-content {
+        font-size: 24px;
+    }
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dashboard-page > * {
+    animation: fadeIn 0.5s ease;
 }

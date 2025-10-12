@@ -1,10 +1,12 @@
 const asyncHandler = require('../Middleware/asyncHandler')
 const Restaurant = require('../Models/Restaurant')
+const User = require('../Models/User')
+const bcrypt = require('bcryptjs')
 
 // @desc    Get all restaurants
 // @route   GET /api/restaurants
 // @access  Public
-const getRestaurants = asyncHandler(async (req, res) => {
+const getRestaurants = asyncHandler(async(req, res) => {
     const { search, rating, isOpen } = req.query
 
     let query = {}
@@ -25,7 +27,7 @@ const getRestaurants = asyncHandler(async (req, res) => {
     }
 
     const restaurants = await Restaurant.find(query)
-        .populate('owner', 'name email')
+        .populate('owner', 'name email phone role')
         .sort('-rating')
 
     res.json({
@@ -38,7 +40,7 @@ const getRestaurants = asyncHandler(async (req, res) => {
 // @desc    Get restaurant by ID
 // @route   GET /api/restaurants/:id
 // @access  Public
-const getRestaurantById = asyncHandler(async (req, res) => {
+const getRestaurantById = asyncHandler(async(req, res) => {
     const restaurant = await Restaurant.findById(req.params.id)
         .populate('owner', 'name email phone')
 
@@ -56,7 +58,7 @@ const getRestaurantById = asyncHandler(async (req, res) => {
 // @desc    Get nearby restaurants (geospatial)
 // @route   GET /api/restaurants/nearby
 // @access  Public
-const getNearbyRestaurants = asyncHandler(async (req, res) => {
+const getNearbyRestaurants = asyncHandler(async(req, res) => {
     const { lng, lat, maxDistance = 10000 } = req.query // maxDistance in meters
 
     if (!lng || !lat) {
@@ -87,7 +89,7 @@ const getNearbyRestaurants = asyncHandler(async (req, res) => {
 // @desc    Create restaurant
 // @route   POST /api/restaurants
 // @access  Private (Admin)
-const createRestaurant = asyncHandler(async (req, res) => {
+const createRestaurant = asyncHandler(async(req, res) => {
     const restaurant = await Restaurant.create(req.body)
 
     res.status(201).json({
@@ -96,10 +98,110 @@ const createRestaurant = asyncHandler(async (req, res) => {
     })
 })
 
+// @desc    Create restaurant with account (Admin only)
+// @route   POST /api/restaurants/create-with-account
+// @access  Private (Admin)
+const createRestaurantWithAccount = asyncHandler(async(req, res) => {
+    const {
+        // User credentials
+        email,
+        password,
+        name: ownerName,
+        phone: ownerPhone,
+        // Restaurant info
+        restaurantName,
+        description,
+        image,
+        categories,
+        address,
+        lat,
+        lng,
+        restaurantPhone,
+        restaurantEmail,
+        openingHours,
+        deliveryTime,
+    } = req.body
+
+    // Validate required fields
+    if (!email || !password || !restaurantName || !address) {
+        res.status(400)
+        throw new Error('Vui lòng điền đầy đủ thông tin bắt buộc')
+    }
+
+    // Check if user already exists
+    const userExists = await User.findOne({ email })
+    if (userExists) {
+        res.status(400)
+        throw new Error('Email đã tồn tại trong hệ thống')
+    }
+
+    // Create User account with restaurant role
+    // ✅ KHÔNG hash password ở đây - để User model tự hash
+    const user = await User.create({
+        name: ownerName || restaurantName,
+        email,
+        password: password, // ✅ Giữ nguyên plain password
+        phone: ownerPhone || restaurantPhone,
+        role: 'restaurant',
+        isActive: true,
+    })
+
+    // Create Restaurant
+    const restaurantData = {
+        name: restaurantName,
+        description: description || '',
+        image: image || '',
+        owner: user._id,
+        categories: categories || [],
+        address,
+        phone: restaurantPhone || ownerPhone,
+        email: restaurantEmail || email,
+        openingHours: openingHours || '8:00 - 22:00',
+        deliveryTime: deliveryTime || '20-30',
+        isOpen: true,
+        isActive: true,
+    }
+
+    // Add location if lat/lng provided
+    if (lat && lng) {
+        restaurantData.location = {
+            type: 'Point',
+            coordinates: [parseFloat(lng), parseFloat(lat)],
+        }
+    } else {
+        // Default location (can be updated later)
+        restaurantData.location = {
+            type: 'Point',
+            coordinates: [106.6297, 10.8231], // Default: Ho Chi Minh City center
+        }
+    }
+
+    const restaurant = await Restaurant.create(restaurantData)
+
+    // ✅ Update User with restaurantId
+    await User.findByIdAndUpdate(user._id, { restaurantId: restaurant._id })
+
+    const populatedRestaurant = await Restaurant.findById(restaurant._id)
+        .populate('owner', 'name email phone')
+
+    res.status(201).json({
+        success: true,
+        data: {
+            restaurant: populatedRestaurant,
+            credentials: {
+                email: user.email,
+                password: password, // Return plain password for admin to send to restaurant
+                role: user.role,
+            },
+        },
+        message: 'Tạo nhà hàng và tài khoản thành công',
+    })
+})
+
 // @desc    Update restaurant
 // @route   PUT /api/restaurants/:id
 // @access  Private (Restaurant/Admin)
-const updateRestaurant = asyncHandler(async (req, res) => {
+const updateRestaurant = asyncHandler(async(req, res) => {
     let restaurant = await Restaurant.findById(req.params.id)
 
     if (!restaurant) {
@@ -117,8 +219,8 @@ const updateRestaurant = asyncHandler(async (req, res) => {
     }
 
     // Parse JSON fields from FormData
-    const updateData = { ...req.body }
-    
+    const updateData = {...req.body }
+
     // Parse categories if it's a string
     if (updateData.categories && typeof updateData.categories === 'string') {
         try {
@@ -147,7 +249,7 @@ const updateRestaurant = asyncHandler(async (req, res) => {
     // Validate promo object structure if it's an object
     if (updateData.promo && typeof updateData.promo === 'object') {
         const { text, discountPercent, validUntil, minOrder } = updateData.promo
-        // Ensure required fields
+            // Ensure required fields
         if (!text) {
             updateData.promo.text = 'Khuyến mãi đặc biệt'
         }
@@ -173,8 +275,7 @@ const updateRestaurant = asyncHandler(async (req, res) => {
 
     restaurant = await Restaurant.findByIdAndUpdate(
         req.params.id,
-        updateData,
-        {
+        updateData, {
             new: true,
             runValidators: true,
         }
@@ -189,7 +290,7 @@ const updateRestaurant = asyncHandler(async (req, res) => {
 // @desc    Delete restaurant
 // @route   DELETE /api/restaurants/:id
 // @access  Private (Admin)
-const deleteRestaurant = asyncHandler(async (req, res) => {
+const deleteRestaurant = asyncHandler(async(req, res) => {
     const restaurant = await Restaurant.findById(req.params.id)
 
     if (!restaurant) {
@@ -208,7 +309,7 @@ const deleteRestaurant = asyncHandler(async (req, res) => {
 // @desc    Get restaurant menu (products)
 // @route   GET /api/restaurants/:id/menu
 // @access  Public
-const getRestaurantMenu = asyncHandler(async (req, res) => {
+const getRestaurantMenu = asyncHandler(async(req, res) => {
     const Product = require('../Models/Product')
 
     const restaurant = await Restaurant.findById(req.params.id)
@@ -219,9 +320,9 @@ const getRestaurantMenu = asyncHandler(async (req, res) => {
     }
 
     const products = await Product.find({
-        restaurant: req.params.id,
-        isAvailable: true,
-    })
+            restaurant: req.params.id,
+            isAvailable: true,
+        })
         .populate('category', 'name')
         .sort('category')
 
@@ -237,7 +338,7 @@ const getRestaurantMenu = asyncHandler(async (req, res) => {
 // @desc    Get restaurant orders
 // @route   GET /api/restaurants/:id/orders
 // @access  Private (Restaurant/Admin)
-const getRestaurantOrders = asyncHandler(async (req, res) => {
+const getRestaurantOrders = asyncHandler(async(req, res) => {
     const Order = require('../Models/Order')
 
     const restaurant = await Restaurant.findById(req.params.id)
@@ -278,7 +379,7 @@ const getRestaurantOrders = asyncHandler(async (req, res) => {
 // @desc    Toggle restaurant open status
 // @route   PATCH /api/restaurants/:id/toggle-status
 // @access  Private (Restaurant/Admin)
-const toggleRestaurantStatus = asyncHandler(async (req, res) => {
+const toggleRestaurantStatus = asyncHandler(async(req, res) => {
     const restaurant = await Restaurant.findById(req.params.id)
 
     if (!restaurant) {
@@ -307,7 +408,7 @@ const toggleRestaurantStatus = asyncHandler(async (req, res) => {
 // @desc    Get restaurant statistics
 // @route   GET /api/restaurants/:id/stats
 // @access  Private (Restaurant/Admin)
-const getRestaurantStats = asyncHandler(async (req, res) => {
+const getRestaurantStats = asyncHandler(async(req, res) => {
     const Order = require('../Models/Order')
     const Product = require('../Models/Product')
 
@@ -353,8 +454,7 @@ const getRestaurantStats = asyncHandler(async (req, res) => {
     })
 
     // Orders by status
-    const ordersByStatus = await Order.aggregate([
-        {
+    const ordersByStatus = await Order.aggregate([{
             $match: {
                 restaurant: restaurant._id,
                 ...dateFilter,
@@ -374,8 +474,7 @@ const getRestaurantStats = asyncHandler(async (req, res) => {
     })
 
     // Total revenue
-    const revenueData = await Order.aggregate([
-        {
+    const revenueData = await Order.aggregate([{
             $match: {
                 restaurant: restaurant._id,
                 status: 'delivered',
@@ -401,14 +500,13 @@ const getRestaurantStats = asyncHandler(async (req, res) => {
         const start = new Date(startDate)
         const end = new Date(endDate)
         const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24))
-        
+
         const prevStart = new Date(start)
         prevStart.setDate(prevStart.getDate() - daysDiff)
         const prevEnd = new Date(start)
         prevEnd.setDate(prevEnd.getDate() - 1)
 
-        const prevRevenueData = await Order.aggregate([
-            {
+        const prevRevenueData = await Order.aggregate([{
                 $match: {
                     restaurant: restaurant._id,
                     status: 'delivered',
@@ -447,8 +545,7 @@ const getRestaurantStats = asyncHandler(async (req, res) => {
     })
 
     // Today's revenue
-    const todayRevenueData = await Order.aggregate([
-        {
+    const todayRevenueData = await Order.aggregate([{
             $match: {
                 restaurant: restaurant._id,
                 status: 'delivered',
@@ -487,6 +584,7 @@ module.exports = {
     getRestaurantById,
     getNearbyRestaurants,
     createRestaurant,
+    createRestaurantWithAccount,
     updateRestaurant,
     deleteRestaurant,
     getRestaurantMenu,

@@ -20,26 +20,26 @@ const app = express();
 
 // ---------------------- MIDDLEWARES ---------------------- //
 app.use(helmet({
-  // Cho phép tài nguyên (ảnh) được nhúng từ origin khác
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  // Tắt COEP để tránh chặn tài nguyên không có COEP headers
-  crossOriginEmbedderPolicy: false,
+    // Cho phép tài nguyên (ảnh) được nhúng từ origin khác
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    // Tắt COEP để tránh chặn tài nguyên không có COEP headers
+    crossOriginEmbedderPolicy: false,
 }));
 
 app.use(
-  cors({
-    origin: [
-      'http://localhost:5173', // Client App
-      'http://localhost:5174', // Restaurant App
-      'http://localhost:5175', // Admin App
-      'http://localhost:5176', // Drone App
-      process.env.CLIENT_URL || 'http://localhost:3000',
-      process.env.RESTAURANT_URL || 'http://localhost:3001',
-      process.env.ADMIN_URL || 'http://localhost:3002',
-      process.env.DRONE_URL || 'http://localhost:3003',
-    ],
-    credentials: true,
-  })
+    cors({
+        origin: [
+            'http://localhost:5173', // Client App
+            'http://localhost:5174', // Restaurant App
+            'http://localhost:5175', // Admin App
+            'http://localhost:5176', // Drone App
+            process.env.CLIENT_URL || 'http://localhost:3000',
+            process.env.RESTAURANT_URL || 'http://localhost:3001',
+            process.env.ADMIN_URL || 'http://localhost:3002',
+            process.env.DRONE_URL || 'http://localhost:3003',
+        ],
+        credentials: true,
+    })
 );
 app.use(compression());
 app.use(morgan('dev'));
@@ -56,11 +56,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ---------------------- ROUTES ---------------------- //
 app.get('/', (req, res) => {
-  res.json({
-    message: 'FoodFast Drone Delivery API',
-    version: '1.0.0',
-    status: 'running',
-  });
+    res.json({
+        message: 'FoodFast Drone Delivery API',
+        version: '1.0.0',
+        status: 'running',
+    });
 });
 
 app.use('/api/auth', require('./API/Routers/authRouter'));
@@ -81,60 +81,67 @@ app.use(errorHandler);
 
 // 404 Handler
 app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+    res.status(404).json({ message: 'Route not found' });
 });
 
 // ---------------------- SERVER START ---------------------- //
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+    logger.info(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
 
 // ---------------------- SOCKET.IO SETUP ---------------------- //
+<<
+<< << < HEAD
 const io = require('socket.io')(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST'],
+    },
 });
 
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+    console.log('Client connected:', socket.id);
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
-  });
-io.of('/').adapter.on('join-room', (room, id) => {
-  console.log(`[JOIN ROOM] socket=${id} room=${room}`)
-})
-  // Join order room
-  socket.on('join-order', (orderId) => {
-    socket.join(`order-${orderId}`);
-    console.log(`Socket ${socket.id} joined order-${orderId}`);
-  });
+    socket.on('disconnect', () => {
+        console.log('Client disconnected:', socket.id);
+    });
+    io.of('/').adapter.on('join-room', (room, id) => {
+            console.log(`[JOIN ROOM] socket=${id} room=${room}`)
+        })
+        // Join order room
+    socket.on('join-order', (orderId) => {
+        socket.join(`order-${orderId}`);
+        console.log(`Socket ${socket.id} joined order-${orderId}`);
+    });
 
-  // Join restaurant room (for restaurant-wide notifications)
-  socket.on('join-restaurant', (restaurantId) => {
-    socket.join(`restaurant-${restaurantId}`);
-    console.log(`Socket ${socket.id} joined restaurant-${restaurantId}`);
-  });
+    // Join restaurant room (for restaurant-wide notifications)
+    socket.on('join-restaurant', (restaurantId) => {
+        socket.join(`restaurant-${restaurantId}`);
+        console.log(`Socket ${socket.id} joined restaurant-${restaurantId}`);
+    });
 
-  // Join drone room
-  socket.on('join-drone', (droneId) => {
-    socket.join(`drone-${droneId}`);
-    console.log(`Socket ${socket.id} joined drone-${droneId}`);
-  });
-});
+    // Join drone room
+    socket.on('join-drone', (droneId) => {
+        socket.join(`drone-${droneId}`);
+        console.log(`Socket ${socket.id} joined drone-${droneId}`);
+    });
+}); ===
+=== =
+const socketService = require('./services/socketService');
+const io = socketService.initialize(server); >>>
+>>> > origin / DUCTOAN
 
 // Make io accessible to routes
 app.set('io', io);
+app.set('socketService', socketService);
 
 // ---------------------- UNHANDLED REJECTIONS ---------------------- //
 process.on('unhandledRejection', (err) => {
-  logger.error('Unhandled Rejection:', err);
-  server.close(() => process.exit(1));
+    logger.error('Unhandled Rejection:', err);
+    server.close(() => process.exit(1));
 });
 
-module.exports = { app, io };
+module.exports = { app, io, socketService };

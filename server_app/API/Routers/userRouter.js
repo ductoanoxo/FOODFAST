@@ -7,9 +7,11 @@ const {
     deleteUser,
     getUserStats,
     getUserOrders,
+    checkEmailExists,
 } = require('../Controllers/userController')
 const { protect, authorize } = require('../Middleware/authMiddleware')
 
+router.get('/check-email', checkEmailExists)
 router.get('/stats', protect, authorize('admin'), getUserStats)
 router.get('/', protect, authorize('admin'), getUsers)
 router.get('/:id', protect, authorize('admin'), getUserById)

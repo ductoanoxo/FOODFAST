@@ -34,7 +34,8 @@ const restaurantSchema = new mongoose.Schema({
         },
         coordinates: {
             type: [Number],
-            required: true,
+            required: false,
+            default: [106.6297, 10.8231], // Default: Ho Chi Minh City center
         },
     },
     phone: {

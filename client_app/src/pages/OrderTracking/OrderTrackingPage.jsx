@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Card, Steps, Timeline, Typography, Tag, Spin, Row, Col, Divider } from 'antd'
+import { Card, Steps, Timeline, Typography, Tag, Spin, Row, Col, Divider, Button, Modal, message } from 'antd'
 import { 
   ShoppingCartOutlined, 
   CheckCircleOutlined, 
   RocketOutlined,
-  HomeOutlined 
+  HomeOutlined,
+  CheckOutlined
 } from '@ant-design/icons'
 import { orderAPI } from '../../api/orderAPI'
+import DroneMap from './DroneMap'
 import './OrderTrackingPage.css'
 
 const { Title, Text } = Typography
@@ -17,6 +19,8 @@ const OrderTrackingPage = () => {
   const { orderId } = useParams()
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false)
+  const [confirming, setConfirming] = useState(false)
 
   useEffect(() => {
     fetchOrderTracking()
@@ -33,6 +37,23 @@ const OrderTrackingPage = () => {
       console.error('Error fetching order:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleConfirmDelivery = async () => {
+    try {
+      setConfirming(true)
+      const response = await orderAPI.confirmDelivery(orderId)
+      message.success('Đã xác nhận nhận hàng thành công!')
+      setOrder(response.data.data)
+      setConfirmModalVisible(false)
+      // Refresh order data
+      fetchOrderTracking()
+    } catch (error) {
+      console.error('Error confirming delivery:', error)
+      message.error(error.response?.data?.message || 'Không thể xác nhận nhận hàng')
+    } finally {
+      setConfirming(false)
     }
   }
 
@@ -89,62 +110,99 @@ const OrderTrackingPage = () => {
 
               <Divider />
 
-              <Timeline mode="left" style={{ marginTop: 32 }}>
-                <Timeline.Item color="green">
-                  <Text strong>Đơn hàng đã được đặt</Text>
-                  <br />
-                  <Text type="secondary">{new Date(order.createdAt).toLocaleString('vi-VN')}</Text>
-                </Timeline.Item>
-                
-                {order.confirmedAt && (
-                  <Timeline.Item color="blue">
-                    <Text strong>Nhà hàng đã xác nhận</Text>
-                    <br />
-                    <Text type="secondary">{new Date(order.confirmedAt).toLocaleString('vi-VN')}</Text>
-                  </Timeline.Item>
-                )}
+              <Timeline 
+                mode="left" 
+                style={{ marginTop: 32 }}
+                items={[
+                  {
+                    color: 'green',
+                    children: (
+                      <>
+                        <Text strong>Đơn hàng đã được đặt</Text>
+                        <br />
+                        <Text type="secondary">{new Date(order.createdAt).toLocaleString('vi-VN')}</Text>
+                      </>
+                    )
+                  },
+                  ...(order.confirmedAt ? [{
+                    color: 'blue',
+                    children: (
+                      <>
+                        <Text strong>Nhà hàng đã xác nhận</Text>
+                        <br />
+                        <Text type="secondary">{new Date(order.confirmedAt).toLocaleString('vi-VN')}</Text>
+                      </>
+                    )
+                  }] : []),
+                  ...(order.preparingAt ? [{
+                    color: 'orange',
+                    children: (
+                      <>
+                        <Text strong>Đang chuẩn bị món ăn</Text>
+                        <br />
+                        <Text type="secondary">{new Date(order.preparingAt).toLocaleString('vi-VN')}</Text>
+                      </>
+                    )
+                  }] : []),
+                  ...(order.deliveringAt ? [{
+                    color: 'purple',
+                    children: (
+                      <>
+                        <Text strong>Drone đang giao hàng 🚁</Text>
+                        <br />
+                        <Text type="secondary">{new Date(order.deliveringAt).toLocaleString('vi-VN')}</Text>
+                      </>
+                    )
+                  }] : []),
+                  ...(order.deliveredAt ? [{
+                    color: 'green',
+                    children: (
+                      <>
+                        <Text strong>Đã giao hàng thành công</Text>
+                        <br />
+                        <Text type="secondary">{new Date(order.deliveredAt).toLocaleString('vi-VN')}</Text>
+                      </>
+                    )
+                  }] : []),
+                  ...(order.status === 'cancelled' ? [{
+                    color: 'red',
+                    children: (
+                      <>
+                        <Text strong>Đơn hàng đã bị hủy</Text>
+                        <br />
+                        <Text type="secondary">{order.cancelReason}</Text>
+                      </>
+                    )
+                  }] : []),
+                ]}
+              />
 
-                {order.preparingAt && (
-                  <Timeline.Item color="orange">
-                    <Text strong>Đang chuẩn bị món ăn</Text>
-                    <br />
-                    <Text type="secondary">{new Date(order.preparingAt).toLocaleString('vi-VN')}</Text>
-                  </Timeline.Item>
-                )}
-
-                {order.deliveringAt && (
-                  <Timeline.Item color="purple">
-                    <Text strong>Drone đang giao hàng 🚁</Text>
-                    <br />
-                    <Text type="secondary">{new Date(order.deliveringAt).toLocaleString('vi-VN')}</Text>
-                  </Timeline.Item>
-                )}
-
-                {order.deliveredAt && (
-                  <Timeline.Item color="green">
-                    <Text strong>Đã giao hàng thành công</Text>
-                    <br />
-                    <Text type="secondary">{new Date(order.deliveredAt).toLocaleString('vi-VN')}</Text>
-                  </Timeline.Item>
-                )}
-
-                {order.status === 'cancelled' && (
-                  <Timeline.Item color="red">
-                    <Text strong>Đơn hàng đã bị hủy</Text>
-                    <br />
-                    <Text type="secondary">{order.cancelReason}</Text>
-                  </Timeline.Item>
-                )}
-              </Timeline>
+              {/* Confirm Delivery Button */}
+              {order.status === 'delivering' && (
+                <div style={{ marginTop: 24, textAlign: 'center' }}>
+                  <Button 
+                    type="primary" 
+                    size="large" 
+                    icon={<CheckOutlined />}
+                    onClick={() => setConfirmModalVisible(true)}
+                    style={{ width: '100%', height: '50px', fontSize: '16px' }}
+                  >
+                    ✅ Tôi đã nhận được hàng
+                  </Button>
+                </div>
+              )}
             </Card>
 
-            {/* Map placeholder */}
-            <Card className="tracking-card" title="Vị trí Drone">
-              <div className="map-placeholder">
-                <RocketOutlined style={{ fontSize: 64, color: '#ccc' }} />
-                <Text type="secondary">Bản đồ theo dõi drone sẽ hiển thị ở đây</Text>
-              </div>
-            </Card>
+            {/* Drone Tracking Map */}
+            {order.drone && (order.status === 'delivering' || order.status === 'delivered') && (
+              <Card className="tracking-card" title={
+                <span>
+                  <RocketOutlined /> Theo dõi Drone real-time
+                </span>
+              }>
+                <DroneMap order={order} />
+              </Card>
+            )}
           </Col>
 
           <Col xs={24} lg={8}>
@@ -207,6 +265,32 @@ const OrderTrackingPage = () => {
             </Card>
           </Col>
         </Row>
+
+        {/* Confirmation Modal */}
+        <Modal
+          title="Xác nhận đã nhận hàng"
+          open={confirmModalVisible}
+          onOk={handleConfirmDelivery}
+          onCancel={() => setConfirmModalVisible(false)}
+          okText="Xác nhận"
+          cancelText="Hủy"
+          confirmLoading={confirming}
+          okButtonProps={{ 
+            type: 'primary',
+            danger: false,
+            size: 'large'
+          }}
+        >
+          <div style={{ padding: '20px 0' }}>
+            <CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a', display: 'block', textAlign: 'center', marginBottom: 16 }} />
+            <p style={{ fontSize: 16, textAlign: 'center' }}>
+              Bạn có chắc chắn đã nhận được hàng không?
+            </p>
+            <p style={{ textAlign: 'center', color: '#888' }}>
+              Sau khi xác nhận, đơn hàng sẽ được đánh dấu là đã hoàn thành và drone sẽ sẵn sàng cho chuyến giao tiếp theo.
+            </p>
+          </div>
+        </Modal>
       </div>
     </div>
   )
