@@ -4,7 +4,7 @@ const User = require('../Models/User')
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Private (Admin)
-const getUsers = asyncHandler(async (req, res) => {
+const getUsers = asyncHandler(async(req, res) => {
     const { role, search } = req.query
 
     let query = {}
@@ -32,7 +32,7 @@ const getUsers = asyncHandler(async (req, res) => {
 // @desc    Get user by ID
 // @route   GET /api/users/:id
 // @access  Private (Admin)
-const getUserById = asyncHandler(async (req, res) => {
+const getUserById = asyncHandler(async(req, res) => {
     const user = await User.findById(req.params.id).select('-password')
 
     if (!user) {
@@ -49,7 +49,7 @@ const getUserById = asyncHandler(async (req, res) => {
 // @desc    Update user
 // @route   PUT /api/users/:id
 // @access  Private (Admin)
-const updateUser = asyncHandler(async (req, res) => {
+const updateUser = asyncHandler(async(req, res) => {
     let user = await User.findById(req.params.id)
 
     if (!user) {
@@ -76,7 +76,7 @@ const updateUser = asyncHandler(async (req, res) => {
 // @desc    Delete user
 // @route   DELETE /api/users/:id
 // @access  Private (Admin)
-const deleteUser = asyncHandler(async (req, res) => {
+const deleteUser = asyncHandler(async(req, res) => {
     const user = await User.findById(req.params.id)
 
     if (!user) {
@@ -95,7 +95,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 // @desc    Get user statistics
 // @route   GET /api/users/stats
 // @access  Private (Admin)
-const getUserStats = asyncHandler(async (req, res) => {
+const getUserStats = asyncHandler(async(req, res) => {
     const totalUsers = await User.countDocuments({ role: 'user' })
     const totalRestaurants = await User.countDocuments({ role: 'restaurant' })
     const totalAdmins = await User.countDocuments({ role: 'admin' })
@@ -124,7 +124,7 @@ const getUserStats = asyncHandler(async (req, res) => {
 // @desc    Get user orders
 // @route   GET /api/users/:id/orders
 // @access  Private (Admin or User owns)
-const getUserOrders = asyncHandler(async (req, res) => {
+const getUserOrders = asyncHandler(async(req, res) => {
     const Order = require('../Models/Order')
 
     const user = await User.findById(req.params.id)
@@ -155,6 +155,25 @@ const getUserOrders = asyncHandler(async (req, res) => {
     })
 })
 
+// @desc    Check if email exists
+// @route   GET /api/users/check-email
+// @access  Public
+const checkEmailExists = asyncHandler(async(req, res) => {
+    const { email } = req.query
+
+    if (!email) {
+        res.status(400)
+        throw new Error('Email is required')
+    }
+
+    const user = await User.findOne({ email })
+
+    res.json({
+        success: true,
+        exists: !!user,
+    })
+})
+
 module.exports = {
     getUsers,
     getUserById,
@@ -162,4 +181,5 @@ module.exports = {
     deleteUser,
     getUserStats,
     getUserOrders,
+    checkEmailExists,
 }

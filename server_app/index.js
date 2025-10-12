@@ -71,6 +71,7 @@ app.use('/api/payment', require('./API/Routers/paymentRouter'));
 app.use('/api/reviews', require('./API/Routers/reviewRouter'));
 app.use('/api/upload', require('./API/Routers/uploadRouter'));
 app.use('/api/admin', require('./API/Routers/adminRouter'));
+app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
 
 // ---------------------- ERROR HANDLER ---------------------- //
 app.use(errorHandler);
