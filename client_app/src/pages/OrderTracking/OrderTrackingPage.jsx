@@ -9,6 +9,7 @@ import {
   CheckOutlined
 } from '@ant-design/icons'
 import { orderAPI } from '../../api/orderAPI'
+import DroneMap from './DroneMap'
 import './OrderTrackingPage.css'
 
 const { Title, Text } = Typography
@@ -109,53 +110,72 @@ const OrderTrackingPage = () => {
 
               <Divider />
 
-              <Timeline mode="left" style={{ marginTop: 32 }}>
-                <Timeline.Item color="green">
-                  <Text strong>Đơn hàng đã được đặt</Text>
-                  <br />
-                  <Text type="secondary">{new Date(order.createdAt).toLocaleString('vi-VN')}</Text>
-                </Timeline.Item>
-                
-                {order.confirmedAt && (
-                  <Timeline.Item color="blue">
-                    <Text strong>Nhà hàng đã xác nhận</Text>
-                    <br />
-                    <Text type="secondary">{new Date(order.confirmedAt).toLocaleString('vi-VN')}</Text>
-                  </Timeline.Item>
-                )}
-
-                {order.preparingAt && (
-                  <Timeline.Item color="orange">
-                    <Text strong>Đang chuẩn bị món ăn</Text>
-                    <br />
-                    <Text type="secondary">{new Date(order.preparingAt).toLocaleString('vi-VN')}</Text>
-                  </Timeline.Item>
-                )}
-
-                {order.deliveringAt && (
-                  <Timeline.Item color="purple">
-                    <Text strong>Drone đang giao hàng 🚁</Text>
-                    <br />
-                    <Text type="secondary">{new Date(order.deliveringAt).toLocaleString('vi-VN')}</Text>
-                  </Timeline.Item>
-                )}
-
-                {order.deliveredAt && (
-                  <Timeline.Item color="green">
-                    <Text strong>Đã giao hàng thành công</Text>
-                    <br />
-                    <Text type="secondary">{new Date(order.deliveredAt).toLocaleString('vi-VN')}</Text>
-                  </Timeline.Item>
-                )}
-
-                {order.status === 'cancelled' && (
-                  <Timeline.Item color="red">
-                    <Text strong>Đơn hàng đã bị hủy</Text>
-                    <br />
-                    <Text type="secondary">{order.cancelReason}</Text>
-                  </Timeline.Item>
-                )}
-              </Timeline>
+              <Timeline 
+                mode="left" 
+                style={{ marginTop: 32 }}
+                items={[
+                  {
+                    color: 'green',
+                    children: (
+                      <>
+                        <Text strong>Đơn hàng đã được đặt</Text>
+                        <br />
+                        <Text type="secondary">{new Date(order.createdAt).toLocaleString('vi-VN')}</Text>
+                      </>
+                    )
+                  },
+                  ...(order.confirmedAt ? [{
+                    color: 'blue',
+                    children: (
+                      <>
+                        <Text strong>Nhà hàng đã xác nhận</Text>
+                        <br />
+                        <Text type="secondary">{new Date(order.confirmedAt).toLocaleString('vi-VN')}</Text>
+                      </>
+                    )
+                  }] : []),
+                  ...(order.preparingAt ? [{
+                    color: 'orange',
+                    children: (
+                      <>
+                        <Text strong>Đang chuẩn bị món ăn</Text>
+                        <br />
+                        <Text type="secondary">{new Date(order.preparingAt).toLocaleString('vi-VN')}</Text>
+                      </>
+                    )
+                  }] : []),
+                  ...(order.deliveringAt ? [{
+                    color: 'purple',
+                    children: (
+                      <>
+                        <Text strong>Drone đang giao hàng 🚁</Text>
+                        <br />
+                        <Text type="secondary">{new Date(order.deliveringAt).toLocaleString('vi-VN')}</Text>
+                      </>
+                    )
+                  }] : []),
+                  ...(order.deliveredAt ? [{
+                    color: 'green',
+                    children: (
+                      <>
+                        <Text strong>Đã giao hàng thành công</Text>
+                        <br />
+                        <Text type="secondary">{new Date(order.deliveredAt).toLocaleString('vi-VN')}</Text>
+                      </>
+                    )
+                  }] : []),
+                  ...(order.status === 'cancelled' ? [{
+                    color: 'red',
+                    children: (
+                      <>
+                        <Text strong>Đơn hàng đã bị hủy</Text>
+                        <br />
+                        <Text type="secondary">{order.cancelReason}</Text>
+                      </>
+                    )
+                  }] : []),
+                ]}
+              />
 
               {/* Confirm Delivery Button */}
               {order.status === 'delivering' && (
@@ -173,13 +193,16 @@ const OrderTrackingPage = () => {
               )}
             </Card>
 
-            {/* Map placeholder */}
-            <Card className="tracking-card" title="Vị trí Drone">
-              <div className="map-placeholder">
-                <RocketOutlined style={{ fontSize: 64, color: '#ccc' }} />
-                <Text type="secondary">Bản đồ theo dõi drone sẽ hiển thị ở đây</Text>
-              </div>
-            </Card>
+            {/* Drone Tracking Map */}
+            {order.drone && (order.status === 'delivering' || order.status === 'delivered') && (
+              <Card className="tracking-card" title={
+                <span>
+                  <RocketOutlined /> Theo dõi Drone real-time
+                </span>
+              }>
+                <DroneMap order={order} />
+              </Card>
+            )}
           </Col>
 
           <Col xs={24} lg={8}>
