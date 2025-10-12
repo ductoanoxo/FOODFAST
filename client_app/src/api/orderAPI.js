@@ -8,4 +8,5 @@ export const orderAPI = {
     trackOrder: (id) => axiosInstance.get(`/orders/${id}/track`),
     getOrderHistory: (params) => axiosInstance.get('/orders/history', { params }),
     rateOrder: (id, rating) => axiosInstance.post(`/orders/${id}/rate`, rating),
+    confirmDelivery: (id) => axiosInstance.post(`/orders/${id}/confirm-delivery`),
 }

@@ -53,6 +53,15 @@ const CheckoutPage = () => {
   const onFinish = async (values) => {
     try {
       setLoading(true)
+      
+      // Check if user is logged in
+      const token = localStorage.getItem('token')
+      if (!token || !user) {
+        message.error('Bạn cần đăng nhập để đặt hàng!')
+        navigate('/login', { state: { from: '/checkout' } })
+        return
+      }
+      
       const orderData = {
         items: items.map(item => ({
           product: item._id,
@@ -70,7 +79,9 @@ const CheckoutPage = () => {
         deliveryFee,
       }
 
+      console.log('Creating order with data:', orderData)
       const response = await orderAPI.createOrder(orderData)
+      console.log('Order created successfully:', response)
       const orderId = response.data._id
 
       // Xử lý thanh toán theo phương thức

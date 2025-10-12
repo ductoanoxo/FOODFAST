@@ -36,12 +36,12 @@ const createOrder = asyncHandler(async(req, res) => {
             res.status(404)
             throw new Error(`Product not found: ${item.product}`)
         }
-        
+
         // Set restaurant from first product
         if (!restaurantId) {
             restaurantId = product.restaurant._id
         }
-        
+
         subtotal += product.price * item.quantity
     }
 
@@ -86,7 +86,7 @@ const createOrder = asyncHandler(async(req, res) => {
 // @access  Private
 const getOrders = asyncHandler(async(req, res) => {
     let query = {}
-    
+
     // If restaurant role, get orders for their restaurant
     if (req.user.role === 'restaurant') {
         if (!req.user.restaurantId) {
@@ -256,6 +256,89 @@ const getOrderHistory = asyncHandler(async(req, res) => {
     })
 })
 
+// @desc    Confirm delivery (customer received order)
+// @route   POST /api/orders/:id/confirm-delivery
+// @access  Private (Customer only)
+const confirmDelivery = asyncHandler(async(req, res) => {
+    const order = await Order.findById(req.params.id)
+        .populate('drone', 'name serialNumber');
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Không tìm thấy đơn hàng');
+    }
+
+    // Check if user owns this order
+    if (order.user.toString() !== req.user._id.toString()) {
+        res.status(403);
+        throw new Error('Bạn không có quyền xác nhận đơn hàng này');
+    }
+
+    // Check if order is in delivering status
+    if (order.status !== 'delivering') {
+        res.status(400);
+        throw new Error('Đơn hàng chưa ở trạng thái đang giao');
+    }
+
+    // Update order status to delivered
+    order.status = 'delivered';
+    order.deliveredAt = new Date();
+    await order.save();
+
+    // Update drone status to available and clear current order
+    if (order.drone) {
+        const Drone = require('../Models/Drone');
+        const drone = await Drone.findById(order.drone._id);
+
+        if (drone) {
+            drone.status = 'available';
+            drone.currentOrder = null;
+            drone.totalFlights = (drone.totalFlights || 0) + 1;
+            await drone.save();
+
+            // Emit socket event to notify drone is available
+            const socketService = req.app.get('socketService');
+            if (socketService) {
+                socketService.io.emit('drone:available', {
+                    droneId: drone._id,
+                    droneName: drone.name,
+                });
+
+                // Notify admins
+                socketService.notifyAdmins('order:delivered', {
+                    orderId: order._id,
+                    orderNumber: order.orderNumber,
+                    droneId: drone._id,
+                    droneName: drone.name,
+                    timestamp: new Date(),
+                });
+
+                // Notify restaurant about completed order
+                if (order.restaurant) {
+                    socketService.io.emit('restaurant:order:completed', {
+                        restaurantId: order.restaurant,
+                        orderId: order._id,
+                        orderNumber: order.orderNumber,
+                        totalAmount: order.totalAmount,
+                        deliveredAt: order.deliveredAt,
+                        timestamp: new Date(),
+                    });
+                }
+            }
+        }
+    }
+
+    // Populate order details for response
+    await order.populate('restaurant', 'name address phone');
+    await order.populate('items.product', 'name image price');
+
+    res.json({
+        success: true,
+        message: 'Xác nhận giao hàng thành công',
+        data: order,
+    });
+});
+
 module.exports = {
     createOrder,
     getOrders,
@@ -264,4 +347,5 @@ module.exports = {
     trackOrder,
     cancelOrder,
     getOrderHistory,
+    confirmDelivery,
 }

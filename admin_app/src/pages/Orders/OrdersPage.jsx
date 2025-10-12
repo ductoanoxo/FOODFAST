@@ -11,7 +11,7 @@ import {
     Select,
 } from 'antd'
 import { EyeOutlined } from '@ant-design/icons'
-import axios from 'axios'
+import { getAllOrders } from '../../api/orderAPI'
 import './OrdersPage.css'
 
 const { Option } = Select
@@ -30,23 +30,12 @@ const OrdersPage = () => {
     const fetchOrders = async () => {
         try {
             setLoading(true)
-            const token = localStorage.getItem('token')
-
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            }
-
-            let url = 'http://localhost:5000/api/orders'
-            if (statusFilter !== 'all') {
-                url += `?status=${statusFilter}`
-            }
-
-            const { data } = await axios.get(url, config)
-            setOrders(data.data)
+            const filters = statusFilter !== 'all' ? { status: statusFilter } : {}
+            const response = await getAllOrders(filters)
+            setOrders(response.data || response)
         } catch (error) {
-            message.error('Không thể tải danh sách đơn hàng')
+            console.error('Error fetching orders:', error)
+            message.error(error.response?.data?.message || 'Không thể tải danh sách đơn hàng')
         } finally {
             setLoading(false)
         }
@@ -101,8 +90,8 @@ const OrdersPage = () => {
         },
         {
             title: 'Tổng tiền',
-            dataIndex: 'totalPrice',
-            key: 'totalPrice',
+            dataIndex: 'totalAmount',
+            key: 'totalAmount',
             render: (price) => `${price?.toLocaleString()}đ`,
         },
         {
@@ -207,7 +196,7 @@ const OrdersPage = () => {
                                 {selectedOrder.restaurant?.name}
                             </Descriptions.Item>
                             <Descriptions.Item label="Địa chỉ giao hàng" span={2}>
-                                {selectedOrder.deliveryAddress?.address}
+                                {selectedOrder.deliveryInfo?.address}
                             </Descriptions.Item>
                             <Descriptions.Item label="Ghi chú" span={2}>
                                 {selectedOrder.note || 'Không có'}
@@ -220,8 +209,8 @@ const OrdersPage = () => {
                                     : 'Momo'}
                             </Descriptions.Item>
                             <Descriptions.Item label="Trạng thái thanh toán">
-                                <Tag color={selectedOrder.isPaid ? 'green' : 'orange'}>
-                                    {selectedOrder.isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                                <Tag color={selectedOrder.paymentStatus === 'paid' ? 'green' : 'orange'}>
+                                    {selectedOrder.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
                                 </Tag>
                             </Descriptions.Item>
                             <Descriptions.Item label="Trạng thái đơn hàng">
@@ -259,18 +248,18 @@ const OrdersPage = () => {
                                         title: 'Thành tiền',
                                         key: 'total',
                                         render: (_, record) =>
-                                            `${(record.quantity * record.price).toLocaleString()}đ`,
+                                            `${((record.quantity || 0) * (record.price || 0)).toLocaleString()}đ`,
                                     },
                                 ]}
                                 pagination={false}
-                                rowKey={(record, index) => index}
+                                rowKey={(record, index) => String(index)}
                             />
 
                             <div style={{ marginTop: 16, textAlign: 'right' }}>
                                 <Space direction="vertical">
                                     <div>
                                         <strong>Tổng tiền hàng:</strong>{' '}
-                                        {selectedOrder.itemsPrice?.toLocaleString()}đ
+                                        {selectedOrder.subtotal?.toLocaleString()}đ
                                     </div>
                                     <div>
                                         <strong>Phí giao hàng:</strong>{' '}
@@ -278,7 +267,7 @@ const OrdersPage = () => {
                                     </div>
                                     <div style={{ fontSize: 18, color: '#ff4d4f' }}>
                                         <strong>Tổng cộng:</strong>{' '}
-                                        {selectedOrder.totalPrice?.toLocaleString()}đ
+                                        {selectedOrder.totalAmount?.toLocaleString()}đ
                                     </div>
                                 </Space>
                             </div>

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Card, Steps, Timeline, Typography, Tag, Spin, Row, Col, Divider } from 'antd'
+import { Card, Steps, Timeline, Typography, Tag, Spin, Row, Col, Divider, Button, Modal, message } from 'antd'
 import { 
   ShoppingCartOutlined, 
   CheckCircleOutlined, 
   RocketOutlined,
-  HomeOutlined 
+  HomeOutlined,
+  CheckOutlined
 } from '@ant-design/icons'
 import { orderAPI } from '../../api/orderAPI'
 import './OrderTrackingPage.css'
@@ -17,6 +18,8 @@ const OrderTrackingPage = () => {
   const { orderId } = useParams()
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false)
+  const [confirming, setConfirming] = useState(false)
 
   useEffect(() => {
     fetchOrderTracking()
@@ -33,6 +36,23 @@ const OrderTrackingPage = () => {
       console.error('Error fetching order:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleConfirmDelivery = async () => {
+    try {
+      setConfirming(true)
+      const response = await orderAPI.confirmDelivery(orderId)
+      message.success('Đã xác nhận nhận hàng thành công!')
+      setOrder(response.data.data)
+      setConfirmModalVisible(false)
+      // Refresh order data
+      fetchOrderTracking()
+    } catch (error) {
+      console.error('Error confirming delivery:', error)
+      message.error(error.response?.data?.message || 'Không thể xác nhận nhận hàng')
+    } finally {
+      setConfirming(false)
     }
   }
 
@@ -136,6 +156,21 @@ const OrderTrackingPage = () => {
                   </Timeline.Item>
                 )}
               </Timeline>
+
+              {/* Confirm Delivery Button */}
+              {order.status === 'delivering' && (
+                <div style={{ marginTop: 24, textAlign: 'center' }}>
+                  <Button 
+                    type="primary" 
+                    size="large" 
+                    icon={<CheckOutlined />}
+                    onClick={() => setConfirmModalVisible(true)}
+                    style={{ width: '100%', height: '50px', fontSize: '16px' }}
+                  >
+                    ✅ Tôi đã nhận được hàng
+                  </Button>
+                </div>
+              )}
             </Card>
 
             {/* Map placeholder */}
@@ -207,6 +242,32 @@ const OrderTrackingPage = () => {
             </Card>
           </Col>
         </Row>
+
+        {/* Confirmation Modal */}
+        <Modal
+          title="Xác nhận đã nhận hàng"
+          open={confirmModalVisible}
+          onOk={handleConfirmDelivery}
+          onCancel={() => setConfirmModalVisible(false)}
+          okText="Xác nhận"
+          cancelText="Hủy"
+          confirmLoading={confirming}
+          okButtonProps={{ 
+            type: 'primary',
+            danger: false,
+            size: 'large'
+          }}
+        >
+          <div style={{ padding: '20px 0' }}>
+            <CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a', display: 'block', textAlign: 'center', marginBottom: 16 }} />
+            <p style={{ fontSize: 16, textAlign: 'center' }}>
+              Bạn có chắc chắn đã nhận được hàng không?
+            </p>
+            <p style={{ textAlign: 'center', color: '#888' }}>
+              Sau khi xác nhận, đơn hàng sẽ được đánh dấu là đã hoàn thành và drone sẽ sẵn sàng cho chuyến giao tiếp theo.
+            </p>
+          </div>
+        </Modal>
       </div>
     </div>
   )
