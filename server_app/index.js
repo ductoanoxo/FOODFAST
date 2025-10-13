@@ -73,6 +73,8 @@ app.use('/api/drones', require('./API/Routers/droneRouter'));
 app.use('/api/payment', require('./API/Routers/paymentRouter'));
 app.use('/api/reviews', require('./API/Routers/reviewRouter'));
 app.use('/api/upload', require('./API/Routers/uploadRouter'));
+app.use('/api/admin', require('./API/Routers/adminRouter'));
+app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
 app.use('/api/vouchers', require('./API/Routers/voucherRouter'));
 app.use('/api/promotions', require('./API/Routers/promotionRouter'));
 
@@ -93,46 +95,8 @@ const server = app.listen(PORT, () => {
 });
 
 // ---------------------- SOCKET.IO SETUP ---------------------- //
-<<
-<< << < HEAD
-const io = require('socket.io')(server, {
-    cors: {
-        origin: '*',
-        methods: ['GET', 'POST'],
-    },
-});
-
-io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
-
-    socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-    });
-    io.of('/').adapter.on('join-room', (room, id) => {
-            console.log(`[JOIN ROOM] socket=${id} room=${room}`)
-        })
-        // Join order room
-    socket.on('join-order', (orderId) => {
-        socket.join(`order-${orderId}`);
-        console.log(`Socket ${socket.id} joined order-${orderId}`);
-    });
-
-    // Join restaurant room (for restaurant-wide notifications)
-    socket.on('join-restaurant', (restaurantId) => {
-        socket.join(`restaurant-${restaurantId}`);
-        console.log(`Socket ${socket.id} joined restaurant-${restaurantId}`);
-    });
-
-    // Join drone room
-    socket.on('join-drone', (droneId) => {
-        socket.join(`drone-${droneId}`);
-        console.log(`Socket ${socket.id} joined drone-${droneId}`);
-    });
-}); ===
-=== =
 const socketService = require('./services/socketService');
-const io = socketService.initialize(server); >>>
->>> > origin / DUCTOAN
+const io = socketService.initialize(server);
 
 // Make io accessible to routes
 app.set('io', io);

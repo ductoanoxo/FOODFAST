@@ -764,3 +764,6 @@
 {"level":"error","message":"User role user is not authorized to access this route","stack":"Error: User role user is not authorized to access this route\n    at C:\\Users\\ADMIN\\Desktop\\FOODFAST\\server_app\\API\\Middleware\\authMiddleware.js:42:19\n    at Layer.handle [as handle_request] (C:\\Users\\ADMIN\\Desktop\\FOODFAST\\server_app\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at next (C:\\Users\\ADMIN\\Desktop\\FOODFAST\\server_app\\node_modules\\express\\lib\\router\\route.js:149:13)\n    at C:\\Users\\ADMIN\\Desktop\\FOODFAST\\server_app\\API\\Middleware\\authMiddleware.js:24:13\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-10-12T14:36:28.887Z"}
 {"level":"info","message":"Server running on port 5000","timestamp":"2025-10-12T14:36:51.426Z"}
 {"level":"info","message":"Server running on port 5000","timestamp":"2025-10-12T15:21:39.224Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-12T15:57:19.574Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-13T01:14:00.318Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-13T02:02:41.448Z"}

@@ -43,7 +43,9 @@
     margin-bottom: 12px;
 }
 
+
 /* Loading */
+
 .loading-container {
     display: flex;
     justify-content: center;
@@ -51,12 +53,13 @@
     min-height: 400px;
 }
 
+
 /* Responsive */
+
 @media (max-width: 768px) {
     .order-tracking-page {
         padding: 20px 0;
     }
-    
     .tracking-card {
         margin-bottom: 16px;
     }

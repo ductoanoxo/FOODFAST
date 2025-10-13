@@ -7,7 +7,7 @@ const Drone = require('../Models/Drone')
 // @desc    Get dashboard statistics
 // @route   GET /api/dashboard/stats
 // @access  Private/Admin
-const getDashboardStats = asyncHandler(async (req, res) => {
+const getDashboardStats = asyncHandler(async(req, res) => {
     // Get counts
     const totalUsers = await User.countDocuments()
     const totalRestaurants = await Restaurant.countDocuments()
@@ -34,17 +34,16 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     // Today's statistics
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
-    const todayOrders = await Order.countDocuments({ 
-        createdAt: { $gte: today } 
+
+    const todayOrders = await Order.countDocuments({
+        createdAt: { $gte: today }
     })
-    
-    const todayRevenue = await Order.aggregate([
-        { 
-            $match: { 
+
+    const todayRevenue = await Order.aggregate([{
+            $match: {
                 status: 'delivered',
                 createdAt: { $gte: today }
-            } 
+            }
         },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ])
@@ -83,7 +82,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
 // @desc    Get recent orders
 // @route   GET /api/dashboard/recent-orders
 // @access  Private/Admin
-const getRecentOrders = asyncHandler(async (req, res) => {
+const getRecentOrders = asyncHandler(async(req, res) => {
     const limit = parseInt(req.query.limit) || 10
 
     const orders = await Order.find()
@@ -101,7 +100,7 @@ const getRecentOrders = asyncHandler(async (req, res) => {
 // @desc    Get top restaurants
 // @route   GET /api/dashboard/top-restaurants
 // @access  Private/Admin
-const getTopRestaurants = asyncHandler(async (req, res) => {
+const getTopRestaurants = asyncHandler(async(req, res) => {
     const limit = parseInt(req.query.limit) || 5
 
     const restaurants = await Restaurant.find()
@@ -118,15 +117,14 @@ const getTopRestaurants = asyncHandler(async (req, res) => {
 // @desc    Get order statistics by date
 // @route   GET /api/dashboard/order-stats
 // @access  Private/Admin
-const getOrderStatistics = asyncHandler(async (req, res) => {
+const getOrderStatistics = asyncHandler(async(req, res) => {
     const days = parseInt(req.query.days) || 7
 
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
     startDate.setHours(0, 0, 0, 0)
 
-    const stats = await Order.aggregate([
-        {
+    const stats = await Order.aggregate([{
             $match: {
                 createdAt: { $gte: startDate }
             }
@@ -139,14 +137,14 @@ const getOrderStatistics = asyncHandler(async (req, res) => {
                     day: { $dayOfMonth: '$createdAt' }
                 },
                 count: { $sum: 1 },
-                revenue: { 
-                    $sum: { 
+                revenue: {
+                    $sum: {
                         $cond: [
-                            { $eq: ['$status', 'delivered'] }, 
-                            '$totalAmount', 
+                            { $eq: ['$status', 'delivered'] },
+                            '$totalAmount',
                             0
-                        ] 
-                    } 
+                        ]
+                    }
                 }
             }
         },
