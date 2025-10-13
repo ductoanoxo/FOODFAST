@@ -25,6 +25,26 @@ const orderSchema = new mongoose.Schema({
             type: Number,
             required: true,
         },
+        originalPrice: {
+            type: Number,
+            required: true,
+        },
+        appliedPromotion: {
+            // Snapshot of promotion applied to this item
+            id: { type: mongoose.Schema.Types.ObjectId },
+            name: { type: String },
+            discountPercent: { type: Number },
+            category: { type: String }, // Category name for display
+        },
+        appliedDiscount: {
+            type: {
+                type: String,
+                enum: ['promotion', 'product_discount', 'none'],
+                default: 'none',
+            },
+            value: { type: Number, default: 0 }, // Discount percentage or amount
+            amount: { type: Number, default: 0 }, // Actual discount amount
+        },
     }],
     restaurant: {
         type: mongoose.Schema.Types.ObjectId,
@@ -67,6 +87,23 @@ const orderSchema = new mongoose.Schema({
         discountPercent: { type: Number },
         minOrder: { type: Number },
         validUntil: { type: Date },
+    },
+    appliedPromotions: [{
+        // order-level snapshot of promotions applied to any items (unique)
+        id: { type: mongoose.Schema.Types.ObjectId },
+        name: { type: String },
+        discountPercent: { type: Number },
+        category: { type: String },
+    }],
+    appliedVoucher: {
+        // Snapshot of the voucher used for this order
+        id: { type: mongoose.Schema.Types.ObjectId },
+        code: { type: String },
+        name: { type: String },
+        discountType: { type: String },
+        discountValue: { type: Number },
+        maxDiscount: { type: Number },
+        discountAmount: { type: Number }, // Actual discount amount applied
     },
     totalAmount: {
         type: Number,

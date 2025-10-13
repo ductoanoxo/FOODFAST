@@ -75,6 +75,9 @@ app.use('/api/reviews', require('./API/Routers/reviewRouter'));
 app.use('/api/upload', require('./API/Routers/uploadRouter'));
 app.use('/api/vouchers', require('./API/Routers/voucherRouter'));
 app.use('/api/promotions', require('./API/Routers/promotionRouter'));
+// Admin and dashboard routers (were missing and caused 404s from frontend)
+app.use('/api/admin', require('./API/Routers/adminRouter'));
+app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
 
 // ---------------------- ERROR HANDLER ---------------------- //
 app.use(errorHandler);
@@ -93,46 +96,43 @@ const server = app.listen(PORT, () => {
 });
 
 // ---------------------- SOCKET.IO SETUP ---------------------- //
-<<
-<< << < HEAD
-const io = require('socket.io')(server, {
-    cors: {
-        origin: '*',
-        methods: ['GET', 'POST'],
-    },
-});
 
+// Use centralized socket service which handles authentication and connection logic
+const socketService = require('./services/socketService');
+const io = socketService.initialize(server);
+
+// Backwards-compatible simple join handlers for clients that emit these events
 io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
 
     socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
     });
-    io.of('/').adapter.on('join-room', (room, id) => {
-            console.log(`[JOIN ROOM] socket=${id} room=${room}`)
-        })
-        // Join order room
+
+    if (io.of && io.of('/').adapter && typeof io.of('/').adapter.on === 'function') {
+        io.of('/').adapter.on('join-room', (room, id) => {
+            console.log(`[JOIN ROOM] socket=${id} room=${room}`);
+        });
+    }
+
+    // Join order room (legacy event)
     socket.on('join-order', (orderId) => {
         socket.join(`order-${orderId}`);
         console.log(`Socket ${socket.id} joined order-${orderId}`);
     });
 
-    // Join restaurant room (for restaurant-wide notifications)
+    // Join restaurant room (legacy event)
     socket.on('join-restaurant', (restaurantId) => {
         socket.join(`restaurant-${restaurantId}`);
         console.log(`Socket ${socket.id} joined restaurant-${restaurantId}`);
     });
 
-    // Join drone room
+    // Join drone room (legacy event)
     socket.on('join-drone', (droneId) => {
         socket.join(`drone-${droneId}`);
         console.log(`Socket ${socket.id} joined drone-${droneId}`);
     });
-}); ===
-=== =
-const socketService = require('./services/socketService');
-const io = socketService.initialize(server); >>>
->>> > origin / DUCTOAN
+});
 
 // Make io accessible to routes
 app.set('io', io);

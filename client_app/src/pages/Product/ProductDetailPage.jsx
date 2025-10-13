@@ -74,7 +74,12 @@ const ProductDetailPage = () => {
         return
       }
 
-      dispatch(addToCart({ ...product, quantity }))
+      // Tính giá sau khi áp dụng discount
+      const finalPrice = product.discount 
+        ? Math.round(product.price * (1 - product.discount / 100))
+        : product.price
+
+      dispatch(addToCart({ ...product, quantity, price: finalPrice }))
       message.success(`Đã thêm ${quantity} ${product.name} vào giỏ hàng!`)
     } catch (err) {
       console.error('Error checking restaurant status', err)
@@ -194,7 +199,9 @@ const ProductDetailPage = () => {
                   loading={checking}
                   style={{ marginTop: 20 }}
                 >
-                  Thêm vào giỏ hàng - {formatPrice(product.price * quantity)}
+                  Thêm vào giỏ hàng - {formatPrice((product.discount 
+                    ? product.price * (1 - product.discount / 100) 
+                    : product.price) * quantity)}
                 </Button>
 
                 {user && (

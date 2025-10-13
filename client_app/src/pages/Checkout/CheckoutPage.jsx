@@ -91,9 +91,11 @@ const CheckoutPage = () => {
         },
         note: values.note || '',
         paymentMethod,
-        totalAmount,
         deliveryFee,
         voucherCode: appliedVoucherData?.voucher?.code || undefined,
+        // Gửi thông tin để validation
+        clientCalculatedTotal: totalAmount,
+        clientDiscount: discountAmount,
       }
 
   console.log('Creating order, payload:', orderData)
@@ -143,18 +145,28 @@ const CheckoutPage = () => {
     }
   }
 
-  if (items.length === 0) {
-    navigate('/cart')
-    return null
-  }
+  // If cart is empty, redirect to cart page. Use useEffect to avoid calling navigate during render
+  useEffect(() => {
+    if (!items || items.length === 0) {
+      navigate('/cart')
+    }
+  }, [items, navigate])
 
   // Load restaurant status from first cart item
   useEffect(() => {
     const loadStatus = async () => {
       try {
         setRestaurantLoading(true)
+        if (!items || items.length === 0) {
+          // No items — nothing to load
+          setRestaurantId(null)
+          setRestaurantClosed(false)
+          setRestaurantLoading(false)
+          return
+        }
+
         const first = items[0]
-        const resId = first.restaurant?._id || first.restaurant
+        const resId = first?.restaurant?._id || first?.restaurant
         setRestaurantId(resId)
         if (!resId) {
           setRestaurantClosed(false)
