@@ -1,0 +1,44 @@
+{
+  "name": "foodfast-backend-tests",
+  "version": "1.0.0",
+  "description": "Test suite for FOODFAST Drone Delivery Backend",
+  "scripts": {
+    "test": "jest --coverage",
+    "test:unit": "jest __tests__/unit --coverage",
+    "test:integration": "jest __tests__/integration --coverage",
+    "test:watch": "jest --watch",
+    "test:verbose": "jest --verbose",
+    "test:ci": "jest --ci --coverage --maxWorkers=2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "API/**/*.js",
+      "services/**/*.js",
+      "!API/Models/**",
+      "!node_modules/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    },
+    "testMatch": [
+      "**/__tests__/**/*.test.js",
+      "**/?(*.)+(spec|test).js"
+    ],
+    "setupFilesAfterEnv": ["<rootDir>/__tests__/setup.js"],
+    "testTimeout": 10000
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "mongodb-memory-server": "^9.1.6",
+    "sinon": "^17.0.1",
+    "@faker-js/faker": "^8.3.1"
+  }
+}

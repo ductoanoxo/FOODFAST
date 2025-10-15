@@ -4,7 +4,7 @@ const Drone = require('../Models/Drone')
 // @desc    Get all drones
 // @route   GET /api/drones
 // @access  Public
-const getDrones = asyncHandler(async (req, res) => {
+const getDrones = asyncHandler(async(req, res) => {
     const { status, available } = req.query
 
     let query = {}
@@ -31,7 +31,7 @@ const getDrones = asyncHandler(async (req, res) => {
 // @desc    Get drone by ID
 // @route   GET /api/drones/:id
 // @access  Public
-const getDroneById = asyncHandler(async (req, res) => {
+const getDroneById = asyncHandler(async(req, res) => {
     const drone = await Drone.findById(req.params.id)
 
     if (!drone) {
@@ -48,8 +48,25 @@ const getDroneById = asyncHandler(async (req, res) => {
 // @desc    Create drone
 // @route   POST /api/drones
 // @access  Private (Admin)
-const createDrone = asyncHandler(async (req, res) => {
+const createDrone = asyncHandler(async(req, res) => {
+    // Set currentLocation to homeLocation if not provided
+    if (req.body.homeLocation && !req.body.currentLocation) {
+        req.body.currentLocation = {
+            type: 'Point',
+            coordinates: req.body.homeLocation.coordinates
+        }
+    }
+
     const drone = await Drone.create(req.body)
+
+    // Emit socket event to notify admins about new drone
+    const io = req.app.get('io')
+    if (io) {
+        io.to('admin-room').emit('drone:created', {
+            drone: drone,
+            timestamp: new Date(),
+        })
+    }
 
     res.status(201).json({
         success: true,
@@ -60,7 +77,7 @@ const createDrone = asyncHandler(async (req, res) => {
 // @desc    Update drone
 // @route   PUT /api/drones/:id
 // @access  Private (Admin/Drone)
-const updateDrone = asyncHandler(async (req, res) => {
+const updateDrone = asyncHandler(async(req, res) => {
     let drone = await Drone.findById(req.params.id)
 
     if (!drone) {
@@ -73,6 +90,15 @@ const updateDrone = asyncHandler(async (req, res) => {
         runValidators: true,
     })
 
+    // Emit socket event to notify admins about drone update
+    const io = req.app.get('io')
+    if (io) {
+        io.to('admin-room').emit('drone:updated', {
+            drone: drone,
+            timestamp: new Date(),
+        })
+    }
+
     res.json({
         success: true,
         data: drone,
@@ -82,7 +108,7 @@ const updateDrone = asyncHandler(async (req, res) => {
 // @desc    Delete drone
 // @route   DELETE /api/drones/:id
 // @access  Private (Admin)
-const deleteDrone = asyncHandler(async (req, res) => {
+const deleteDrone = asyncHandler(async(req, res) => {
     const drone = await Drone.findById(req.params.id)
 
     if (!drone) {
@@ -90,18 +116,37 @@ const deleteDrone = asyncHandler(async (req, res) => {
         throw new Error('Drone not found')
     }
 
+    // Check if drone is currently assigned to an order
+    if (drone.currentOrder) {
+        res.status(400)
+        throw new Error('Cannot delete drone that is currently assigned to an order')
+    }
+
+    const droneData = drone.toObject() // Save drone data before deletion
+
     await drone.deleteOne()
+
+    // Emit socket event to notify admins about drone deletion
+    const io = req.app.get('io')
+    if (io) {
+        io.to('admin-room').emit('drone:deleted', {
+            droneId: droneData._id,
+            droneName: droneData.name,
+            timestamp: new Date(),
+        })
+    }
 
     res.json({
         success: true,
         data: {},
+        message: `Drone ${droneData.name} has been deleted successfully`,
     })
 })
 
 // @desc    Update drone location
 // @route   PATCH /api/drones/:id/location
 // @access  Private (Drone/Admin)
-const updateDroneLocation = asyncHandler(async (req, res) => {
+const updateDroneLocation = asyncHandler(async(req, res) => {
     const { longitude, latitude } = req.body
 
     const drone = await Drone.findById(req.params.id)
@@ -135,7 +180,7 @@ const updateDroneLocation = asyncHandler(async (req, res) => {
 // @desc    Update drone status
 // @route   PATCH /api/drones/:id/status
 // @access  Private (Drone/Admin)
-const updateDroneStatus = asyncHandler(async (req, res) => {
+const updateDroneStatus = asyncHandler(async(req, res) => {
     const { status } = req.body
 
     const drone = await Drone.findById(req.params.id)
@@ -157,7 +202,7 @@ const updateDroneStatus = asyncHandler(async (req, res) => {
 // @desc    Update drone battery
 // @route   PATCH /api/drones/:id/battery
 // @access  Private (Drone/Admin)
-const updateDroneBattery = asyncHandler(async (req, res) => {
+const updateDroneBattery = asyncHandler(async(req, res) => {
     const { batteryLevel } = req.body
 
     const drone = await Drone.findById(req.params.id)
@@ -185,7 +230,7 @@ const updateDroneBattery = asyncHandler(async (req, res) => {
 // @desc    Assign drone to order
 // @route   POST /api/drones/:id/assign
 // @access  Private (Admin)
-const assignDroneToOrder = asyncHandler(async (req, res) => {
+const assignDroneToOrder = asyncHandler(async(req, res) => {
     const { orderId } = req.body
     const Order = require('../Models/Order')
 
@@ -236,7 +281,7 @@ const assignDroneToOrder = asyncHandler(async (req, res) => {
 // @desc    Get nearby drones
 // @route   GET /api/drones/nearby
 // @access  Private (Admin)
-const getNearbyDrones = asyncHandler(async (req, res) => {
+const getNearbyDrones = asyncHandler(async(req, res) => {
     const { lng, lat, maxDistance = 5000 } = req.query
 
     if (!lng || !lat) {
@@ -268,7 +313,7 @@ const getNearbyDrones = asyncHandler(async (req, res) => {
 // @desc    Get drone statistics
 // @route   GET /api/drones/:id/stats
 // @access  Private (Admin)
-const getDroneStats = asyncHandler(async (req, res) => {
+const getDroneStats = asyncHandler(async(req, res) => {
     const Order = require('../Models/Order')
 
     const drone = await Drone.findById(req.params.id)

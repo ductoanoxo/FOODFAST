@@ -43,6 +43,7 @@ app.use(
 );
 app.use(compression());
 app.use(morgan('dev'));
+
 // Increase body size limits to accommodate larger payloads (e.g., base64 image data).
 // NOTE: For file/image uploads it's better to use multipart/form-data with multer
 // rather than embedding large files in JSON.
@@ -75,6 +76,8 @@ app.use('/api/reviews', require('./API/Routers/reviewRouter'));
 app.use('/api/upload', require('./API/Routers/uploadRouter'));
 app.use('/api/vouchers', require('./API/Routers/voucherRouter'));
 app.use('/api/promotions', require('./API/Routers/promotionRouter'));
+app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
+app.use('/api/admin', require('./API/Routers/adminRouter'));
 
 // ---------------------- ERROR HANDLER ---------------------- //
 app.use(errorHandler);
@@ -92,49 +95,11 @@ const server = app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
 
-// ---------------------- SOCKET.IO SETUP ---------------------- //
-<<
-<< << < HEAD
-const io = require('socket.io')(server, {
-    cors: {
-        origin: '*',
-        methods: ['GET', 'POST'],
-    },
-});
-
-io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
-
-    socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-    });
-    io.of('/').adapter.on('join-room', (room, id) => {
-            console.log(`[JOIN ROOM] socket=${id} room=${room}`)
-        })
-        // Join order room
-    socket.on('join-order', (orderId) => {
-        socket.join(`order-${orderId}`);
-        console.log(`Socket ${socket.id} joined order-${orderId}`);
-    });
-
-    // Join restaurant room (for restaurant-wide notifications)
-    socket.on('join-restaurant', (restaurantId) => {
-        socket.join(`restaurant-${restaurantId}`);
-        console.log(`Socket ${socket.id} joined restaurant-${restaurantId}`);
-    });
-
-    // Join drone room
-    socket.on('join-drone', (droneId) => {
-        socket.join(`drone-${droneId}`);
-        console.log(`Socket ${socket.id} joined drone-${droneId}`);
-    });
-}); ===
-=== =
+// ---------------------- SOCKET.IO VIA SERVICE ---------------------- //
 const socketService = require('./services/socketService');
-const io = socketService.initialize(server); >>>
->>> > origin / DUCTOAN
+const io = socketService.initialize(server);
 
-// Make io accessible to routes
+// Make io + socketService accessible to routes
 app.set('io', io);
 app.set('socketService', socketService);
 

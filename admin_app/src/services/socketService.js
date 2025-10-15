@@ -122,6 +122,24 @@ class SocketService {
         }
     }
 
+    onDroneCreated(callback) {
+        if (this.socket) {
+            this.socket.on('drone:created', callback);
+        }
+    }
+
+    onDroneUpdated(callback) {
+        if (this.socket) {
+            this.socket.on('drone:updated', callback);
+        }
+    }
+
+    onDroneDeleted(callback) {
+        if (this.socket) {
+            this.socket.on('drone:deleted', callback);
+        }
+    }
+
     onDroneEmergency(callback) {
         if (this.socket) {
             this.socket.on('drone:emergency', callback);

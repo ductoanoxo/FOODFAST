@@ -98,6 +98,9 @@ const FleetMap = () => {
       socketService.off('fleet:location-update');
       socketService.off('drone:online');
       socketService.off('drone:offline');
+      socketService.off('drone:created');
+      socketService.off('drone:updated');
+      socketService.off('drone:deleted');
     };
   }, []);
 
@@ -176,6 +179,26 @@ const FleetMap = () => {
     socketService.onDroneOffline((data) => {
       message.warning(`⚠️ Drone ${data.droneId} went offline`);
       fetchData();
+    });
+
+    // Listen for new drone created
+    socketService.onDroneCreated((data) => {
+      console.log('New drone created:', data);
+      message.success(`🚁 New drone added: ${data.drone?.name || 'Unknown'}`);
+      fetchData(); // Refresh to get the new drone
+    });
+
+    // Listen for drone updated
+    socketService.onDroneUpdated((data) => {
+      console.log('Drone updated:', data);
+      fetchData(); // Refresh to get updated data
+    });
+
+    // Listen for drone deleted
+    socketService.onDroneDeleted((data) => {
+      console.log('Drone deleted:', data);
+      message.info(`🗑️ Drone ${data.droneName} has been deleted`);
+      fetchData(); // Refresh to remove deleted drone
     });
   };
 
