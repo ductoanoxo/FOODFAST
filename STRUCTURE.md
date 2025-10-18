@@ -6,260 +6,343 @@
 FOODFAST-DRONE-DELIVERY/
 │
 ├── 📱 client_app/                    # React App - Khách hàng (Port 3000)
+│   ├── dist/                         # Build output (auto-generated)
 │   ├── public/
+│   │   └── clear-cache.html          # Cache clearing utility
 │   ├── src/
 │   │   ├── api/                      # API integration layer
 │   │   │   ├── axios.js              # Axios config + interceptors
 │   │   │   ├── authAPI.js            # Auth endpoints
+│   │   │   ├── index.js              # API exports
+│   │   │   ├── orderAPI.js           # Order endpoints
+│   │   │   ├── paymentAPI.js         # Payment endpoints
 │   │   │   ├── productAPI.js         # Product endpoints
 │   │   │   ├── restaurantAPI.js      # Restaurant endpoints
-│   │   │   ├── orderAPI.js           # Order endpoints
-│   │   │   └── paymentAPI.js         # Payment endpoints
+│   │   │   ├── reviewAPI.js          # Review endpoints
+│   │   │   └── voucherAPI.js         # Voucher endpoints
 │   │   │
 │   │   ├── components/               # Reusable components
 │   │   │   ├── Layout/
-│   │   │   │   ├── MainLayout.jsx    # Main layout with Header/Footer
-│   │   │   │   ├── Header.jsx        # Navigation header
-│   │   │   │   ├── Header.css
-│   │   │   │   ├── Footer.jsx        # Footer
+│   │   │   │   ├── AuthLayout.jsx
+│   │   │   │   ├── Footer.jsx
 │   │   │   │   ├── Footer.css
-│   │   │   │   └── AuthLayout.jsx    # Layout for login/register
-│   │   │   │
+│   │   │   │   ├── Header.jsx
+│   │   │   │   ├── Header.css
+│   │   │   │   └── MainLayout.jsx
 │   │   │   ├── Product/
-│   │   │   │   ├── ProductCard.jsx   # Product display card
+│   │   │   │   ├── ProductCard.jsx
 │   │   │   │   ├── ProductCard.css
-│   │   │   │   ├── ProductFilter.jsx # Filter sidebar
+│   │   │   │   ├── ProductFilter.jsx
 │   │   │   │   └── ProductFilter.css
-│   │   │   │
 │   │   │   ├── Restaurant/
 │   │   │   │   ├── RestaurantCard.jsx
 │   │   │   │   └── RestaurantCard.css
-│   │   │   │
-│   │   │   └── Route/
-│   │   │       └── ProtectedRoute.jsx # Route protection
+│   │   │   ├── Route/
+│   │   │   │   └── ProtectedRoute.jsx
+│   │   │   └── VoucherSelector/
+│   │   │       ├── VoucherSelector.jsx
+│   │   │       └── VoucherSelector.css
 │   │   │
 │   │   ├── pages/                    # Page components
-│   │   │   ├── Home/
-│   │   │   │   ├── HomePage.jsx      # Landing page
-│   │   │   │   └── HomePage.css
-│   │   │   │
 │   │   │   ├── Auth/
-│   │   │   │   ├── LoginPage.jsx     # Login form
+│   │   │   │   ├── LoginPage.jsx
 │   │   │   │   ├── LoginPage.css
-│   │   │   │   ├── RegisterPage.jsx  # Register form
+│   │   │   │   ├── RegisterPage.jsx
 │   │   │   │   └── RegisterPage.css
-│   │   │   │
-│   │   │   ├── Menu/
-│   │   │   │   ├── MenuPage.jsx      # Menu browsing
-│   │   │   │   └── MenuPage.css
-│   │   │   │
-│   │   │   ├── Store/
-│   │   │   │   ├── StorePage.jsx     # Restaurant listing
-│   │   │   │   └── StorePage.css
-│   │   │   │
-│   │   │   ├── Product/
-│   │   │   │   ├── ProductDetailPage.jsx  # Product detail
-│   │   │   │   └── ProductDetailPage.css
-│   │   │   │
 │   │   │   ├── Cart/
-│   │   │   │   ├── CartPage.jsx      # Shopping cart
+│   │   │   │   ├── CartPage.jsx
 │   │   │   │   └── CartPage.css
-│   │   │   │
+│   │   │   ├── Categories/
+│   │   │   │   ├── CategoriesPage.jsx
+│   │   │   │   └── CategoriesPage.css
 │   │   │   ├── Checkout/
-│   │   │   │   ├── CheckoutPage.jsx  # Checkout flow
+│   │   │   │   ├── CheckoutPage.jsx
 │   │   │   │   └── CheckoutPage.css
-│   │   │   │
+│   │   │   ├── Home/
+│   │   │   │   ├── HomePage.jsx
+│   │   │   │   └── HomePage.css
+│   │   │   ├── Menu/
+│   │   │   │   ├── MenuPage.jsx
+│   │   │   │   └── MenuPage.css
+│   │   │   ├── NotFound/
+│   │   │   │   └── NotFoundPage.jsx
 │   │   │   ├── OrderTracking/
-│   │   │   │   ├── OrderTrackingPage.jsx  # Real-time tracking
+│   │   │   │   ├── OrderTrackingPage.jsx
 │   │   │   │   └── OrderTrackingPage.css
-│   │   │   │
+│   │   │   ├── Payment/
+│   │   │   │   ├── PaymentPage.jsx
+│   │   │   │   └── PaymentPage.css
+│   │   │   ├── Product/
+│   │   │   │   ├── ProductDetailPage.jsx
+│   │   │   │   └── ProductDetailPage.css
 │   │   │   ├── Profile/
-│   │   │   │   ├── ProfilePage.jsx   # User profile
-│   │   │   │   ├── ProfilePage.css
-│   │   │   │   ├── OrderHistoryPage.jsx  # Order history
-│   │   │   │   └── OrderHistoryPage.css
-│   │   │   │
-│   │   │   └── NotFound/
-│   │   │       └── NotFoundPage.jsx  # 404 page
+│   │   │   │   ├── OrderHistoryPage.jsx
+│   │   │   │   ├── OrderHistoryPage.css
+│   │   │   │   ├── ProfilePage.jsx
+│   │   │   │   └── ProfilePage.css
+│   │   │   └── Store/
+│   │   │       ├── StorePage.jsx
+│   │   │       └── StorePage.css
 │   │   │
 │   │   ├── redux/                    # State management
-│   │   │   ├── store.js              # Redux store config
-│   │   │   └── slices/
-│   │   │       ├── authSlice.js      # Auth state
-│   │   │       ├── cartSlice.js      # Cart state
-│   │   │       ├── productSlice.js   # Product state
-│   │   │       └── orderSlice.js     # Order state
-│   │   │
-│   │   ├── App.jsx                   # Main App component
-│   │   ├── main.jsx                  # Entry point
-│   │   └── index.css                 # Global styles
-│   │
-│   ├── index.html                    # HTML entry
-│   ├── package.json                  # Dependencies
-│   ├── vite.config.js                # Vite config
-│   ├── Dockerfile                    # Docker image
-│   └── nginx.conf                    # Nginx config
-│
-├── 🍴 restaurant_app/                # React App - Nhà hàng (Port 3001)
-│   ├── src/
-│   │   ├── components/
-│   │   │   └── Layout/
-│   │   │       └── MainLayout.jsx    # Dashboard layout
-│   │   │
-│   │   ├── pages/
-│   │   │   ├── Auth/
-│   │   │   │   └── LoginPage.jsx
-│   │   │   ├── Dashboard/
-│   │   │   │   └── DashboardPage.jsx # Stats dashboard
-│   │   │   ├── Orders/
-│   │   │   │   └── OrdersPage.jsx    # Order management
-│   │   │   ├── Menu/
-│   │   │   │   └── MenuPage.jsx      # Menu CRUD
-│   │   │   └── Profile/
-│   │   │       └── ProfilePage.jsx
-│   │   │
-│   │   ├── redux/
 │   │   │   ├── store.js
 │   │   │   └── slices/
-│   │   │       └── authSlice.js
+│   │   │       ├── authSlice.js
+│   │   │       ├── cartSlice.js
+│   │   │       ├── orderSlice.js
+│   │   │       └── productSlice.js
+│   │   │
+│   │   ├── services/
+│   │   │   └── socketService.js      # Socket.IO client
 │   │   │
 │   │   ├── App.jsx
 │   │   ├── main.jsx
 │   │   └── index.css
 │   │
+│   ├── Dockerfile
+│   ├── index.html
+│   ├── nginx.conf
+│   ├── package.json
+│   └── vite.config.js
+│
+├── 🍴 restaurant_app/                # React App - Nhà hàng (Port 3001)
+│   ├── dist/                         # Build output (auto-generated)
+│   ├── src/
+│   │   ├── api/
+│   │   │   ├── axios.js
+│   │   │   ├── authAPI.js
+│   │   │   ├── orderAPI.js
+│   │   │   └── productAPI.js
+│   │   ├── components/
+│   │   │   └── Layout/
+│   │   │       └── MainLayout.jsx
+│   │   ├── constants/
+│   │   │   └── orderStatus.js
+│   │   ├── pages/
+│   │   │   ├── Auth/
+│   │   │   │   └── LoginPage.jsx
+│   │   │   ├── Dashboard/
+│   │   │   │   └── DashboardPage.jsx
+│   │   │   ├── Menu/
+│   │   │   │   └── MenuPage.jsx
+│   │   │   ├── Orders/
+│   │   │   │   └── OrdersPage.jsx
+│   │   │   └── Profile/
+│   │   │       └── ProfilePage.jsx
+│   │   ├── redux/
+│   │   │   ├── store.js
+│   │   │   └── slices/
+│   │   │       └── authSlice.js
+│   │   ├── utils/
+│   │   │   └── formatters.js
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── index.css
+│   │
+│   ├── Dockerfile
 │   ├── index.html
 │   ├── package.json
-│   ├── vite.config.js
-│   └── Dockerfile
+│   ├── README.md
+│   ├── READ_ME_FIRST.md
+│   ├── START_HERE.md
+│   ├── USER_GUIDE.md
+│   └── vite.config.js
 │
 ├── 👨‍💼 admin_app/                      # React App - Admin (Port 3002)
 │   ├── src/
+│   │   ├── api/
+│   │   │   ├── adminAPI.js           # Admin-specific APIs
+│   │   │   ├── authAPI.js
+│   │   │   ├── axios.js
+│   │   │   ├── dashboardAPI.js
+│   │   │   ├── droneAPI.js           # Drone CRUD ⭐
+│   │   │   ├── orderAPI.js
+│   │   │   ├── restaurantAPI.js
+│   │   │   └── userAPI.js
 │   │   ├── components/
+│   │   │   ├── Alerts/
+│   │   │   │   └── AlertList.jsx
 │   │   │   └── Layout/
-│   │   │       └── MainLayout.jsx    # Admin panel layout
-│   │   │
+│   │   │       └── MainLayout.jsx
 │   │   ├── pages/
+│   │   │   ├── Assignment/
+│   │   │   │   └── AssignmentDashboard.jsx
 │   │   │   ├── Auth/
 │   │   │   │   └── LoginPage.jsx
 │   │   │   ├── Dashboard/
-│   │   │   │   └── DashboardPage.jsx # System overview
-│   │   │   ├── Users/
-│   │   │   │   └── UsersPage.jsx     # User management
-│   │   │   ├── Restaurants/
-│   │   │   │   └── RestaurantsPage.jsx  # Restaurant approval
+│   │   │   │   └── DashboardPage.jsx
+│   │   │   ├── Drones/
+│   │   │   │   ├── DronesPage.jsx    # Drone CRUD UI ⭐
+│   │   │   │   └── DronesPage.css
+│   │   │   ├── Fleet/
+│   │   │   │   ├── FleetMap.jsx      # Fleet map with realtime ⭐
+│   │   │   │   └── FleetMap.css
 │   │   │   ├── Orders/
-│   │   │   │   └── OrdersPage.jsx    # Order monitoring
-│   │   │   └── Drones/
-│   │   │       └── DronesPage.jsx    # Drone fleet
-│   │   │
+│   │   │   │   └── OrdersPage.jsx
+│   │   │   ├── Restaurants/
+│   │   │   │   └── RestaurantsPage.jsx
+│   │   │   └── Users/
+│   │   │       └── UsersPage.jsx
 │   │   ├── redux/
 │   │   │   ├── store.js
 │   │   │   └── slices/
 │   │   │       └── authSlice.js
-│   │   │
+│   │   ├── services/
+│   │   │   └── socketService.js      # Socket.IO with drone events ⭐
 │   │   ├── App.jsx
 │   │   ├── main.jsx
 │   │   └── index.css
 │   │
+│   ├── Dockerfile
 │   ├── index.html
+│   ├── jsconfig.json
 │   ├── package.json
-│   ├── vite.config.js
-│   └── Dockerfile
+│   └── vite.config.js
 │
-├── 🚁 drone_manage/                   # React App - Drone (Port 3003)
+├── 🚁 drone_manage/                   # React App - Drone Management (Port 3003)
+│   ├── public/
+│   │   └── clear-cache.html
 │   ├── src/
+│   │   ├── api/
+│   │   │   ├── axios.js
+│   │   │   ├── authAPI.js
+│   │   │   ├── droneAPI.js
+│   │   │   └── orderAPI.js
 │   │   ├── components/
-│   │   │   └── Layout/
-│   │   │       └── MainLayout.jsx    # Drone dashboard
-│   │   │
+│   │   │   ├── Layout/
+│   │   │   │   └── MainLayout.jsx
+│   │   │   └── Map/
+│   │   │       └── MapController.jsx
 │   │   ├── pages/
 │   │   │   ├── Auth/
 │   │   │   │   └── LoginPage.jsx
-│   │   │   ├── Map/
-│   │   │   │   └── MapPage.jsx       # Leaflet map
 │   │   │   ├── Drones/
-│   │   │   │   └── DronesPage.jsx    # Drone list
+│   │   │   │   └── DronesPage.jsx
+│   │   │   ├── Map/
+│   │   │   │   └── MapPage.jsx
 │   │   │   └── Missions/
-│   │   │       └── MissionsPage.jsx  # Mission management
-│   │   │
+│   │   │       └── MissionsPage.jsx
 │   │   ├── redux/
 │   │   │   ├── store.js
 │   │   │   └── slices/
 │   │   │       ├── authSlice.js
-│   │   │       └── droneSlice.js     # Drone state
-│   │   │
+│   │   │       └── droneSlice.js
+│   │   ├── utils/
+│   │   │   └── socketService.js
 │   │   ├── App.jsx
 │   │   ├── main.jsx
 │   │   └── index.css
 │   │
+│   ├── .env
+│   ├── .env.example
+│   ├── Dockerfile
 │   ├── index.html
+│   ├── LOGIN_GUIDE.md
 │   ├── package.json
-│   ├── vite.config.js
-│   └── Dockerfile
+│   ├── README.md
+│   └── vite.config.js
 │
 ├── 🖥️  server_app/                     # Node.js Backend (Port 5000)
 │   ├── API/
-│   │   ├── Controllers/              # Request handlers
-│   │   │   ├── authController.js     # Auth logic (register, login)
-│   │   │   ├── productController.js  # Product CRUD
-│   │   │   └── orderController.js    # Order management
+│   │   ├── Controllers/
+│   │   │   ├── adminController.js    # Admin operations
+│   │   │   ├── authController.js
+│   │   │   ├── categoryController.js
+│   │   │   ├── droneController.js    # Drone CRUD with socket ⭐
+│   │   │   ├── orderController.js
+│   │   │   ├── productController.js
+│   │   │   ├── promotionController.js
+│   │   │   ├── restaurantController.js
+│   │   │   ├── reviewController.js
+│   │   │   ├── userController.js
+│   │   │   └── voucherController.js
 │   │   │
-│   │   ├── Middleware/               # Express middleware
-│   │   │   ├── authMiddleware.js     # JWT verification
-│   │   │   ├── asyncHandler.js       # Async wrapper
-│   │   │   └── errorMiddleware.js    # Error handling
+│   │   ├── Middleware/
+│   │   │   ├── asyncHandler.js
+│   │   │   ├── authMiddleware.js
+│   │   │   └── errorMiddleware.js
 │   │   │
-│   │   ├── Models/                   # Mongoose schemas
-│   │   │   ├── User.js               # User model
-│   │   │   ├── Restaurant.js         # Restaurant model
-│   │   │   ├── Product.js            # Product model
-│   │   │   ├── Category.js           # Category model
-│   │   │   ├── Order.js              # Order model
-│   │   │   └── Drone.js              # Drone model
+│   │   ├── Models/
+│   │   │   ├── Category.js
+│   │   │   ├── Drone.js              # Drone schema ⭐
+│   │   │   ├── Order.js
+│   │   │   ├── Product.js
+│   │   │   ├── Promotion.js
+│   │   │   ├── PromoUsage.js
+│   │   │   ├── Restaurant.js
+│   │   │   ├── Review.js
+│   │   │   ├── User.js
+│   │   │   ├── Voucher.js
+│   │   │   └── VoucherUsage.js
 │   │   │
-│   │   ├── Routers/                  # Route definitions
-│   │   │   ├── authRouter.js         # /api/auth/*
-│   │   │   ├── productRouter.js      # /api/products/*
-│   │   │   ├── orderRouter.js        # /api/orders/*
-│   │   │   ├── restaurantRouter.js   # /api/restaurants/*
-│   │   │   ├── categoryRouter.js     # /api/categories/*
-│   │   │   ├── userRouter.js         # /api/users/* (admin)
-│   │   │   ├── droneRouter.js        # /api/drones/*
-│   │   │   ├── paymentRouter.js      # /api/payment/* (placeholder)
-│   │   │   ├── reviewRouter.js       # /api/reviews/* (placeholder)
-│   │   │   └── uploadRouter.js       # /api/upload/* (placeholder)
+│   │   ├── Routers/
+│   │   │   ├── adminRouter.js
+│   │   │   ├── authRouter.js
+│   │   │   ├── categoryRouter.js
+│   │   │   ├── droneRouter.js
+│   │   │   ├── orderRouter.js
+│   │   │   ├── productRouter.js
+│   │   │   ├── promotionRouter.js
+│   │   │   ├── restaurantRouter.js
+│   │   │   ├── reviewRouter.js
+│   │   │   ├── userRouter.js
+│   │   │   └── voucherRouter.js
 │   │   │
-│   │   └── Utils/                    # Utility functions
-│   │       └── logger.js             # Winston logger
+│   │   └── Utils/
+│   │       └── logger.js
 │   │
-│   ├── config/                       # Configuration
-│   │   └── db.js                     # MongoDB connection
+│   ├── __tests__/                    # Test files
+│   │   ├── setup.js
+│   │   ├── integration/
+│   │   └── unit/
 │   │
-│   ├── logs/                         # Log files (auto-generated)
-│   │   ├── error.log
-│   │   └── combined.log
+│   ├── config/
+│   │   └── db.js
 │   │
-│   ├── uploads/                      # Upload directory (auto-generated)
+│   ├── logs/                         # Auto-generated logs
+│   ├── services/
+│   │   └── socketService.js          # Socket.IO server ⭐
+│   ├── uploads/                      # Auto-generated uploads
 │   │
-│   ├── index.js                      # Express server entry
-│   ├── seed.js                       # Data seeding script ⭐
-│   ├── package.json                  # Dependencies
-│   ├── Dockerfile                    # Docker image
-│   └── .gitignore                    # Git ignore
+│   ├── check-drone-status.js         # Utility script
+│   ├── Dockerfile
+│   ├── fix-stuck-drones.js           # Utility script
+│   ├── index.js                      # Server entry point
+│   ├── package.json
+│   ├── package.test.json
+│   ├── seed.js                       # Data seeding ⭐
+│   └── test-order.js                 # Test script
+│
+├── 🧪 cypress/                        # E2E Testing
+│   └── e2e/
+│       └── user-journeys.cy.js
 │
 ├── 📄 Root Files
-│   ├── .env                          # Environment variables
-│   ├── .gitignore                    # Git ignore (root)
-│   ├── docker-compose.yml            # Docker orchestration
-│   ├── package.json                  # Root scripts
-│   ├── README.md                     # Main documentation
-│   ├── SETUP_GUIDE.md                # Installation guide
-│   ├── TODO.md                       # Task tracking
-│   ├── PROJECT_COMPLETE.md           # Completion summary ⭐
-│   ├── QUICKSTART.md                 # Quick start guide ⭐
-│   └── STRUCTURE.md                  # This file ⭐
+│   ├── .env
+│   ├── .gitignore
+│   ├── API_DOCUMENTATION.md          # API docs
+│   ├── API_TESTING.md                # API testing guide
+│   ├── cypress.config.js
+│   ├── cypress.package.json
+│   ├── docker-compose.yml
+│   ├── DRONE_CRUD_IMPLEMENTATION.md  # Drone CRUD docs ⭐
+│   ├── DRONE_CRUD_SUMMARY.md         # Drone summary ⭐
+│   ├── DRONE_MAP_FIX.md              # Map fix docs ⭐
+│   ├── DRONE_USER_GUIDE.md           # User guide ⭐
+│   ├── FULL_IMPLEMENTATION.md
+│   ├── install.ps1
+│   ├── package.json
+│   ├── PROJECT_COMPLETE.md
+│   ├── QUICKSTART.md
+│   ├── README.md
+│   ├── seed.ps1
+│   ├── setup.ps1
+│   ├── SETUP_GUIDE.md
+│   ├── start.ps1
+│   ├── START_HERE.md
+│   └── STRUCTURE.md                  # This file
 │
-└── Total Files: 140+                 # All source files
+└── Total Files: 200+                 # All source files (excluding node_modules)
 ```
 
 ---
@@ -447,6 +530,36 @@ client_app/dist/    # Vite build output
 | User Management | - | - | ✅ | - | ✅ |
 | Restaurant CRUD | - | ✅ | ✅ | - | ✅ |
 | Drone Tracking | - | - | ✅ | ✅ | ✅ |
+
+---
+
+---
+
+## 🆕 RECENT CHANGES (Drone CRUD & Realtime)
+
+The repository has recent updates that enhance Drone management and realtime synchronization. Additions and changes are summarized below (excluding node_modules).
+
+- Backend (server_app):
+  - `API/Controllers/droneController.js`
+    - Create: sets `currentLocation` from `homeLocation` if not provided; emits `drone:created` socket event to `admin-room`.
+    - Update: emits `drone:updated` socket event after successful update.
+    - Delete: prevents deletion when `currentOrder` exists; deletes drone and emits `drone:deleted` to `admin-room`.
+  - `API/Models/Drone.js` updated so `currentLocation.coordinates` is optional (backend sets it on create).
+
+- Frontend (admin_app):
+  - `src/pages/Drones/DronesPage.jsx` — added Edit & Delete UI, edit modal, delete confirmation, and handlers (`handleEditDrone`, `handleDelete`, `showEditModal`).
+  - `src/services/socketService.js` — added `onDroneCreated`, `onDroneUpdated`, `onDroneDeleted` handlers.
+  - `src/pages/Fleet/FleetMap.jsx` — listens for `drone:created`, `drone:updated`, `drone:deleted` and refreshes markers via `fetchData()`; converts coordinates for Leaflet rendering (lat,lng).
+
+- Realtime behaviour:
+  - Socket events are authenticated via JWT and broadcast to `admin-room` so all admin clients stay synchronized.
+  - Fleet Map auto-fits bounds to available drone markers on refresh.
+
+### Notes for maintainers
+
+- Coordinate conventions: MongoDB stores coordinates as `[lng, lat]`; Leaflet expects `[lat, lng]`. Ensure proper conversion when rendering markers.
+- Validation: frontend forms validate lat/lng ranges and serial formats; backend validates and prevents destructive actions (e.g., deleting assigned drones).
+- Files added/modified (high-level): `DRONE_MAP_FIX.md`, `DRONE_CRUD_IMPLEMENTATION.md`, `DRONE_USER_GUIDE.md`, controller and frontend files as listed above.
 
 ---
 

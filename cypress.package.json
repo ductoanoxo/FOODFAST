@@ -1,0 +1,35 @@
+{
+  "name": "foodfast-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-End tests for FOODFAST Drone Delivery",
+  "scripts": {
+    "cy:open": "cypress open",
+    "cy:run": "cypress run",
+    "cy:run:chrome": "cypress run --browser chrome",
+    "cy:run:firefox": "cypress run --browser firefox",
+    "cy:run:headed": "cypress run --headed",
+    "test:e2e": "cypress run",
+    "test:e2e:ci": "cypress run --record --key $CYPRESS_RECORD_KEY"
+  },
+  "devDependencies": {
+    "cypress": "^13.6.3",
+    "cypress-file-upload": "^5.0.8",
+    "@faker-js/faker": "^8.3.1"
+  },
+  "cypress": {
+    "baseUrl": "http://localhost:3000",
+    "viewportWidth": 1920,
+    "viewportHeight": 1080,
+    "video": true,
+    "screenshotOnRunFailure": true,
+    "chromeWebSecurity": false,
+    "defaultCommandTimeout": 10000,
+    "requestTimeout": 15000,
+    "responseTimeout": 15000,
+    "pageLoadTimeout": 30000,
+    "retries": {
+      "runMode": 2,
+      "openMode": 0
+    }
+  }
+}

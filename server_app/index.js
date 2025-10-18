@@ -43,6 +43,7 @@ app.use(
 );
 app.use(compression());
 app.use(morgan('dev'));
+
 // Increase body size limits to accommodate larger payloads (e.g., base64 image data).
 // NOTE: For file/image uploads it's better to use multipart/form-data with multer
 // rather than embedding large files in JSON.
@@ -63,6 +64,9 @@ app.get('/', (req, res) => {
     });
 });
 
+// Health check endpoints (must be before other routes for Docker health checks)
+app.use('/api', require('./API/Routers/healthRouter'));
+
 app.use('/api/auth', require('./API/Routers/authRouter'));
 app.use('/api/users', require('./API/Routers/userRouter'));
 app.use('/api/products', require('./API/Routers/productRouter'));
@@ -76,10 +80,16 @@ app.use('/api/upload', require('./API/Routers/uploadRouter'));
 app.use('/api/admin', require('./API/Routers/adminRouter'));
 app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
 app.use('/api/vouchers', require('./API/Routers/voucherRouter'));
-app.use('/api/promotions', require('./API/Routers/promotionRouter'));
+app.use('/api/map', require('./API/Routers/mapRouter'));
+app.use('/api/promotions', require('./API/Routers/promotionRouter')); <<
+<< << < HEAD
 // Admin and dashboard routers (were missing and caused 404s from frontend)
 app.use('/api/admin', require('./API/Routers/adminRouter'));
+app.use('/api/dashboard', require('./API/Routers/dashboardRouter')); ===
+=== =
 app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
+app.use('/api/admin', require('./API/Routers/adminRouter')); >>>
+>>> > DUCTOAN
 
 // ---------------------- ERROR HANDLER ---------------------- //
 app.use(errorHandler);
@@ -136,7 +146,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// Make io accessible to routes
+// Make io + socketService accessible to routes
 app.set('io', io);
 app.set('socketService', socketService);
 

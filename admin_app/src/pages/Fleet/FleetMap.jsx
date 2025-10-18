@@ -12,6 +12,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import * as adminAPI from '../../api/adminAPI';
 import socketService from '../../services/socketService';
+import { MAP_CONFIG, getTileLayerConfig } from '../../config/mapConfig';
 import './FleetMap.css';
 
 // Fix Leaflet default marker icon issue
@@ -82,8 +83,9 @@ const FleetMap = () => {
   const [selectedDrone, setSelectedDrone] = useState(null);
   const mapRef = useRef(null);
 
-  // Default center (Ho Chi Minh City)
-  const defaultCenter = [10.8231, 106.6297];
+  // Get tile layer config from map config
+  const tileConfig = getTileLayerConfig();
+  const defaultCenter = [MAP_CONFIG.defaultCenter.lat, MAP_CONFIG.defaultCenter.lng];
 
   useEffect(() => {
     fetchData();
@@ -98,6 +100,9 @@ const FleetMap = () => {
       socketService.off('fleet:location-update');
       socketService.off('drone:online');
       socketService.off('drone:offline');
+      socketService.off('drone:created');
+      socketService.off('drone:updated');
+      socketService.off('drone:deleted');
     };
   }, []);
 
@@ -176,6 +181,26 @@ const FleetMap = () => {
     socketService.onDroneOffline((data) => {
       message.warning(`⚠️ Drone ${data.droneId} went offline`);
       fetchData();
+    });
+
+    // Listen for new drone created
+    socketService.onDroneCreated((data) => {
+      console.log('New drone created:', data);
+      message.success(`🚁 New drone added: ${data.drone?.name || 'Unknown'}`);
+      fetchData(); // Refresh to get the new drone
+    });
+
+    // Listen for drone updated
+    socketService.onDroneUpdated((data) => {
+      console.log('Drone updated:', data);
+      fetchData(); // Refresh to get updated data
+    });
+
+    // Listen for drone deleted
+    socketService.onDroneDeleted((data) => {
+      console.log('Drone deleted:', data);
+      message.info(`🗑️ Drone ${data.droneName} has been deleted`);
+      fetchData(); // Refresh to remove deleted drone
     });
   };
 
@@ -292,13 +317,13 @@ const FleetMap = () => {
             <div style={{ height: 600, borderRadius: 8, overflow: 'hidden' }}>
               <MapContainer
                 center={defaultCenter}
-                zoom={12}
+                zoom={MAP_CONFIG.defaultZoom}
                 style={{ height: '100%', width: '100%' }}
                 ref={mapRef}
               >
                 <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution={tileConfig.attribution}
+                  url={tileConfig.url}
                 />
 
                 <MapUpdater drones={drones} />

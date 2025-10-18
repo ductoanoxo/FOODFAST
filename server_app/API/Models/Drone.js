@@ -33,7 +33,7 @@ const droneSchema = new mongoose.Schema({
         },
         coordinates: {
             type: [Number],
-            default: [0, 0],
+            required: false, // Will be set to homeLocation on creation
         },
     },
     homeLocation: {

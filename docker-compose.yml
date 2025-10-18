@@ -18,11 +18,14 @@ services:
 
   # Backend Server
   server_app:
-    build: ./server_app
+    build:
+      context: ./server_app
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_USERNAME:-ductoanoxo}/foodfast-server:${IMAGE_TAG:-latest}
     container_name: foodfast_server
-    restart: always
+    restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "${SERVER_PORT:-5000}:5000"
     environment:
       - NODE_ENV=production
       - PORT=5000
@@ -40,57 +43,106 @@ services:
       - VNPAY_API=https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
     networks:
       - foodfast_network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
   # Client App
   client_app:
-    build: ./client_app
+    build:
+      context: ./client_app
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_USERNAME:-ductoanoxo}/foodfast-client:${IMAGE_TAG:-latest}
     container_name: foodfast_client
-    restart: always
+    restart: unless-stopped
     ports:
-      - "3000:80"
+      - "${CLIENT_PORT:-3000}:80"
     depends_on:
-      - server_app
+      server_app:
+        condition: service_healthy
     networks:
       - foodfast_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
   # Restaurant App
   restaurant_app:
-    build: ./restaurant_app
+    build:
+      context: ./restaurant_app
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_USERNAME:-ductoanoxo}/foodfast-restaurant:${IMAGE_TAG:-latest}
     container_name: foodfast_restaurant
-    restart: always
+    restart: unless-stopped
     ports:
-      - "3001:80"
+      - "${RESTAURANT_PORT:-3001}:80"
     depends_on:
-      - server_app
+      server_app:
+        condition: service_healthy
     networks:
       - foodfast_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
   # Admin App
   admin_app:
-    build: ./admin_app
+    build:
+      context: ./admin_app
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_USERNAME:-ductoanoxo}/foodfast-admin:${IMAGE_TAG:-latest}
     container_name: foodfast_admin
-    restart: always
+    restart: unless-stopped
     ports:
-      - "3002:80"
+      - "${ADMIN_PORT:-3002}:80"
     depends_on:
-      - server_app
+      server_app:
+        condition: service_healthy
     networks:
       - foodfast_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
   # Drone Management App
   drone_manage:
-    build: ./drone_manage
+    build:
+      context: ./drone_manage
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_USERNAME:-ductoanoxo}/foodfast-drone:${IMAGE_TAG:-latest}
     container_name: foodfast_drone
-    restart: always
+    restart: unless-stopped
     ports:
-      - "3003:80"
+      - "${DRONE_PORT:-3003}:80"
     depends_on:
-      - server_app
+      server_app:
+        condition: service_healthy
     networks:
       - foodfast_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
 volumes:
   mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
 
 networks:
   foodfast_network:

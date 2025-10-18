@@ -1,34 +1,34 @@
 // Map configuration
 export const MAP_CONFIG = {
-    defaultCenter: [10.8231, 106.6297], // Ho Chi Minh City, Vietnam
+    defaultCenter: [10.762622, 106.660172], // Ho Chi Minh City, Vietnam
     defaultZoom: 13,
     maxZoom: 18,
     minZoom: 10,
 }
 
-// Tile layer configuration
+// Tile layer configuration - Now using Goong Maps
 export const TILE_LAYER = {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    url: 'https://tiles.goong.io/{z}/{x}/{y}.png?api_key=imOrVLTc3mfwx9EiBgPtleQi6Dqpi8VHMoKgiijd',
+    attribution: '&copy; <a href="https://goong.io/">Goong</a>',
 }
 
 // Drone status colors
 export const DRONE_STATUS_COLORS = {
-    available: '#52c41a',  // green
-    busy: '#1890ff',       // blue
-    charging: '#faad14',   // orange
+    available: '#52c41a', // green
+    busy: '#1890ff', // blue
+    charging: '#faad14', // orange
     maintenance: '#ff4d4f', // red
-    offline: '#8c8c8c',    // gray
+    offline: '#8c8c8c', // gray
 }
 
 // Mission status colors
 export const MISSION_STATUS_COLORS = {
-    pending: '#faad14',     // orange
-    assigned: '#1890ff',    // blue
+    pending: '#faad14', // orange
+    assigned: '#1890ff', // blue
     in_progress: '#13c2c2', // cyan
-    completed: '#52c41a',   // green
-    failed: '#ff4d4f',      // red
-    cancelled: '#8c8c8c',   // gray
+    completed: '#52c41a', // green
+    failed: '#ff4d4f', // red
+    cancelled: '#8c8c8c', // gray
 }
 
 // Calculate distance between two points (Haversine formula)

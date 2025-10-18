@@ -27,8 +27,11 @@ import {
     RocketOutlined,
     ClockCircleOutlined,
     CheckCircleOutlined,
+    EditOutlined,
+    DeleteOutlined,
+    ExclamationCircleOutlined,
 } from '@ant-design/icons'
-import { createDrone, getAllDrones, getDroneStats } from '../../api/droneAPI'
+import { createDrone, getAllDrones, getDroneStats, updateDrone, deleteDrone } from '../../api/droneAPI'
 import './DronesPage.css'
 
 const DronesPage = () => {
@@ -37,7 +40,10 @@ const DronesPage = () => {
     const [selectedDrone, setSelectedDrone] = useState(null)
     const [modalVisible, setModalVisible] = useState(false)
     const [addModalVisible, setAddModalVisible] = useState(false)
+    const [editModalVisible, setEditModalVisible] = useState(false)
+    const [editingDrone, setEditingDrone] = useState(null)
     const [form] = Form.useForm()
+    const [editForm] = Form.useForm()
 
     useEffect(() => {
         fetchDrones()
@@ -149,6 +155,19 @@ const DronesPage = () => {
                     >
                         Chi tiết
                     </Button>
+                    <Button
+                        icon={<EditOutlined />}
+                        onClick={() => showEditModal(record)}
+                    >
+                        Sửa
+                    </Button>
+                    <Button
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDelete(record)}
+                    >
+                        Xóa
+                    </Button>
                 </Space>
             ),
         },
@@ -179,6 +198,71 @@ const DronesPage = () => {
         } catch (error) {
             message.error('Lỗi: ' + (error.response?.data?.message || error.message))
         }
+    }
+
+    const showEditModal = (drone) => {
+        setEditingDrone(drone)
+        editForm.setFieldsValue({
+            name: drone.name,
+            model: drone.model,
+            serialNumber: drone.serialNumber,
+            lat: drone.homeLocation?.coordinates[1],
+            lng: drone.homeLocation?.coordinates[0],
+            batteryLevel: drone.batteryLevel,
+            maxRange: drone.maxRange,
+            maxWeight: drone.maxWeight,
+            speed: drone.speed,
+            status: drone.status,
+        })
+        setEditModalVisible(true)
+    }
+
+    const handleEditDrone = async (values) => {
+        try {
+            const droneData = {
+                name: values.name,
+                model: values.model,
+                serialNumber: values.serialNumber,
+                homeLocation: {
+                    type: 'Point',
+                    coordinates: [values.lng, values.lat],
+                },
+                batteryLevel: values.batteryLevel,
+                maxRange: values.maxRange,
+                maxWeight: values.maxWeight,
+                speed: values.speed,
+                status: values.status,
+            }
+
+            await updateDrone(editingDrone._id, droneData)
+            message.success('Cập nhật drone thành công!')
+            setEditModalVisible(false)
+            editForm.resetFields()
+            setEditingDrone(null)
+            fetchDrones()
+        } catch (error) {
+            message.error('Lỗi: ' + (error.response?.data?.message || error.message))
+        }
+    }
+
+    const handleDelete = (drone) => {
+        Modal.confirm({
+            title: 'Xác nhận xóa drone',
+            icon: <ExclamationCircleOutlined />,
+            content: `Bạn có chắc chắn muốn xóa drone "${drone.name}" (${drone.serialNumber})?`,
+            okText: 'Xóa',
+            okType: 'danger',
+            cancelText: 'Hủy',
+            onOk: async () => {
+                try {
+                    await deleteDrone(drone._id)
+                    message.success('Xóa drone thành công!')
+                    fetchDrones()
+                } catch (error) {
+                    message.error('Lỗi: ' + (error.response?.data?.message || error.message))
+                }
+            },
+        })
     }
 
     return (
@@ -561,6 +645,145 @@ const DronesPage = () => {
                         )}
                     </div>
                 )}
+            </Modal>
+
+            {/* Edit Drone Modal */}
+            <Modal
+                title="Chỉnh sửa Drone"
+                open={editModalVisible}
+                onCancel={() => {
+                    setEditModalVisible(false)
+                    editForm.resetFields()
+                    setEditingDrone(null)
+                }}
+                onOk={() => editForm.submit()}
+                okText="Cập nhật"
+                cancelText="Hủy"
+                width={600}
+            >
+                <Form
+                    form={editForm}
+                    layout="vertical"
+                    onFinish={handleEditDrone}
+                >
+                    <Form.Item
+                        label="Tên drone"
+                        name="name"
+                        rules={[{ required: true, message: 'Vui lòng nhập tên drone' }]}
+                    >
+                        <Input placeholder="Nhập tên drone" />
+                    </Form.Item>
+
+                    <Form.Item
+                        label="Model"
+                        name="model"
+                        rules={[{ required: true, message: 'Vui lòng nhập model' }]}
+                    >
+                        <Input placeholder="Ví dụ: DJI-X100" />
+                    </Form.Item>
+
+                    <Form.Item
+                        label="Serial Number"
+                        name="serialNumber"
+                        rules={[
+                            { required: true, message: 'Vui lòng nhập serial number' },
+                            { pattern: /^[A-Z0-9]+$/, message: 'Chỉ chấp nhận chữ in hoa và số' }
+                        ]}
+                    >
+                        <Input placeholder="Ví dụ: DRONE001" />
+                    </Form.Item>
+
+                    <Form.Item label="Vị trí home (tọa độ)">
+                        <Space>
+                            <Form.Item
+                                name="lat"
+                                rules={[
+                                    { required: true, message: 'Vui lòng nhập vĩ độ' },
+                                    { type: 'number', min: -90, max: 90, message: 'Vĩ độ phải từ -90 đến 90' }
+                                ]}
+                                noStyle
+                            >
+                                <InputNumber
+                                    placeholder="Vĩ độ (lat)"
+                                    style={{ width: 180 }}
+                                    step={0.0001}
+                                />
+                            </Form.Item>
+                            <Form.Item
+                                name="lng"
+                                rules={[
+                                    { required: true, message: 'Vui lòng nhập kinh độ' },
+                                    { type: 'number', min: -180, max: 180, message: 'Kinh độ phải từ -180 đến 180' }
+                                ]}
+                                noStyle
+                            >
+                                <InputNumber
+                                    placeholder="Kinh độ (lng)"
+                                    style={{ width: 180 }}
+                                    step={0.0001}
+                                />
+                            </Form.Item>
+                        </Space>
+                    </Form.Item>
+
+                    <Form.Item
+                        label="Mức pin (%)"
+                        name="batteryLevel"
+                    >
+                        <InputNumber
+                            min={0}
+                            max={100}
+                            style={{ width: '100%' }}
+                            placeholder="100"
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        label="Tầm bay tối đa (km)"
+                        name="maxRange"
+                    >
+                        <InputNumber
+                            min={1}
+                            style={{ width: '100%' }}
+                            placeholder="10"
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        label="Trọng tải tối đa (kg)"
+                        name="maxWeight"
+                    >
+                        <InputNumber
+                            min={0.1}
+                            style={{ width: '100%' }}
+                            placeholder="5"
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        label="Tốc độ (km/h)"
+                        name="speed"
+                    >
+                        <InputNumber
+                            min={1}
+                            style={{ width: '100%' }}
+                            placeholder="60"
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        label="Trạng thái"
+                        name="status"
+                    >
+                        <Select>
+                            <Select.Option value="available">Sẵn sàng</Select.Option>
+                            <Select.Option value="busy">Đang bận</Select.Option>
+                            <Select.Option value="charging">Đang sạc</Select.Option>
+                            <Select.Option value="maintenance">Bảo trì</Select.Option>
+                            <Select.Option value="offline">Offline</Select.Option>
+                        </Select>
+                    </Form.Item>
+                </Form>
             </Modal>
         </div>
     )
