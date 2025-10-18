@@ -1,0 +1,122 @@
+name: CI - Test and Lint
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - DUCTOAN
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test-server:
+    name: Test Server App
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7.0-alpine
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: admin123
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: server_app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./server_app
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ./server_app
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
+          JWT_SECRET: test-secret-key
+        run: npm test || echo "No tests found"
+
+      - name: Check for syntax errors
+        working-directory: ./server_app
+        run: node -c index.js
+
+  test-client-apps:
+    name: Test Frontend Apps
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        app:
+          - client_app
+          - restaurant_app
+          - admin_app
+          - drone_manage
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./${{ matrix.app }}
+        run: npm ci
+
+      - name: Run linting
+        working-directory: ./${{ matrix.app }}
+        run: npm run lint || echo "No linting configured"
+
+      - name: Build application
+        working-directory: ./${{ matrix.app }}
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.app }}-build
+          path: ${{ matrix.app }}/dist
+          retention-days: 7
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'

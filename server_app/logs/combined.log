@@ -776,3 +776,20 @@
 {"level":"info","message":"Server running on port 5000","timestamp":"2025-10-14T16:33:28.850Z"}
 {"level":"info","message":"Server running on port 5000","timestamp":"2025-10-14T16:40:54.688Z"}
 {"level":"info","message":"Server running on port 5000","timestamp":"2025-10-14T16:46:47.672Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-15T03:52:11.298Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-15T03:53:21.662Z"}
+{"level":"error","message":"Not authorized, token failed","stack":"Error: Not authorized, token failed\n    at D:\\BUILDWEB\\FOODFAST-DRONE-DELIVERY\\server_app\\API\\Middleware\\authMiddleware.js:28:19\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-10-15T04:10:15.000Z"}
+{"level":"error","message":"Not authorized, token failed","stack":"Error: Not authorized, token failed\n    at D:\\BUILDWEB\\FOODFAST-DRONE-DELIVERY\\server_app\\API\\Middleware\\authMiddleware.js:28:19\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-10-15T04:10:15.009Z"}
+{"level":"error","message":"Not authorized, token failed","stack":"Error: Not authorized, token failed\n    at D:\\BUILDWEB\\FOODFAST-DRONE-DELIVERY\\server_app\\API\\Middleware\\authMiddleware.js:28:19\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-10-15T04:10:45.016Z"}
+{"level":"error","message":"Not authorized, token failed","stack":"Error: Not authorized, token failed\n    at D:\\BUILDWEB\\FOODFAST-DRONE-DELIVERY\\server_app\\API\\Middleware\\authMiddleware.js:28:19\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at runNextTicks (node:internal/process/task_queues:69:3)\n    at process.processTimers (node:internal/timers:520:9)","timestamp":"2025-10-15T04:10:45.021Z"}
+{"level":"error","message":"Not authorized, token failed","stack":"Error: Not authorized, token failed\n    at D:\\BUILDWEB\\FOODFAST-DRONE-DELIVERY\\server_app\\API\\Middleware\\authMiddleware.js:28:19\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at runNextTicks (node:internal/process/task_queues:69:3)\n    at listOnTimeout (node:internal/timers:549:9)\n    at process.processTimers (node:internal/timers:523:7)","timestamp":"2025-10-15T04:17:45.031Z"}
+{"level":"error","message":"Not authorized, token failed","stack":"Error: Not authorized, token failed\n    at D:\\BUILDWEB\\FOODFAST-DRONE-DELIVERY\\server_app\\API\\Middleware\\authMiddleware.js:28:19\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-10-15T04:17:45.034Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-15T16:13:57.769Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-15T16:24:52.442Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-16T03:19:19.979Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-16T03:19:57.584Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-16T03:20:41.004Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-16T03:28:20.697Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-16T03:34:28.027Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-16T03:35:57.305Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-18T15:17:06.131Z"}

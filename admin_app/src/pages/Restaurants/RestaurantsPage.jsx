@@ -86,54 +86,25 @@ const RestaurantsPage = () => {
         setModalVisible(true)
     }
 
-    const geocodeAddress = async (address) => {
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=vn`
-        
-        try {
-            const response = await fetch(url, {
-                headers: {
-                    'User-Agent': 'FoodFast-Drone-Delivery/1.0'
-                }
-            })
-            const data = await response.json()
-            
-            if (data.length > 0) {
-                return {
-                    lat: parseFloat(data[0].lat),
-                    lng: parseFloat(data[0].lon),
-                    formatted_address: data[0].display_name
-                }
-            }
-            return null
-        } catch (error) {
-            console.error('Geocoding error:', error)
-            return null
-        }
-    }
-
     const validateEmail = async (_, value) => {
         if (!value) {
-            return Promise.reject(new Error('Vui lòng nhập email'))
+            return Promise.reject(new Error('Email không được để trống!'))
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!emailRegex.test(value)) {
-            return Promise.reject(new Error('Email không hợp lệ'))
+            return Promise.reject(new Error('Email không đúng định dạng!'))
         }
 
         try {
-            setEmailChecking(true)
             const result = await checkEmailExists(value)
-            setEmailChecking(false)
-
             if (result.exists) {
-                return Promise.reject(new Error('Email này đã được sử dụng. Vui lòng dùng email khác!'))
+                return Promise.reject(new Error('Email đã được sử dụng!'))
             }
-
             return Promise.resolve()
         } catch (error) {
-            setEmailChecking(false)
-            return Promise.resolve() // Nếu API lỗi, vẫn cho phép tiếp tục
+            console.error('Error checking email:', error)
+            return Promise.resolve() // Continue if check fails
         }
     }
 

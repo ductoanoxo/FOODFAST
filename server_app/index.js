@@ -64,6 +64,9 @@ app.get('/', (req, res) => {
     });
 });
 
+// Health check endpoints (must be before other routes for Docker health checks)
+app.use('/api', require('./API/Routers/healthRouter'));
+
 app.use('/api/auth', require('./API/Routers/authRouter'));
 app.use('/api/users', require('./API/Routers/userRouter'));
 app.use('/api/products', require('./API/Routers/productRouter'));
@@ -75,6 +78,7 @@ app.use('/api/payment', require('./API/Routers/paymentRouter'));
 app.use('/api/reviews', require('./API/Routers/reviewRouter'));
 app.use('/api/upload', require('./API/Routers/uploadRouter'));
 app.use('/api/vouchers', require('./API/Routers/voucherRouter'));
+app.use('/api/map', require('./API/Routers/mapRouter'));
 app.use('/api/promotions', require('./API/Routers/promotionRouter'));
 app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
 app.use('/api/admin', require('./API/Routers/adminRouter'));

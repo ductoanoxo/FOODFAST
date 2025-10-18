@@ -12,6 +12,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import * as adminAPI from '../../api/adminAPI';
 import socketService from '../../services/socketService';
+import { MAP_CONFIG, getTileLayerConfig } from '../../config/mapConfig';
 import './FleetMap.css';
 
 // Fix Leaflet default marker icon issue
@@ -82,8 +83,9 @@ const FleetMap = () => {
   const [selectedDrone, setSelectedDrone] = useState(null);
   const mapRef = useRef(null);
 
-  // Default center (Ho Chi Minh City)
-  const defaultCenter = [10.8231, 106.6297];
+  // Get tile layer config from map config
+  const tileConfig = getTileLayerConfig();
+  const defaultCenter = [MAP_CONFIG.defaultCenter.lat, MAP_CONFIG.defaultCenter.lng];
 
   useEffect(() => {
     fetchData();
@@ -315,13 +317,13 @@ const FleetMap = () => {
             <div style={{ height: 600, borderRadius: 8, overflow: 'hidden' }}>
               <MapContainer
                 center={defaultCenter}
-                zoom={12}
+                zoom={MAP_CONFIG.defaultZoom}
                 style={{ height: '100%', width: '100%' }}
                 ref={mapRef}
               >
                 <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution={tileConfig.attribution}
+                  url={tileConfig.url}
                 />
 
                 <MapUpdater drones={drones} />

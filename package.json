@@ -12,10 +12,16 @@
         "dev:server": "cd server_app && npm run dev",
         "seed": "cd server_app && npm run seed"
     },
-    "keywords": ["food-delivery", "drone", "react", "nodejs"],
+    "keywords": [
+        "food-delivery",
+        "drone",
+        "react",
+        "nodejs"
+    ],
     "author": "",
     "license": "MIT",
     "devDependencies": {
-        "concurrently": "^8.2.2"
+        "concurrently": "^8.2.2",
+        "mongodb-memory-server": "^10.2.3"
     }
 }
