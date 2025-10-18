@@ -81,15 +81,14 @@ app.use('/api/admin', require('./API/Routers/adminRouter'));
 app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
 app.use('/api/vouchers', require('./API/Routers/voucherRouter'));
 app.use('/api/map', require('./API/Routers/mapRouter'));
-app.use('/api/promotions', require('./API/Routers/promotionRouter')); <<
-<< << < HEAD
+app.use('/api/promotions', require('./API/Routers/promotionRouter')); 
+
 // Admin and dashboard routers (were missing and caused 404s from frontend)
 app.use('/api/admin', require('./API/Routers/adminRouter'));
-app.use('/api/dashboard', require('./API/Routers/dashboardRouter')); ===
-=== =
+app.use('/api/dashboard', require('./API/Routers/dashboardRouter')); 
+
 app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
-app.use('/api/admin', require('./API/Routers/adminRouter')); >>>
->>> > DUCTOAN
+app.use('/api/admin', require('./API/Routers/adminRouter')); 
 
 // ---------------------- ERROR HANDLER ---------------------- //
 app.use(errorHandler);
