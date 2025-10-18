@@ -1,20 +1,20 @@
 version: '3.8'
 
 services:
-  # MongoDB Database
-  mongodb:
-    image: mongo:latest
-    container_name: foodfast_mongodb
-    restart: always
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin123
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - foodfast_network
+  # MongoDB Database - COMMENTED OUT (Using MongoDB Atlas instead)
+  # mongodb:
+  #   image: mongo:latest
+  #   container_name: foodfast_mongodb
+  #   restart: always
+  #   ports:
+  #     - "27017:27017"
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: admin
+  #     MONGO_INITDB_ROOT_PASSWORD: admin123
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   networks:
+  #     - foodfast_network
 
   # Backend Server
   server_app:
@@ -25,9 +25,19 @@ services:
       - "5000:5000"
     environment:
       - NODE_ENV=production
-      - MONGO_URI=mongodb://admin:admin123@mongodb:27017/foodfast_drone_delivery?authSource=admin
-    depends_on:
-      - mongodb
+      - PORT=5000
+      - MONGO_URI=mongodb+srv://toantra349:toantoan123@ktpm.dwb8wtz.mongodb.net/FOODFASTDRONEDELIVERY?retryWrites=true&w=majority&appName=KTPM
+      - JWT_SECRET=your_jwt_secret_key_here_change_in_production
+      - JWT_EXPIRE=7d
+      - CLIENT_URL=http://localhost:3000
+      - RESTAURANT_URL=http://localhost:3001
+      - ADMIN_URL=http://localhost:3002
+      - DRONE_URL=http://localhost:3003
+      - VNPAY_TMN_CODE=1C1PQ01T
+      - VNPAY_HASH_SECRET=VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L
+      - VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+      - VNPAY_RETURN_URL=http://localhost:3000/payment/vnpay/return
+      - VNPAY_API=https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
     networks:
       - foodfast_network
 

@@ -6,11 +6,35 @@ P# 🍔🚁 FOODFAST DRONE DELIVERY
 
 ## ⚡ QUICK START (BẮT ĐẦU NGAY!)
 
-**Vừa clone về? Chỉ cần 3 lệnh:**
+### 🐳 Cách 1: Chạy với Docker (KHUYẾN NGHỊ - Nhanh nhất!)
 
-## Chạy ở file root
 ```bash
+# Chỉ cần 1 lệnh!
+docker compose up -d --build
+```
 
+**Hoặc dùng script:**
+```bash
+# Linux/Mac
+./start-docker.sh
+
+# Windows PowerShell
+.\start-docker.ps1
+```
+
+**Mở trình duyệt:**
+- 👥 Client: http://localhost:3000
+- 🏪 Restaurant: http://localhost:3001
+- 👨‍💼 Admin: http://localhost:3002
+- 🚁 Drone: http://localhost:3003
+
+> 📖 **Chi tiết:** Đọc [DOCKER_QUICKSTART.md](./DOCKER_QUICKSTART.md)
+
+---
+
+### 💻 Cách 2: Chạy ở local (Development)
+
+```bash
 npm run install-all
 npm run seed
 npm run dev
