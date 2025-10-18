@@ -21,9 +21,10 @@ import {
   MinusOutlined,
   PlusOutlined 
 } from '@ant-design/icons'
-import { removeFromCart, updateQuantity, clearCart } from '../../redux/slices/cartSlice'
+import { removeFromCart, updateQuantity, clearCart, updateItemDetails } from '../../redux/slices/cartSlice'
 import './CartPage.css'
 import { restaurantAPI } from '../../api/restaurantAPI'
+import { productAPI } from '../../api'
 
 const { Title, Text } = Typography
 
@@ -33,6 +34,49 @@ const CartPage = () => {
   const { items, totalItems, totalPrice } = useSelector((state) => state.cart)
   const [promoRemaining, setPromoRemaining] = useState(0)
   const [restaurantPromo, setRestaurantPromo] = useState(null)
+  const [updatingPrices, setUpdatingPrices] = useState(false)
+
+  // Cập nhật giá sản phẩm từ database khi load trang
+  useEffect(() => {
+    const updatePrices = async () => {
+      if (!items || items.length === 0) return
+      
+      try {
+        setUpdatingPrices(true)
+        for (const item of items) {
+          try {
+            const response = await productAPI.getProductById(item._id)
+            const product = response.data
+            
+            // Tính giá sau discount
+            const finalPrice = product.discount 
+              ? Math.round(product.price * (1 - product.discount / 100))
+              : product.price
+            
+            // Chỉ update nếu giá khác
+            if (item.price !== finalPrice) {
+              dispatch(updateItemDetails({ 
+                id: item._id, 
+                data: { 
+                  price: finalPrice,
+                  discount: product.discount,
+                  promotion: product.promotion 
+                } 
+              }))
+            }
+          } catch (err) {
+            console.error('Failed to update price for item', item._id, err)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to update cart prices', err)
+      } finally {
+        setUpdatingPrices(false)
+      }
+    }
+    
+    updatePrices()
+  }, []) // Chỉ chạy 1 lần khi mount
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {

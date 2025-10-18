@@ -238,8 +238,41 @@ const OrderTrackingPage = () => {
               <Title level={5}>Món ăn</Title>
               {order.items?.map((item, index) => (
                 <div key={index} className="order-item">
-                  <Text>{item.quantity}x {item.product?.name || 'Product'}</Text>
-                  <Text strong>{formatPrice(item.price * item.quantity)}</Text>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <Text strong>{item.product?.name || 'Product'}</Text>
+                      <div style={{ marginTop: 6 }}>
+                        <Text type="secondary">Giá gốc: </Text>
+                        <Text>{formatPrice(item.originalPrice || item.price)}</Text>
+                        <Text style={{ marginLeft: 12 }} type="secondary">Số lượng: </Text>
+                        <Text strong>{item.quantity}</Text>
+                      </div>
+                      {/* Show discounted unit price if different */}
+                      {item.price !== item.originalPrice && (
+                        <div style={{ marginTop: 6 }}>
+                          <Text type="secondary">Giá sau giảm mỗi phần: </Text>
+                          <Text strong>{formatPrice(item.price)}</Text>
+                        </div>
+                      )}
+
+                      {/* Show per-item promotion/discount if present */}
+                      {item.appliedPromotion && (
+                        <div style={{ marginTop: 6 }}>
+                          <Text type="secondary">Khuyến mãi: </Text>
+                          <Tag color="green">{item.appliedPromotion.name} - {item.appliedPromotion.discountPercent}%</Tag>
+                        </div>
+                      )}
+                      {item.appliedDiscount && item.appliedDiscount.amount > 0 && (
+                        <div style={{ marginTop: 6 }}>
+                          <Text type="secondary">Giảm tổng cho mục này: </Text>
+                          <Text type="danger">-{formatPrice(item.appliedDiscount.amount * item.quantity)}</Text>
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <Text>{formatPrice(item.price * item.quantity)}</Text>
+                    </div>
+                  </div>
                 </div>
               ))}
 
@@ -254,6 +287,22 @@ const OrderTrackingPage = () => {
                   <Text>Phí giao hàng:</Text>
                   <Text>{formatPrice(order.deliveryFee || 0)}</Text>
                 </div>
+                {order.appliedVoucher && (
+                  <div className="summary-row">
+                    <Text>Voucher:</Text>
+                    <Text strong>{order.appliedVoucher.name || order.appliedVoucher.code} - Giảm {formatPrice(order.appliedVoucher.discountAmount || 0)}</Text>
+                  </div>
+                )}
+                {order.appliedPromotions && order.appliedPromotions.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <Text type="secondary">Khuyến mãi áp dụng:</Text>
+                    <div style={{ marginTop: 6 }}>
+                      {order.appliedPromotions.map((p) => (
+                        <Tag key={p.id} color="blue">{p.name} ({p.discountPercent}%)</Tag>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <Divider />
                 <div className="summary-row">
                   <Title level={4}>Tổng cộng:</Title>

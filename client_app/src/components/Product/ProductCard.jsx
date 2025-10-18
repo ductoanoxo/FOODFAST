@@ -14,12 +14,6 @@ const ProductCard = ({ product }) => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-  const handleAddToCart = (e) => {
-    e.stopPropagation()
-    dispatch(addToCart(product))
-    toast.success(`Đã thêm ${product.name} vào giỏ hàng!`)
-  }
-
   // Updated: check restaurant open status before adding to cart
   const [checking, setChecking] = useState(false)
   const handleAddToCartChecked = async (e) => {
@@ -47,7 +41,12 @@ const ProductCard = ({ product }) => {
         return
       }
 
-      dispatch(addToCart(product))
+      // Tính giá sau khi áp dụng discount
+      const finalPrice = product.discount 
+        ? Math.round(product.price * (1 - product.discount / 100))
+        : product.price
+      
+      dispatch(addToCart({ ...product, price: finalPrice }))
       toast.success(`Đã thêm ${product.name} vào giỏ hàng!`)
     } catch (err) {
       console.error('Error checking restaurant status', err)

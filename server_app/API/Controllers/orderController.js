@@ -16,9 +16,11 @@ const createOrder = asyncHandler(async(req, res) => {
         paymentMethod,
         note,
         voucherCode, // Mã voucher (optional)
+        clientCalculatedTotal, // Tổng tiền từ client (để validation)
+        clientDiscount, // Giảm giá từ client (để validation)
     } = req.body
 
-    console.log('Create order request:', { items, deliveryInfo, paymentMethod, note, voucherCode })
+    console.log('Create order request:', { items, deliveryInfo, paymentMethod, note, voucherCode, clientCalculatedTotal, clientDiscount })
 
     if (!items || items.length === 0) {
         res.status(400)
@@ -31,28 +33,123 @@ const createOrder = asyncHandler(async(req, res) => {
         throw new Error('Delivery information is required')
     }
 
-    // Calculate subtotal and validate products
+    // Calculate subtotal and validate products.
+    // Also group items by their restaurant so we can notify only the restaurants that have items in this order.
     let subtotal = 0
-    let restaurantId = null
+    let restaurantId = null // keep first restaurant for backward compatibility (voucher logic etc.)
+
+    // map of restaurantId -> { items: [{ productId, name, price, quantity }], subtotal }
+    const restaurantsMap = new Map()
+    // items to save in the order (snapshot prices after discounts)
+    const savedItems = []
 
     for (let item of items) {
-        const product = await Product.findById(item.product).populate('restaurant')
+        const product = await Product.findById(item.product).populate(['restaurant', 'category'])
         if (!product) {
             res.status(404)
             throw new Error(`Product not found: ${item.product}`)
         }
 
-        // Set restaurant from first product
-        if (!restaurantId) {
-            restaurantId = product.restaurant._id
+        const prodRest = product.restaurant && product.restaurant._id ? String(product.restaurant._id) : null
+        if (!prodRest) {
+            res.status(400)
+            throw new Error('Sản phẩm không thuộc nhà hàng nào')
         }
-        // If any product's restaurant is closed, prevent ordering
+
+        // Set restaurant from first product for compatibility
+        if (!restaurantId) {
+            restaurantId = prodRest
+        }
+
+        // If any product's restaurant is closed, prevent ordering for that product
         if (product.restaurant && product.restaurant.isOpen === false) {
             res.status(400)
             throw new Error('Nhà hàng hiện đang đóng cửa, không thể đặt hàng')
         }
 
-        subtotal += product.price * item.quantity
+    // Calculate price: Check for active promotion first (same logic as getProducts API)
+    let finalPrice = product.price
+    const originalPrice = product.price
+    let appliedPromotion = null
+    let appliedDiscount = {
+        type: 'none',
+        value: 0,
+        amount: 0,
+    }
+    const now = new Date()
+    
+    if (product.category) {
+        const Promotion = require('../Models/Promotion')
+        const promotion = await Promotion.findOne({
+            restaurant: product.restaurant._id,
+            category: product.category._id,
+            isActive: true,
+            startDate: { $lte: now },
+            endDate: { $gte: now },
+        })
+
+        if (promotion) {
+            const discountAmount = (product.price * promotion.discountPercent) / 100
+            finalPrice = product.price - discountAmount
+            
+            // Store promotion info
+            appliedPromotion = {
+                id: promotion._id,
+                name: promotion.name,
+                discountPercent: promotion.discountPercent,
+                category: product.category.name || 'N/A',
+            }
+            
+            appliedDiscount = {
+                type: 'promotion',
+                value: promotion.discountPercent,
+                amount: Math.round(discountAmount),
+            }
+        }
+    }
+    
+    // If no promotion, check product discount
+    if (finalPrice === product.price) {
+        const discount = product.discount || 0
+        if (discount > 0) {
+            const discountAmount = product.price * (discount / 100)
+            finalPrice = product.price - discountAmount
+            
+            appliedDiscount = {
+                type: 'product_discount',
+                value: discount,
+                amount: Math.round(discountAmount),
+            }
+        }
+    }
+
+    // Round to integer VND to avoid floating point pennies
+    const roundedFinalPrice = Math.round(finalPrice)
+
+    const itemSubtotal = roundedFinalPrice * item.quantity
+    subtotal += itemSubtotal
+
+        if (!restaurantsMap.has(prodRest)) {
+            restaurantsMap.set(prodRest, { items: [], subtotal: 0 })
+        }
+        const group = restaurantsMap.get(prodRest)
+        group.items.push({
+            productId: product._id,
+            name: product.name,
+            price: roundedFinalPrice,
+            quantity: item.quantity,
+        })
+        group.subtotal += itemSubtotal
+        
+        // Prepare saved item snapshot for the order with detailed discount info
+        savedItems.push({
+            product: product._id,
+            quantity: item.quantity,
+            price: roundedFinalPrice,
+            originalPrice: originalPrice,
+            appliedPromotion: appliedPromotion,
+            appliedDiscount: appliedDiscount,
+        })
     }
 
     if (!restaurantId) {
@@ -106,11 +203,13 @@ const createOrder = asyncHandler(async(req, res) => {
             discountAmount = voucherObj.calculateDiscount(subtotal)
 
             appliedVoucher = {
-                id: voucherObj._id.toString(),
+                id: voucherObj._id,
                 code: voucherObj.code,
                 name: voucherObj.name,
                 discountType: voucherObj.discountType,
                 discountValue: voucherObj.discountValue,
+                maxDiscount: voucherObj.maxDiscount,
+                discountAmount: discountAmount,
             }
         } catch (error) {
             console.error('Voucher error:', error)
@@ -121,16 +220,47 @@ const createOrder = asyncHandler(async(req, res) => {
 
     const totalAmount = subtotal - discountAmount + deliveryFee
 
+    // Validate với client calculation (cho phép sai lệch nhỏ do làm tròn)
+    if (clientCalculatedTotal && Math.abs(totalAmount - clientCalculatedTotal) > 1) {
+        console.warn('Price mismatch!', {
+            serverTotal: totalAmount,
+            clientTotal: clientCalculatedTotal,
+            serverDiscount: discountAmount,
+            clientDiscount: clientDiscount,
+            subtotal,
+            deliveryFee
+        })
+        // Log warning nhưng vẫn sử dụng giá từ server để đảm bảo an toàn
+    }
+
+    // Build unique list of applied promotions from savedItems
+    const appliedPromotionsList = []
+    for (const it of savedItems) {
+        if (it.appliedPromotion && it.appliedPromotion.id) {
+            // avoid duplicates
+            if (!appliedPromotionsList.find(p => String(p.id) === String(it.appliedPromotion.id))) {
+                appliedPromotionsList.push({
+                    id: it.appliedPromotion.id,
+                    name: it.appliedPromotion.name,
+                    discountPercent: it.appliedPromotion.discountPercent,
+                    category: it.appliedPromotion.category,
+                })
+            }
+        }
+    }
+
     const order = await Order.create({
         user: req.user._id,
-        items,
+        items: savedItems,
         restaurant: restaurantId,
         deliveryInfo,
         note: note || '',
         subtotal,
         deliveryFee,
         discount: discountAmount,
-        appliedPromo: appliedVoucher, // Store voucher info
+        appliedPromo: appliedVoucher ? null : null, // Keep for backward compatibility but deprecated
+        appliedPromotions: appliedPromotionsList,
+        appliedVoucher: appliedVoucher, // Store voucher info in dedicated field
         totalAmount,
         paymentMethod: paymentMethod || 'COD',
         estimatedDeliveryTime: new Date(Date.now() + 30 * 60000), // 30 minutes
@@ -138,15 +268,22 @@ const createOrder = asyncHandler(async(req, res) => {
 
     // Debug logs: show voucher application details
     try {
-        console.log('Voucher debug:', {
+        console.log('Order creation debug:', {
             voucherCodeProvided: voucherCode || null,
             computedDiscountAmount: discountAmount,
             appliedVoucherSnapshot: appliedVoucher,
             orderDiscountStored: order.discount,
-            orderAppliedPromo: order.appliedPromo,
+            orderAppliedVoucher: order.appliedVoucher,
+            itemsWithPromotions: savedItems.map(item => ({
+                productId: item.product,
+                originalPrice: item.originalPrice,
+                finalPrice: item.price,
+                appliedPromotion: item.appliedPromotion,
+                appliedDiscount: item.appliedDiscount,
+            })),
         })
     } catch (e) {
-        console.error('Failed to log voucher debug info', e)
+        console.error('Failed to log order debug info', e)
     }
 
     // Record voucher usage
@@ -172,33 +309,66 @@ const createOrder = asyncHandler(async(req, res) => {
         }
     }
 
-    // Update product sold count
-    for (let item of items) {
-        await Product.findByIdAndUpdate(item.product, {
-            $inc: { soldCount: item.quantity },
-        })
+    // Update product sold count (use savedItems which contain correct quantities)
+    for (let item of savedItems) {
+        try {
+            await Product.findByIdAndUpdate(item.product, {
+                $inc: { soldCount: item.quantity },
+            })
+        } catch (e) {
+            console.error('Failed to update soldCount for product', item.product, e)
+        }
     }
 
     console.log('Order created successfully:', order._id)
 
-    // Emit new-order to the restaurant room so restaurant clients get notified
+    // Emit new-order to the restaurant rooms so only restaurants that have items in this order get notified
     try {
         const io = req.app.get('io')
-            // Populate user info for notification
+        // Populate user info for notification
         const populatedOrder = await Order.findById(order._id).populate('user', 'name phone')
-        console.log('Emitting new-order to restaurant room:', `restaurant-${restaurantId}`, {
-            orderId: order._id,
-            orderNumber: order.orderNumber,
-            user: populatedOrder.user,
-        })
-        io.to(`restaurant-${restaurantId}`).emit('new-order', {
-            orderId: order._id,
-            orderNumber: order.orderNumber,
-            restaurantId: restaurantId,
-            totalAmount: order.totalAmount,
-            user: populatedOrder.user,
-            timestamp: new Date(),
-        })
+
+        // For each restaurant that has items, emit a tailored notification containing only that restaurant's items and subtotal
+        for (const [restId, group] of restaurantsMap.entries()) {
+            try {
+                const roomName = `restaurant-${restId}`
+                // number of sockets in the room (Socket.IO v4)
+                const room = io.sockets.adapter.rooms.get(roomName)
+                const roomSize = room ? room.size : 0
+
+                console.log('Emitting new-order attempt:', { roomName, roomSize, orderId: order._id, orderNumber: order.orderNumber, restaurantId: restId, itemsCount: group.items.length, subtotal: group.subtotal })
+
+                if (roomSize > 0) {
+                    io.to(roomName).emit('new-order', {
+                        orderId: order._id,
+                        orderNumber: order.orderNumber,
+                        restaurantId: restId,
+                        items: group.items,
+                        // include per-item promotion details for restaurant UI to show
+                        itemsWithPromotions: savedItems.filter(si => {
+                            const prod = group.items.find(gi => String(gi.productId) === String(si.product))
+                            return !!prod
+                        }).map(si => ({
+                            product: si.product,
+                            quantity: si.quantity,
+                            price: si.price,
+                            appliedPromotion: si.appliedPromotion,
+                            appliedDiscount: si.appliedDiscount,
+                        })),
+                        subtotal: group.subtotal,
+                        totalAmount: order.totalAmount, // overall total kept for reference
+                        appliedVoucher: order.appliedVoucher,
+                        appliedPromotions: order.appliedPromotions,
+                        user: populatedOrder.user,
+                        timestamp: new Date(),
+                    })
+                } else {
+                    console.log(`Skipping emit to ${roomName} (no connected sockets) for order ${order.orderNumber}`)
+                }
+            } catch (emitErr) {
+                console.error('Failed to emit new-order to restaurant', restId, emitErr)
+            }
+        }
     } catch (e) {
         console.error('Failed to emit new-order:', e)
     }
@@ -305,6 +475,7 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
     const io = req.app.get('io')
     io.to(`order-${order._id}`).emit('order-status-updated', {
         orderId: order._id,
+        orderNumber: order.orderNumber,
         status: order.status,
         timestamp: now,
     })
@@ -313,6 +484,7 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
     io.to(`restaurant-${order.restaurant}`).emit('order-status-updated', {
         orderId: order._id,
         orderNumber: order.orderNumber,
+        restaurantId: order.restaurant,
         status: order.status,
         timestamp: now,
     })
@@ -451,7 +623,7 @@ const confirmDelivery = asyncHandler(async(req, res) => {
 
                 // Notify restaurant about completed order
                 if (order.restaurant) {
-                    socketService.io.emit('restaurant:order:completed', {
+                    socketService.io.to(`restaurant-${order.restaurant}`).emit('restaurant:order:completed', {
                         restaurantId: order.restaurant,
                         orderId: order._id,
                         orderNumber: order.orderNumber,

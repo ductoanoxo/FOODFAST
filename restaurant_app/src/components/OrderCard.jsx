@@ -70,14 +70,40 @@ const OrderCard = ({ order, onUpdateStatus, onViewDetails }) => {
 
             <div>
               <Text strong>Món ăn:</Text>
-              {order.items?.map((item, index) => (
-                <div key={index} style={{ marginTop: 4 }}>
-                  <Text>
-                    {item.quantity}x {item.product?.name || 'Sản phẩm'} 
-                    <Text type="secondary"> - {item.price?.toLocaleString('vi-VN')}₫</Text>
-                  </Text>
+              {order.items?.map((item, index) => {
+                const originalUnit = item.originalPrice ?? item.product?.price ?? 0;
+                const unitPrice = item.price ?? originalUnit;
+                const qty = item.quantity || 0;
+                const discountPercent = item.appliedPromotion?.discountPercent || 0;
+                const itemDiscountAmount = (item.appliedDiscount?.amount || 0) * qty;
+
+                return (
+                  <div key={index} style={{ marginTop: 4 }}>
+                    <Text>
+                      {qty}x {item.product?.name || 'Sản phẩm'}
+                    </Text>
+                    <br />
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      <span>Đơn giá: {unitPrice.toLocaleString('vi-VN')}₫</span>
+                      <span style={{ marginLeft: 8 }}>({originalUnit.toLocaleString('vi-VN')}₫)</span>
+                      {discountPercent > 0 && (
+                        <span style={{ marginLeft: 8, color: '#ff4d4f' }}> -{discountPercent}%</span>
+                      )}
+                      {itemDiscountAmount > 0 && (
+                        <span style={{ marginLeft: 8, color: '#ff4d4f' }}> Giảm {itemDiscountAmount.toLocaleString('vi-VN')}₫</span>
+                      )}
+                    </Text>
+                  </div>
+                );
+              })}
+
+              {/* Order-level voucher summary */}
+              {order.appliedVoucher && (
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary">Voucher: </Text>
+                  <Text strong>{order.appliedVoucher.name || order.appliedVoucher.code} - Giảm {(order.appliedVoucher.discountAmount || 0).toLocaleString('vi-VN')}₫</Text>
                 </div>
-              ))}
+              )}
             </div>
 
             <Divider style={{ margin: '12px 0' }} />

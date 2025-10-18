@@ -69,24 +69,70 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
         {/* Order Items */}
         <div>
           <Title level={5}>Chi tiết món ăn</Title>
-          {order.items?.map((item, index) => (
-            <div 
-              key={index} 
-              style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                padding: '8px 0',
-                borderBottom: '1px solid #f0f0f0'
-              }}
-            >
-              <div>
-                <Text strong>{item.product?.name || 'Sản phẩm'}</Text>
-                <br />
-                <Text type="secondary">Số lượng: {item.quantity}</Text>
+          {order.items?.map((item, index) => {
+            // Prefer stored originalPrice; fallback to product.price
+            const originalUnit = item.originalPrice ?? item.product?.price ?? 0;
+            const discountedUnit = item.price ?? originalUnit;
+            const qty = item.quantity || 0;
+            const lineTotal = discountedUnit * qty;
+            const itemDiscountAmount = (item.appliedDiscount?.amount || 0) * qty;
+
+            return (
+              <div 
+                key={index} 
+                style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  padding: '8px 0',
+                  borderBottom: '1px solid #f0f0f0'
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <Text strong>{item.product?.name || 'Sản phẩm'}</Text>
+                  <br />
+                  <div style={{ marginTop: 6 }}>
+                    <Text type="secondary">Giá gốc mỗi phần: </Text>
+                    <Text>{originalUnit.toLocaleString('vi-VN')}₫</Text>
+                    <Text style={{ marginLeft: 12 }} type="secondary">Số lượng: </Text>
+                    <Text strong>{qty}</Text>
+                  </div>
+
+                  {discountedUnit !== originalUnit && (
+                    <div style={{ marginTop: 6 }}>
+                      <Text type="secondary">Giá sau giảm mỗi phần: </Text>
+                      <Text strong style={{ color: '#ff4d4f' }}>{discountedUnit.toLocaleString('vi-VN')}₫</Text>
+                    </div>
+                  )}
+
+                  {/* Per-item promotion snapshot */}
+                  {item.appliedPromotion && (
+                    <div style={{ marginTop: 6 }}>
+                      <Text type="secondary">Khuyến mãi: </Text>
+                      <Tag color="green">{item.appliedPromotion.name} ({item.appliedPromotion.discountPercent}%)</Tag>
+                    </div>
+                  )}
+
+                  {/* Per-item discount amount */}
+                  {itemDiscountAmount > 0 && (
+                    <div style={{ marginTop: 6 }}>
+                      <Text type="secondary">Giảm cho mục này: </Text>
+                      <Text type="danger">-{itemDiscountAmount.toLocaleString('vi-VN')}₫</Text>
+                    </div>
+                  )}
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  {itemDiscountAmount > 0 && (
+                    <Text type="secondary" delete style={{ fontSize: 12, display: 'block' }}>
+                      {(originalUnit * qty).toLocaleString('vi-VN')}₫
+                    </Text>
+                  )}
+                  <Text strong style={{ color: itemDiscountAmount > 0 ? '#ff4d4f' : 'inherit' }}>
+                    {lineTotal.toLocaleString('vi-VN')}₫
+                  </Text>
+                </div>
               </div>
-              <Text strong>{(item.price * item.quantity)?.toLocaleString('vi-VN')}₫</Text>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <Divider />
@@ -119,6 +165,24 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
                 Phương thức: {order.paymentMethod === 'vnpay' ? 'VNPay' : 'Tiền mặt'}
               </Text>
             </div>
+            {/* Show applied voucher and promotions */}
+            {order.appliedVoucher && (
+              <div style={{ marginTop: 12 }}>
+                <Text type="secondary">Voucher khách dùng:</Text>
+                <br />
+                <Text strong>{order.appliedVoucher.name || order.appliedVoucher.code} - Giảm {(order.appliedVoucher.discountAmount || 0).toLocaleString('vi-VN')}₫</Text>
+              </div>
+            )}
+            {order.appliedPromotions && order.appliedPromotions.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <Text type="secondary">Khuyến mãi áp dụng:</Text>
+                <div style={{ marginTop: 6 }}>
+                  {order.appliedPromotions.map((p) => (
+                    <Tag key={p.id} color="blue">{p.name} ({p.discountPercent}%)</Tag>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
