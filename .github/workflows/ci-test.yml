@@ -19,7 +19,8 @@ jobs:
     
     services:
       mongodb:
-        image: mongo:7.0-alpine
+        # Use the official MongoDB 7.0 image (alpine variant '7.0-alpine' does not exist)
+        image: mongo:7.0
         ports:
           - 27017:27017
         env:
