@@ -1,0 +1,460 @@
+﻿├── admin_app
+│   ├── src
+│   │   ├── api
+│   │   │   ├── adminAPI.js
+│   │   │   ├── authAPI.js
+│   │   │   ├── axios.js
+│   │   │   ├── dashboardAPI.js
+│   │   │   ├── droneAPI.js
+│   │   │   ├── mapAPI.js
+│   │   │   ├── orderAPI.js
+│   │   │   ├── restaurantAPI.js
+│   │   │   └── userAPI.js
+│   │   ├── components
+│   │   │   ├── Alerts
+│   │   │   │   ├── AlertCenter.css
+│   │   │   │   └── AlertCenter.jsx
+│   │   │   └── Layout
+│   │   │       └── MainLayout.jsx
+│   │   ├── config
+│   │   │   └── mapConfig.js
+│   │   ├── pages
+│   │   │   ├── Assignment
+│   │   │   │   ├── AssignmentDashboard.css
+│   │   │   │   └── AssignmentDashboard.jsx
+│   │   │   ├── Auth
+│   │   │   │   └── LoginPage.jsx
+│   │   │   ├── Dashboard
+│   │   │   │   ├── DashboardPage.css
+│   │   │   │   └── DashboardPage.jsx
+│   │   │   ├── Drones
+│   │   │   │   ├── DronesPage.css
+│   │   │   │   └── DronesPage.jsx
+│   │   │   ├── Fleet
+│   │   │   │   ├── FleetMap.css
+│   │   │   │   └── FleetMap.jsx
+│   │   │   ├── Orders
+│   │   │   │   ├── OrdersPage.css
+│   │   │   │   └── OrdersPage.jsx
+│   │   │   ├── Restaurants
+│   │   │   │   ├── RestaurantsPage.css
+│   │   │   │   └── RestaurantsPage.jsx
+│   │   │   └── Users
+│   │   │       ├── UsersPage.css
+│   │   │       └── UsersPage.jsx
+│   │   ├── redux
+│   │   │   ├── slices
+│   │   │   │   └── authSlice.js
+│   │   │   └── store.js
+│   │   ├── services
+│   │   │   └── socketService.js
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── .editorconfig
+│   ├── .env.local
+│   ├── Dockerfile
+│   ├── index.html
+│   ├── jsconfig.json
+│   ├── nginx.conf
+│   ├── package-lock.json
+│   ├── package.json
+│   └── vite.config.js
+├── client_app
+│   ├── public
+│   │   └── clear-cache.html
+│   ├── src
+│   │   ├── api
+│   │   │   ├── authAPI.js
+│   │   │   ├── axios.js
+│   │   │   ├── index.js
+│   │   │   ├── orderAPI.js
+│   │   │   ├── paymentAPI.js
+│   │   │   ├── productAPI.js
+│   │   │   ├── restaurantAPI.js
+│   │   │   ├── reviewAPI.js
+│   │   │   └── voucherAPI.js
+│   │   ├── components
+│   │   │   ├── Layout
+│   │   │   │   ├── AuthLayout.css
+│   │   │   │   ├── AuthLayout.jsx
+│   │   │   │   ├── Footer.css
+│   │   │   │   ├── Footer.jsx
+│   │   │   │   ├── Header.css
+│   │   │   │   ├── Header.jsx
+│   │   │   │   └── MainLayout.jsx
+│   │   │   ├── Product
+│   │   │   │   ├── CreateReview.css
+│   │   │   │   ├── CreateReview.jsx
+│   │   │   │   ├── ProductCard.css
+│   │   │   │   ├── ProductCard.jsx
+│   │   │   │   ├── ProductFilter.css
+│   │   │   │   ├── ProductFilter.jsx
+│   │   │   │   ├── ReviewList.css
+│   │   │   │   └── ReviewList.jsx
+│   │   │   ├── Restaurant
+│   │   │   │   ├── RestaurantCard.css
+│   │   │   │   └── RestaurantCard.jsx
+│   │   │   ├── Route
+│   │   │   │   └── ProtectedRoute.jsx
+│   │   │   └── VoucherSelector
+│   │   │       ├── VoucherSelector.css
+│   │   │       └── VoucherSelector.jsx
+│   │   ├── pages
+│   │   │   ├── Auth
+│   │   │   │   ├── LoginPage.css
+│   │   │   │   ├── LoginPage.jsx
+│   │   │   │   ├── RegisterPage.css
+│   │   │   │   └── RegisterPage.jsx
+│   │   │   ├── Cart
+│   │   │   │   ├── CartPage.css
+│   │   │   │   └── CartPage.jsx
+│   │   │   ├── Categories
+│   │   │   │   ├── CategoriesPage.css
+│   │   │   │   └── CategoriesPage.jsx
+│   │   │   ├── Checkout
+│   │   │   │   ├── CheckoutPage.css
+│   │   │   │   ├── CheckoutPage.jsx
+│   │   │   │   └── VNPayReturn.jsx
+│   │   │   ├── Home
+│   │   │   │   ├── HomePage.css
+│   │   │   │   └── HomePage.jsx
+│   │   │   ├── Menu
+│   │   │   │   ├── MenuPage.css
+│   │   │   │   └── MenuPage.jsx
+│   │   │   ├── NotFound
+│   │   │   │   └── NotFoundPage.jsx
+│   │   │   ├── OrderTracking
+│   │   │   │   ├── DroneMap.css
+│   │   │   │   ├── DroneMap.jsx
+│   │   │   │   ├── OrderTrackingPage.css
+│   │   │   │   └── OrderTrackingPage.jsx
+│   │   │   ├── Payment
+│   │   │   │   └── VNPayReturnPage.jsx
+│   │   │   ├── Product
+│   │   │   │   ├── ProductDetailPage.css
+│   │   │   │   └── ProductDetailPage.jsx
+│   │   │   ├── Profile
+│   │   │   │   ├── MyReviews.css
+│   │   │   │   ├── MyReviews.jsx
+│   │   │   │   ├── OrderHistoryPage.css
+│   │   │   │   ├── OrderHistoryPage.jsx
+│   │   │   │   ├── ProfilePage.css
+│   │   │   │   └── ProfilePage.jsx
+│   │   │   └── Store
+│   │   │       ├── RestaurantDetailPage.css
+│   │   │       ├── RestaurantDetailPage.jsx
+│   │   │       ├── StorePage.css
+│   │   │       └── StorePage.jsx
+│   │   ├── redux
+│   │   │   ├── slices
+│   │   │   │   ├── authSlice.js
+│   │   │   │   ├── cartSlice.js
+│   │   │   │   ├── orderSlice.js
+│   │   │   │   └── productSlice.js
+│   │   │   └── store.js
+│   │   ├── services
+│   │   │   └── socketService.js
+│   │   ├── tests
+│   │   │   └── api
+│   │   ├── utils
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── Dockerfile
+│   ├── index.html
+│   ├── nginx.conf
+│   ├── package-lock.json
+│   ├── package.json
+│   └── vite.config.js
+├── cypress
+│   └── e2e
+│       └── user-journeys.cy.js
+├── drone_manage
+│   ├── public
+│   │   └── clear-cache.html
+│   ├── src
+│   │   ├── api
+│   │   │   ├── authAPI.js
+│   │   │   ├── axios.js
+│   │   │   ├── droneAPI.js
+│   │   │   ├── index.js
+│   │   │   ├── missionAPI.js
+│   │   │   └── orderAPI.js
+│   │   ├── components
+│   │   │   ├── Layout
+│   │   │   │   └── MainLayout.jsx
+│   │   │   ├── Map
+│   │   │   │   ├── DroneMarker.jsx
+│   │   │   │   ├── index.js
+│   │   │   │   ├── LocationMarker.jsx
+│   │   │   │   ├── Map.css
+│   │   │   │   ├── MapController.jsx
+│   │   │   │   └── RoutePolyline.jsx
+│   │   │   └── ProtectedRoute.jsx
+│   │   ├── pages
+│   │   │   ├── Auth
+│   │   │   │   └── LoginPage.jsx
+│   │   │   ├── Drones
+│   │   │   │   ├── DronesPage.css
+│   │   │   │   └── DronesPage.jsx
+│   │   │   ├── Map
+│   │   │   │   ├── MapPage.css
+│   │   │   │   └── MapPage.jsx
+│   │   │   └── Missions
+│   │   │       ├── MissionsPage.css
+│   │   │       └── MissionsPage.jsx
+│   │   ├── redux
+│   │   │   ├── slices
+│   │   │   │   ├── authSlice.js
+│   │   │   │   ├── droneSlice.js
+│   │   │   │   ├── missionSlice.js
+│   │   │   │   └── orderSlice.js
+│   │   │   └── store.js
+│   │   ├── utils
+│   │   │   └── mapHelpers.js
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── .env
+│   ├── .env.example
+│   ├── .env.local
+│   ├── Dockerfile
+│   ├── index.html
+│   ├── LOGIN_GUIDE.md
+│   ├── nginx.conf
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── README.md
+│   └── vite.config.js
+├── restaurant_app
+│   ├── src
+│   │   ├── api
+│   │   │   ├── authAPI.js
+│   │   │   ├── axios.js
+│   │   │   ├── categoryAPI.js
+│   │   │   ├── orderAPI.js
+│   │   │   ├── productAPI.js
+│   │   │   ├── promotionAPI.js
+│   │   │   ├── restaurantAPI.js
+│   │   │   ├── reviewAPI.js
+│   │   │   └── voucherAPI.js
+│   │   ├── components
+│   │   │   ├── Layout
+│   │   │   │   └── MainLayout.jsx
+│   │   │   ├── NotificationCenter
+│   │   │   │   ├── index.js
+│   │   │   │   ├── NotificationCenter.css
+│   │   │   │   └── NotificationCenter.jsx
+│   │   │   ├── EmptyState.jsx
+│   │   │   ├── ErrorBoundary.jsx
+│   │   │   ├── LoadingSpinner.jsx
+│   │   │   ├── OrderCard.css
+│   │   │   ├── OrderCard.jsx
+│   │   │   ├── OrderDetailModal.jsx
+│   │   │   ├── ProductCard.css
+│   │   │   ├── ProductCard.jsx
+│   │   │   └── ProductFormModal.jsx
+│   │   ├── constants
+│   │   │   └── index.js
+│   │   ├── contexts
+│   │   ├── pages
+│   │   │   ├── Auth
+│   │   │   │   └── LoginPage.jsx
+│   │   │   ├── Categories
+│   │   │   │   ├── CategoriesPage.css
+│   │   │   │   ├── CategoriesPage.jsx
+│   │   │   │   └── index.js
+│   │   │   ├── Dashboard
+│   │   │   │   ├── DashboardPage.css
+│   │   │   │   └── DashboardPage.jsx
+│   │   │   ├── Menu
+│   │   │   │   ├── MenuPage.css
+│   │   │   │   └── MenuPage.jsx
+│   │   │   ├── Orders
+│   │   │   │   ├── OrdersPage.css
+│   │   │   │   └── OrdersPage.jsx
+│   │   │   ├── Promotions
+│   │   │   │   ├── PromotionsPage.css
+│   │   │   │   └── PromotionsPage.jsx
+│   │   │   ├── Reports
+│   │   │   │   ├── index.js
+│   │   │   │   ├── ReportsPage.css
+│   │   │   │   └── ReportsPage.jsx
+│   │   │   ├── Reviews
+│   │   │   │   ├── index.js
+│   │   │   │   ├── ReviewsPage.css
+│   │   │   │   └── ReviewsPage.jsx
+│   │   │   ├── Settings
+│   │   │   │   ├── index.js
+│   │   │   │   ├── SettingsPage.css
+│   │   │   │   └── SettingsPage.jsx
+│   │   │   └── Vouchers
+│   │   │       ├── VouchersPage.css
+│   │   │       └── VouchersPage.jsx
+│   │   ├── redux
+│   │   │   ├── slices
+│   │   │   │   ├── authSlice.js
+│   │   │   │   ├── orderSlice.js
+│   │   │   │   └── productSlice.js
+│   │   │   └── store.js
+│   │   ├── utils
+│   │   │   ├── helpers.js
+│   │   │   └── socket.js
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── Dockerfile
+│   ├── index.html
+│   ├── nginx.conf
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── README.md
+│   ├── READ_ME_FIRST.md
+│   ├── START_HERE.md
+│   ├── USER_GUIDE.md
+│   └── vite.config.js
+├── server_app
+│   ├── API
+│   │   ├── Controllers
+│   │   │   ├── adminController.js
+│   │   │   ├── authController.js
+│   │   │   ├── categoryController.js
+│   │   │   ├── dashboardController.js
+│   │   │   ├── droneController.js
+│   │   │   ├── orderController.js
+│   │   │   ├── paymentController.js
+│   │   │   ├── productController.js
+│   │   │   ├── promotionController.js
+│   │   │   ├── restaurantController.js
+│   │   │   ├── reviewController.js
+│   │   │   ├── uploadController.js
+│   │   │   ├── userController.js
+│   │   │   └── voucherController.js
+│   │   ├── Middleware
+│   │   │   ├── asyncHandler.js
+│   │   │   ├── authMiddleware.js
+│   │   │   └── errorMiddleware.js
+│   │   ├── Models
+│   │   │   ├── Category.js
+│   │   │   ├── Drone.js
+│   │   │   ├── Order.js
+│   │   │   ├── Product.js
+│   │   │   ├── Promotion.js
+│   │   │   ├── PromoUsage.js
+│   │   │   ├── Restaurant.js
+│   │   │   ├── Review.js
+│   │   │   ├── User.js
+│   │   │   ├── Voucher.js
+│   │   │   └── VoucherUsage.js
+│   │   ├── Routers
+│   │   │   ├── adminRouter.js
+│   │   │   ├── authRouter.js
+│   │   │   ├── categoryRouter.js
+│   │   │   ├── dashboardRouter.js
+│   │   │   ├── droneRouter.js
+│   │   │   ├── healthRouter.js
+│   │   │   ├── mapRouter.js
+│   │   │   ├── orderRouter.js
+│   │   │   ├── paymentRouter.js
+│   │   │   ├── productRouter.js
+│   │   │   ├── promotionRouter.js
+│   │   │   ├── restaurantRouter.js
+│   │   │   ├── reviewRouter.js
+│   │   │   ├── uploadRouter.js
+│   │   │   ├── userRouter.js
+│   │   │   └── voucherRouter.js
+│   │   └── Utils
+│   │       ├── logger.js
+│   │       └── mapService.js
+│   ├── config
+│   │   └── db.js
+│   ├── logs
+│   │   ├── combined.log
+│   │   └── error.log
+│   ├── services
+│   │   └── socketService.js
+│   ├── uploads
+│   │   ├── 1760246730968-75991099.jpg
+│   │   ├── 1760249863170-963760896.png
+│   │   ├── bun.jpg
+│   │   ├── com.jpg
+│   │   ├── comtam.jpg
+│   │   ├── comtamsuonbicha.jpg
+│   │   ├── doannhanh.jpg
+│   │   ├── drone.jpg
+│   │   ├── ganuong.jpg
+│   │   ├── garan.jpg
+│   │   ├── garanburger.jpg
+│   │   ├── iconbun.jpg
+│   │   ├── iconcom.png
+│   │   ├── icondouong.jpg
+│   │   ├── iconfastfood.jpg
+│   │   ├── iconpho.jpg
+│   │   ├── KFC.jpg
+│   │   ├── khamphamonan.jpg
+│   │   ├── logo.jpg
+│   │   ├── nuocgiakhat.jpg
+│   │   ├── pho.jpg
+│   │   ├── sale.jpg
+│   │   └── trada.jpg
+│   ├── __tests__
+│   │   ├── helpers
+│   │   │   └── testApp.js
+│   │   ├── integration
+│   │   │   ├── auth.integration.test.js
+│   │   │   ├── drone.integration.test.js
+│   │   │   ├── order.integration.test.js
+│   │   │   └── simple.test.js
+│   │   ├── unit
+│   │   │   ├── authentication.test.js
+│   │   │   ├── droneAssignment.test.js
+│   │   │   ├── orderCalculation.test.js
+│   │   │   └── validation.test.js
+│   │   ├── INTEGRATION_TEST_GUIDE.md
+│   │   ├── README.md
+│   │   └── setup.js
+│   ├── API_ENDPOINTS.md
+│   ├── check-drone-status.js
+│   ├── check-products.js
+│   ├── Dockerfile
+│   ├── fix-stuck-drones.js
+│   ├── index.js
+│   ├── jest.config.js
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── package.test.json
+│   ├── seed.js
+│   └── test-order.js
+├── .env
+├── .env.example
+├── API_DOCUMENTATION.md
+├── API_TESTING.md
+├── CICD_SETUP_GUIDE.md
+├── cypress.config.js
+├── cypress.package.json
+├── docker-compose.yml
+├── DOCKER_COMMANDS.md
+├── DOCKER_QUICKSTART.md
+├── install.ps1
+├── INTEGRATION_TESTS_GUIDE.md
+├── package-lock.json
+├── package.json
+├── PRICE_FIX_SUMMARY.md
+├── PROJECT_COMPLETE.md
+├── QUICKSTART.md
+├── QUICK_START_CICD.md
+├── README.md
+├── seed.ps1
+├── setup-cicd.ps1
+├── setup.ps1
+├── SETUP_GUIDE.md
+├── start-docker.ps1
+├── start-docker.sh
+├── start.ps1
+├── START_HERE.md
+├── START_WITH_DOCKER.md
+├── STRUCTURE.md
+├── TESTING_SUMMARY.md
+├── TREE.txt
+└── UNIT_TESTS_GUIDE.md
