@@ -8,6 +8,9 @@
         "dev": "nodemon index.js",
         "seed": "node seed.js",
         "test": "jest --verbose --coverage",
+        "test:unit": "jest --testMatch='**/__tests__/unit/**/*.test.js' --verbose",
+        "test:integration": "jest --testMatch='**/__tests__/integration/**/*.test.js' --verbose --runInBand",
+        "test:ci": "jest --ci --coverage --maxWorkers=2",
         "test:watch": "jest --watch"
     },
     "keywords": [
