@@ -18,13 +18,44 @@ permissions:
   security-events: write
 
 jobs:
-  test-server:
-    name: Test Server App
+  server-unit-tests:
+    name: Server Unit Tests
     runs-on: ubuntu-latest
-    
+    # Run unit tests quickly (useful for PRs)
+    if: github.event_name == 'pull_request' || contains(fromJson('["main","develop","kiet","DUCTOAN"]'), github.ref_name)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: server_app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./server_app
+        run: npm ci
+
+      - name: Run unit tests
+        working-directory: ./server_app
+        env:
+          NODE_ENV: test
+        run: npm run test:unit
+
+      - name: Check for syntax errors
+        working-directory: ./server_app
+        run: node -c index.js
+
+  server-integration-tests:
+    name: Server Integration Tests
+    runs-on: ubuntu-latest
+    needs: server-unit-tests
+    # Run integration tests for push to main/develop (and branches listed)
+    if: github.event_name == 'push' && contains(fromJson('["main","develop","kiet","DUCTOAN"]'), github.ref_name)
     services:
       mongodb:
-        # Use the official MongoDB 7.0 image (alpine variant '7.0-alpine' does not exist)
         image: mongo:7.0
         ports:
           - 27017:27017
@@ -52,17 +83,16 @@ jobs:
         working-directory: ./server_app
         run: npm ci
 
-      - name: Run tests
+      - name: Seed DB (if required)
+        working-directory: ./server_app
+        run: node seed.js || echo "No seed script"
+
+      - name: Run integration tests
         working-directory: ./server_app
         env:
           NODE_ENV: test
           MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
-          JWT_SECRET: test-secret-key
-        run: npm test || echo "No tests found"
-
-      - name: Check for syntax errors
-        working-directory: ./server_app
-        run: node -c index.js
+        run: npm run test:integration
 
   test-client-apps:
     name: Test Frontend Apps
@@ -91,9 +121,18 @@ jobs:
         working-directory: ./${{ matrix.app }}
         run: npm ci
 
+      - name: Run frontend tests (if present)
+        working-directory: ./${{ matrix.app }}
+        run: |
+          if npm run | grep -q "test"; then
+            npm test
+          else
+            echo "No frontend tests script present"
+          fi
+
       - name: Run linting
         working-directory: ./${{ matrix.app }}
-        run: npm run lint || echo "No linting configured"
+        run: npm run lint
 
       - name: Build application
         working-directory: ./${{ matrix.app }}

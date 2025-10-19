@@ -8,7 +8,10 @@
         "dev": "nodemon index.js",
         "seed": "node seed.js",
         "test": "jest --verbose --coverage",
-        "test:watch": "jest --watch"
+        "test:watch": "jest --watch",
+        "test:unit": "jest __tests__/unit --coverage",
+        "test:integration": "jest __tests__/integration --coverage",
+        "test:ci": "jest --ci --coverage --maxWorkers=2"
     },
     "keywords": [
         "express",
