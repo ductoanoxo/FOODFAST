@@ -2,6 +2,11 @@ P# 🍔🚁 FOODFAST DRONE DELIVERY
 
 > Hệ thống đặt đồ ăn với giao hàng bằng drone - Food delivery system with drone management
 
+[![CI Test](https://github.com/ductoanoxo/FOODFAST/workflows/CI%20-%20Test%20and%20Lint/badge.svg)](https://github.com/ductoanoxo/FOODFAST/actions)
+[![Docker Build](https://github.com/ductoanoxo/FOODFAST/workflows/Docker%20Build%20and%20Push/badge.svg)](https://github.com/ductoanoxo/FOODFAST/actions)
+[![Code Quality](https://github.com/ductoanoxo/FOODFAST/workflows/Code%20Quality/badge.svg)](https://github.com/ductoanoxo/FOODFAST/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ---
 
 ## ⚡ QUICK START (BẮT ĐẦU NGAY!)

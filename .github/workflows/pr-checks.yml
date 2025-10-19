@@ -1,0 +1,106 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  pr-validation:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR title
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+          
+          # Check if PR title follows conventional commit format
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\(.+\))?: .+ ]]; then
+            echo "❌ PR title must follow conventional commit format"
+            echo "Examples: feat: add user authentication, fix(api): resolve cors issue"
+            exit 1
+          fi
+          echo "✅ PR title is valid"
+
+      - name: Check for merge conflicts
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          if git merge-tree $(git merge-base HEAD origin/${{ github.base_ref }}) origin/${{ github.base_ref }} HEAD | grep -q "<<<<<"; then
+            echo "❌ Merge conflicts detected"
+            exit 1
+          fi
+          echo "✅ No merge conflicts"
+
+      - name: Check file changes
+        run: |
+          echo "📝 Files changed in this PR:"
+          git diff --name-only origin/${{ github.base_ref }}...HEAD
+
+  size-check:
+    name: Check Build Size
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    strategy:
+      matrix:
+        app:
+          - client_app
+          - restaurant_app
+          - admin_app
+          - drone_manage
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./${{ matrix.app }}
+        run: npm ci
+
+      - name: Build and check size
+        working-directory: ./${{ matrix.app }}
+        run: |
+          npm run build
+          BUILD_SIZE=$(du -sh dist | cut -f1)
+          echo "📦 Build size for ${{ matrix.app }}: $BUILD_SIZE"
+          echo "build_size=$BUILD_SIZE" >> $GITHUB_OUTPUT
+        env:
+          CI: false
+
+  comment-pr:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    needs: [pr-validation, size-check]
+    if: always()
+    
+    steps:
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ needs.pr-validation.result }}' === 'success' && '${{ needs.size-check.result }}' === 'success' ? '✅' : '❌';
+            const message = `${status} **PR Validation Complete**\n\n` +
+                          `- Validation: ${{ needs.pr-validation.result }}\n` +
+                          `- Build Size Check: ${{ needs.size-check.result }}\n\n` +
+                          `All automated checks have been completed for this PR.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });

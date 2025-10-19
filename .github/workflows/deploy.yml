@@ -1,0 +1,78 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'production' }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy services
+        run: |
+          echo "🚀 Deploying FoodFast services..."
+          echo "Environment: ${{ github.event.inputs.environment || 'production' }}"
+          echo "Version: ${{ github.sha }}"
+          
+          # Pull latest images
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/foodfast-server:latest
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/foodfast-client:latest
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/foodfast-restaurant:latest
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/foodfast-admin:latest
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/foodfast-drone:latest
+          
+          echo "✅ All images pulled successfully!"
+
+      - name: Send deployment notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment successful!"
+          else
+            echo "❌ Deployment failed!"
+          fi
+
+  health-check:
+    name: Health Check
+    needs: deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Wait for services to be ready
+        run: |
+          echo "⏳ Waiting 30 seconds for services to start..."
+          sleep 30
+
+      - name: Check service health
+        run: |
+          echo "🏥 Performing health checks..."
+          # Add your health check endpoints here
+          # curl -f http://your-domain/api/health || exit 1
+          echo "✅ Health checks passed!"

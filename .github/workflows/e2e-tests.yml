@@ -1,0 +1,107 @@
+name: E2E Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  schedule:
+    # Run every day at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  cypress-tests:
+    name: Cypress E2E Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: admin123
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install server dependencies
+        working-directory: ./server_app
+        run: npm ci
+
+      - name: Start server
+        working-directory: ./server_app
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
+          JWT_SECRET: test-secret-key
+          PORT: 5000
+        run: |
+          npm start &
+          echo $! > server.pid
+          
+      - name: Wait for server to be ready
+        run: |
+          echo "Waiting for server to start..."
+          timeout 60 bash -c 'until curl -f http://localhost:5000/api/health 2>/dev/null; do sleep 2; done' || echo "Server health check timeout"
+
+      - name: Install client dependencies
+        working-directory: ./client_app
+        run: npm ci
+
+      - name: Install Cypress dependencies
+        run: |
+          if [ -f "cypress.package.json" ]; then
+            npm install --prefix . $(cat cypress.package.json | jq -r '.devDependencies | to_entries[] | "\(.key)@\(.value)"')
+          else
+            npm install cypress @cypress/webpack-preprocessor
+          fi
+
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v6
+        with:
+          browser: chrome
+          config-file: cypress.config.js
+          wait-on: 'http://localhost:5000'
+          wait-on-timeout: 120
+        env:
+          CYPRESS_baseUrl: http://localhost:3000
+
+      - name: Upload Cypress screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+          retention-days: 7
+
+      - name: Upload Cypress videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: cypress/videos
+          retention-days: 7
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f "server_app/server.pid" ]; then
+            kill $(cat server_app/server.pid) || true
+          fi

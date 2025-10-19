@@ -1,0 +1,74 @@
+version: 2
+updates:
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Server App
+  - package-ecosystem: "npm"
+    directory: "/server_app"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "server"
+    versioning-strategy: increase
+    open-pull-requests-limit: 10
+
+  # Client App
+  - package-ecosystem: "npm"
+    directory: "/client_app"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "client"
+    versioning-strategy: increase
+    open-pull-requests-limit: 10
+
+  # Restaurant App
+  - package-ecosystem: "npm"
+    directory: "/restaurant_app"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "restaurant"
+    versioning-strategy: increase
+    open-pull-requests-limit: 10
+
+  # Admin App
+  - package-ecosystem: "npm"
+    directory: "/admin_app"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "admin"
+    versioning-strategy: increase
+    open-pull-requests-limit: 10
+
+  # Drone Management App
+  - package-ecosystem: "npm"
+    directory: "/drone_manage"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "drone"
+    versioning-strategy: increase
+    open-pull-requests-limit: 10
+
+  # Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"
