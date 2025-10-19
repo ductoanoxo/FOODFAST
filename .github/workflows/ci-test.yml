@@ -12,6 +12,11 @@ on:
       - main
       - develop
 
+# Grant minimal permissions required for uploading SARIF/code-scanning results
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   test-server:
     name: Test Server App
@@ -119,6 +124,10 @@ jobs:
 
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        # Only attempt upload when workflow runs in the repository (not a fork),
+        # otherwise the runner's token may not have permission and you'll see
+        # 'Resource not accessible by integration'. Keep 'always()' to allow
+        # the step to be evaluated for post-job/cleanup semantics.
+        if: always() && github.repository == github.event.repository.full_name
         with:
           sarif_file: 'trivy-results.sarif'
