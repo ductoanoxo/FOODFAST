@@ -6,6 +6,7 @@ on:
       - main
       - develop
       - DUCTOAN
+      - kiet
     tags:
       - 'v*'
   pull_request:

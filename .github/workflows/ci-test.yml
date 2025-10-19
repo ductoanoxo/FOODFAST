@@ -6,6 +6,7 @@ on:
       - main
       - develop
       - DUCTOAN
+      - kiet
   pull_request:
     branches:
       - main
