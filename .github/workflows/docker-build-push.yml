@@ -6,6 +6,7 @@ on:
       - main
       - develop
       - DUCTOAN
+      - kiet
     tags:
       - 'v*'
   pull_request:
@@ -64,7 +65,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
