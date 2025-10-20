@@ -8,6 +8,10 @@ const Restaurant = require('./API/Models/Restaurant');
 const Product = require('./API/Models/Product');
 const Category = require('./API/Models/Category');
 const Drone = require('./API/Models/Drone');
+const Voucher = require('./API/Models/Voucher');
+const Promotion = require('./API/Models/Promotion');
+const Review = require('./API/Models/Review');
+const Order = require('./API/Models/Order');
 
 const MONGO_URI =
   process.env.MONGO_URI ||
@@ -36,6 +40,10 @@ const seedData = async () => {
       Product.deleteMany({}),
       Category.deleteMany({}),
       Drone.deleteMany({}),
+      Voucher.deleteMany({}),
+      Promotion.deleteMany({}),
+      Review.deleteMany({}),
+      Order.deleteMany({}),
     ]);
     console.log('Cleared existing data...');
 
@@ -324,6 +332,156 @@ const seedData = async () => {
       },
     ]);
     console.log('Drones created:', drones.length);
+
+    // Vouchers - Tạo voucher cho từng nhà hàng
+    const vouchers = await Voucher.create([
+      {
+        code: 'COMTAM50',
+        name: 'Giảm 50K cho Cơm Tấm',
+        description: 'Áp dụng cho đơn hàng từ 100K',
+        restaurant: restaurants[0]._id,
+        discountType: 'fixed',
+        discountValue: 50000,
+        minOrder: 100000,
+        maxUsage: 100,
+        validFrom: new Date('2025-01-01'),
+        validUntil: new Date('2025-12-31'),
+        isActive: true,
+        userRestriction: 'all',
+      },
+      {
+        code: 'PHO20OFF',
+        name: 'Giảm 20% cho Phở',
+        description: 'Giảm tối đa 30K',
+        restaurant: restaurants[1]._id,
+        discountType: 'percentage',
+        discountValue: 20,
+        maxDiscount: 30000,
+        minOrder: 50000,
+        maxUsage: 50,
+        validFrom: new Date('2025-01-01'),
+        validUntil: new Date('2025-12-31'),
+        isActive: true,
+        userRestriction: 'all',
+      },
+      {
+        code: 'KFCNEW',
+        name: 'Voucher cho khách hàng mới',
+        description: 'Giảm 15% cho khách hàng mới',
+        restaurant: restaurants[2]._id,
+        discountType: 'percentage',
+        discountValue: 15,
+        maxDiscount: 50000,
+        minOrder: 80000,
+        maxUsage: 200,
+        validFrom: new Date('2025-01-01'),
+        validUntil: new Date('2025-12-31'),
+        isActive: true,
+        userRestriction: 'new',
+      },
+      {
+        code: 'FREESHIP',
+        name: 'Miễn phí giao hàng',
+        description: 'Miễn phí ship cho đơn từ 50K',
+        restaurant: restaurants[0]._id,
+        discountType: 'fixed',
+        discountValue: 15000,
+        minOrder: 50000,
+        maxUsage: null, // Không giới hạn
+        validFrom: new Date('2025-01-01'),
+        validUntil: new Date('2025-12-31'),
+        isActive: true,
+        userRestriction: 'all',
+      },
+    ]);
+    console.log('Vouchers created:', vouchers.length);
+
+    // Promotions - Khuyến mãi theo danh mục sản phẩm
+    const promotions = await Promotion.create([
+      {
+        restaurant: restaurants[0]._id,
+        name: 'Giảm giá món Cơm',
+        description: 'Giảm 10% cho tất cả món cơm',
+        discountPercent: 10,
+        category: categories[0]._id, // Cơm
+        startDate: new Date('2025-01-01'),
+        endDate: new Date('2025-12-31'),
+        isActive: true,
+      },
+      {
+        restaurant: restaurants[1]._id,
+        name: 'Khuyến mãi Phở',
+        description: 'Giảm 15% cho tất cả món phở',
+        discountPercent: 15,
+        category: categories[1]._id, // Phở
+        startDate: new Date('2025-01-01'),
+        endDate: new Date('2025-11-30'),
+        isActive: true,
+      },
+      {
+        restaurant: restaurants[2]._id,
+        name: 'Sale Fastfood',
+        description: 'Giảm 20% cho đồ ăn nhanh',
+        discountPercent: 20,
+        category: categories[4]._id, // Fastfood
+        startDate: new Date('2025-01-01'),
+        endDate: new Date('2025-12-31'),
+        isActive: true,
+      },
+      {
+        restaurant: restaurants[0]._id,
+        name: 'Happy Hour - Đồ uống',
+        description: 'Giảm 25% cho đồ uống từ 14h-16h',
+        discountPercent: 25,
+        category: categories[3]._id, // Đồ uống
+        startDate: new Date('2025-01-01'),
+        endDate: new Date('2025-12-31'),
+        isActive: true,
+      },
+    ]);
+    console.log('Promotions created:', promotions.length);
+
+    // Reviews - Tạo một số đánh giá mẫu
+    const reviews = await Review.create([
+      {
+        user: initialUsers[1]._id, // John Doe
+        product: products[0]._id, // Cơm Tấm Sườn Bì Chả
+        rating: 5,
+        comment: 'Cơm tấm rất ngon, sườn nướng thơm lừng. Giao hàng nhanh!',
+        isVerified: true,
+      },
+      {
+        user: initialUsers[1]._id,
+        product: products[2]._id, // Phở Bò Tái
+        rating: 5,
+        comment: 'Phở ngon, nước dùng đậm đà. Sẽ đặt lại!',
+        isVerified: true,
+      },
+      {
+        user: initialUsers[1]._id,
+        product: products[4]._id, // Gà Rán 2 Miếng
+        rating: 4,
+        comment: 'Gà giòn ngon, nhưng hơi ít. Giá hơi cao.',
+        isVerified: true,
+      },
+      {
+        user: initialUsers[1]._id,
+        product: products[1]._id, // Cơm Tấm Sườn Nướng
+        rating: 4,
+        comment: 'Ngon, giá phải chăng. Phục vụ tốt.',
+        isVerified: false,
+      },
+      {
+        user: initialUsers[1]._id,
+        product: products[5]._id, // Combo Gà + Burger
+        rating: 5,
+        comment: 'Combo rất đáng giá, ngon và đầy đủ!',
+        isVerified: true,
+        restaurantReply: 'Cảm ơn bạn đã ủng hộ! Hẹn gặp lại.',
+        repliedAt: new Date(),
+      },
+    ]);
+    console.log('Reviews created:', reviews.length);
 
     console.log('\n✅ Database seeded successfully!');
     console.log('\n👥 Login credentials:');
