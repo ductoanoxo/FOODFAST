@@ -15,6 +15,19 @@ const generateToken = (id) => {
 const register = asyncHandler(async(req, res) => {
     const { name, email, password, phone } = req.body
 
+    // Validate required fields
+    if (!name || !email || !password) {
+        res.status(400)
+        throw new Error('Please provide name, email and password')
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+        res.status(400)
+        throw new Error('Please provide a valid email address')
+    }
+
     // Check if user exists
     const userExists = await User.findOne({ email })
     if (userExists) {
@@ -55,6 +68,12 @@ const register = asyncHandler(async(req, res) => {
 // @access  Public
 const login = asyncHandler(async(req, res) => {
     const { email, password } = req.body
+
+    // Validate required fields
+    if (!email || !password) {
+        res.status(400)
+        throw new Error('Please provide email and password')
+    }
 
     // Check for user email
     const user = await User.findOne({ email }).select('+password')

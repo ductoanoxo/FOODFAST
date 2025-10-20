@@ -54,10 +54,10 @@ describe('🔐 Authentication Flow - INTEGRATION TEST', () => {
 
             // Verify response
             expect(response.body.success).toBe(true);
-            expect(response.body.data.user.name).toBe('New User');
-            expect(response.body.data.user.email).toBe('newuser@example.com');
-            expect(response.body.data.user.password).toBeUndefined(); // Password không trả về
-            expect(response.body.data.token).toBeDefined(); // JWT token
+            expect(response.body.user.name).toBe('New User');
+            expect(response.body.user.email).toBe('newuser@example.com');
+            expect(response.body.user.password).toBeUndefined(); // Password không trả về
+            expect(response.body.token).toBeDefined(); // JWT token
 
             // Verify user in database
             const userInDB = await User.findOne({ email: 'newuser@example.com' });
@@ -82,7 +82,7 @@ describe('🔐 Authentication Flow - INTEGRATION TEST', () => {
                 .send(userData)
                 .expect(201);
 
-            expect(response.body.data.user.role).toBe('user');
+            expect(response.body.user.role).toBe('user');
         });
 
         test('❌ REJECT khi EMAIL ĐÃ TỒN TẠI', async() => {
@@ -146,17 +146,15 @@ describe('🔐 Authentication Flow - INTEGRATION TEST', () => {
     describe('POST /api/auth/login', () => {
 
         beforeEach(async() => {
-            // Create test user
-            const bcrypt = require('bcryptjs');
-            const hashedPassword = await bcrypt.hash('password123', 10);
-
-            await User.create({
-                name: 'Login Test User',
-                email: 'login@example.com',
-                phone: '0901234567',
-                password: hashedPassword,
-                role: 'user'
-            });
+            // Register test user via API (password will be auto-hashed)
+            await request(app)
+                .post('/api/auth/register')
+                .send({
+                    name: 'Login Test User',
+                    email: 'login@example.com',
+                    phone: '0901234567',
+                    password: 'password123'
+                });
         });
 
         test('✅ ĐĂNG NHẬP thành công với email + password ĐÚNG', async() => {
@@ -172,12 +170,12 @@ describe('🔐 Authentication Flow - INTEGRATION TEST', () => {
 
             // Verify response
             expect(response.body.success).toBe(true);
-            expect(response.body.data.user.email).toBe('login@example.com');
-            expect(response.body.data.user.password).toBeUndefined();
-            expect(response.body.data.token).toBeDefined();
+            expect(response.body.user.email).toBe('login@example.com');
+            expect(response.body.user.password).toBeUndefined();
+            expect(response.body.token).toBeDefined();
 
             // Token should be valid JWT
-            const token = response.body.data.token;
+            const token = response.body.token;
             expect(token.split('.').length).toBe(3); // JWT has 3 parts
         });
 
@@ -190,7 +188,7 @@ describe('🔐 Authentication Flow - INTEGRATION TEST', () => {
                 })
                 .expect(200);
 
-            const user = response.body.data.user;
+            const user = response.body.user;
             expect(user.name).toBe('Login Test User');
             expect(user.email).toBe('login@example.com');
             expect(user.phone).toBe('0901234567');
@@ -269,7 +267,7 @@ describe('🔐 Authentication Flow - INTEGRATION TEST', () => {
                     password: 'password123'
                 });
 
-            userToken = loginResponse.body.data.token;
+            userToken = loginResponse.body.token;
         });
 
         test('✅ LẤY thông tin user từ VALID TOKEN', async() => {
@@ -335,7 +333,7 @@ describe('🔐 Authentication Flow - INTEGRATION TEST', () => {
                     password: 'password123'
                 });
 
-            expect(response.body.data.user.password).toBeUndefined();
+            expect(response.body.user.password).toBeUndefined();
         });
     });
 });

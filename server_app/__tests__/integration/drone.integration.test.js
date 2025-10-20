@@ -11,11 +11,13 @@ const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const createTestApp = require('../helpers/testApp');
 const Drone = require('../../API/Models/Drone');
+const User = require('../../API/Models/User');
 
 const app = createTestApp();
 
 let mongod;
 let adminToken;
+let adminUser;
 
 // Setup: Start in-memory MongoDB before all tests
 beforeAll(async() => {
@@ -31,8 +33,22 @@ beforeAll(async() => {
     // Connect to in-memory DB
     await mongoose.connect(uri);
 
-    // Create admin user và get token (simplified - no auth for demo)
-    adminToken = 'mock-admin-token';
+    // Create admin user and get token
+    const registerResponse = await request(app)
+        .post('/api/auth/register')
+        .send({
+            name: 'Admin User',
+            email: 'admin@test.com',
+            password: 'admin123',
+            phone: '0901234567'
+        });
+
+    adminToken = registerResponse.body.token;
+    
+    // Update user role to admin
+    adminUser = await User.findOne({ email: 'admin@test.com' });
+    adminUser.role = 'admin';
+    await adminUser.save();
 }, 30000);
 
 // Cleanup: Clear data after each test
@@ -68,6 +84,10 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
                     serialNumber: 'SN001',
                     status: 'available',
                     batteryLevel: 90,
+                    currentLocation: {
+                        type: 'Point',
+                        coordinates: [106.660172, 10.762622]
+                    },
                     homeLocation: {
                         type: 'Point',
                         coordinates: [106.660172, 10.762622]
@@ -81,6 +101,10 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
                     serialNumber: 'SN002',
                     status: 'busy',
                     batteryLevel: 60,
+                    currentLocation: {
+                        type: 'Point',
+                        coordinates: [106.670172, 10.772622]
+                    },
                     homeLocation: {
                         type: 'Point',
                         coordinates: [106.670172, 10.772622]
@@ -106,9 +130,9 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
         test('✅ FILTER drones theo STATUS', async() => {
             // Setup
             await Drone.create([
-                { name: 'D1', model: 'DJI', serialNumber: 'SN1', status: 'available', homeLocation: { coordinates: [106.6, 10.7] }, maxRange: 10, maxLoad: 2 },
-                { name: 'D2', model: 'DJI', serialNumber: 'SN2', status: 'busy', homeLocation: { coordinates: [106.6, 10.7] }, maxRange: 10, maxLoad: 2 },
-                { name: 'D3', model: 'DJI', serialNumber: 'SN3', status: 'available', homeLocation: { coordinates: [106.6, 10.7] }, maxRange: 10, maxLoad: 2 },
+                { name: 'D1', model: 'DJI', serialNumber: 'SN1', status: 'available', currentLocation: { type: 'Point', coordinates: [106.660172, 10.762622] }, homeLocation: { coordinates: [106.6, 10.7] }, maxRange: 10, maxLoad: 2 },
+                { name: 'D2', model: 'DJI', serialNumber: 'SN2', status: 'busy', currentLocation: { type: 'Point', coordinates: [106.661172, 10.763622] }, homeLocation: { coordinates: [106.6, 10.7] }, maxRange: 10, maxLoad: 2 },
+                { name: 'D3', model: 'DJI', serialNumber: 'SN3', status: 'available', currentLocation: { type: 'Point', coordinates: [106.662172, 10.764622] }, homeLocation: { coordinates: [106.6, 10.7] }, maxRange: 10, maxLoad: 2 },
             ]);
 
             // Test: Filter by status=available
@@ -141,6 +165,7 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
             // Test: Create drone
             const response = await request(app)
                 .post('/api/drones')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send(newDrone)
                 .expect(201);
 
@@ -172,6 +197,7 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
 
             const response = await request(app)
                 .post('/api/drones')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send(newDrone)
                 .expect(201);
 
@@ -188,6 +214,7 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
 
             const response = await request(app)
                 .post('/api/drones')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send(invalidDrone)
                 .expect(400);
 
@@ -200,6 +227,7 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
                 name: 'D1',
                 model: 'DJI',
                 serialNumber: 'DUPLICATE-SN',
+                currentLocation: { type: 'Point', coordinates: [106.660172, 10.762622] },
                 homeLocation: { coordinates: [106.6, 10.7] },
                 maxRange: 10,
                 maxLoad: 2
@@ -217,6 +245,7 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
 
             const response = await request(app)
                 .post('/api/drones')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send(duplicateDrone)
                 .expect(400);
 
@@ -226,7 +255,7 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
 
     describe('GET /api/drones/:id', () => {
 
-        test('✅ Trả về CHI TIẾT drone theo ID', async() => {
+        test('✅ LẤY chi tiết DRONE theo ID', async() => {
             // Setup: Create drone
             const drone = await Drone.create({
                 name: 'Drone-Detail',
@@ -234,6 +263,7 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
                 serialNumber: 'SN-DETAIL',
                 status: 'available',
                 batteryLevel: 85,
+                currentLocation: { type: 'Point', coordinates: [106.660172, 10.762622] },
                 homeLocation: { coordinates: [106.6, 10.7] },
                 maxRange: 10,
                 maxLoad: 2
@@ -263,7 +293,7 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
 
     describe('PUT /api/drones/:id', () => {
 
-        test('✅ CẬP NHẬT drone và lưu vào DB', async() => {
+        test('✅ UPDATE thông tin drone', async() => {
             // Setup
             const drone = await Drone.create({
                 name: 'Old Name',
@@ -271,6 +301,7 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
                 serialNumber: 'SN-UPDATE',
                 status: 'available',
                 batteryLevel: 50,
+                currentLocation: { type: 'Point', coordinates: [106.660172, 10.762622] },
                 homeLocation: { coordinates: [106.6, 10.7] },
                 maxRange: 10,
                 maxLoad: 2
@@ -285,6 +316,7 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
 
             const response = await request(app)
                 .put(`/api/drones/${drone._id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send(updates)
                 .expect(200);
 
@@ -303,12 +335,13 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
 
     describe('DELETE /api/drones/:id', () => {
 
-        test('✅ XÓA drone khỏi DATABASE', async() => {
+        test('✅ XÓA drone', async() => {
             // Setup
             const drone = await Drone.create({
                 name: 'To Delete',
                 model: 'DJI',
                 serialNumber: 'SN-DELETE',
+                currentLocation: { type: 'Point', coordinates: [106.660172, 10.762622] },
                 homeLocation: { coordinates: [106.6, 10.7] },
                 maxRange: 10,
                 maxLoad: 2
@@ -317,6 +350,7 @@ describe('🚁 Drone Management API - INTEGRATION TEST', () => {
             // Test: Delete drone
             const response = await request(app)
                 .delete(`/api/drones/${drone._id}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(200);
 
             expect(response.body.success).toBe(true);

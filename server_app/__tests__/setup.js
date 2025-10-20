@@ -19,11 +19,6 @@ global.console = {
 jest.setTimeout(10000);
 // ============================================
 
-// Set test environment variables
-process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test_jwt_secret_key';
-process.env.MONGO_URI = 'mongodb://localhost:27017/foodfast_test';
-
 // Mock external services
 jest.mock('cloudinary', () => ({
     v2: {

@@ -26,6 +26,8 @@ let testRestaurant;
 let testProduct;
 let testDrone;
 let userToken;
+let restaurantToken;
+let restaurantUser;
 
 beforeAll(async() => {
     mongod = await MongoMemoryServer.create();
@@ -37,17 +39,37 @@ beforeAll(async() => {
 
     await mongoose.connect(uri);
 
-    // Create test data
-    testUser = await User.create({
-        name: 'Test User',
-        email: 'testuser@example.com',
-        phone: '0901234567',
-        password: 'password123',
-        role: 'user'
-    });
+    // Register user and get token
+    const registerResponse = await request(app)
+        .post('/api/auth/register')
+        .send({
+            name: 'Test User',
+            email: 'testuser@example.com',
+            phone: '0901234567',
+            password: 'password123'
+        });
+
+    userToken = registerResponse.body.token;
+    testUser = await User.findOne({ email: 'testuser@example.com' });
+
+    // Create restaurant user for status updates
+    const restaurantRegister = await request(app)
+        .post('/api/auth/register')
+        .send({
+            name: 'Restaurant Owner',
+            email: 'restaurant@example.com',
+            phone: '0907654321',
+            password: 'password123'
+        });
+
+    restaurantToken = restaurantRegister.body.token;
+    restaurantUser = await User.findOne({ email: 'restaurant@example.com' });
+    restaurantUser.role = 'restaurant';
+    await restaurantUser.save();
 
     testRestaurant = await Restaurant.create({
         name: 'Test Restaurant',
+        owner: new mongoose.Types.ObjectId(),
         email: 'restaurant@test.com',
         phone: '0987654321',
         address: '123 Test Street',
@@ -62,7 +84,7 @@ beforeAll(async() => {
         name: 'Test Pizza',
         price: 100000,
         restaurant: testRestaurant._id,
-        category: 'food',
+        category: new mongoose.Types.ObjectId(),
         isAvailable: true
     });
 
@@ -121,7 +143,7 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
                         coordinates: [106.670172, 10.772622]
                     }
                 },
-                paymentMethod: 'cash',
+                paymentMethod: 'COD',
                 note: 'Test order'
             };
 
@@ -139,7 +161,7 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
             expect(response.body.data.items[0].quantity).toBe(2);
             expect(response.body.data.subtotal).toBe(200000); // 100k × 2
             expect(response.body.data.deliveryFee).toBeDefined();
-            expect(response.body.data.total).toBeDefined();
+            expect(response.body.data.totalAmount).toBeDefined();
             expect(response.body.data.status).toBe('pending');
 
             // Verify data in database
@@ -160,7 +182,7 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
                     address: '123 Street',
                     location: { coordinates: [106.67, 10.77] }
                 },
-                paymentMethod: 'cash',
+                paymentMethod: 'COD',
                 deliveryFee: 20000
             };
 
@@ -175,23 +197,24 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
             // total = 320k
             expect(response.body.data.subtotal).toBe(300000);
             expect(response.body.data.deliveryFee).toBe(20000);
-            expect(response.body.data.total).toBe(320000);
+            expect(response.body.data.totalAmount).toBe(320000);
         });
 
         test('✅ ÁP DỤNG VOUCHER giảm giá THÀNH CÔNG', async() => {
             // Create voucher
             const voucher = await Voucher.create({
                 code: 'DISCOUNT20',
+                name: '20% Discount Voucher',
                 discountType: 'percentage',
                 discountValue: 20, // 20%
                 minOrder: 50000,
                 maxDiscount: 50000,
-                startDate: new Date('2025-01-01'),
-                endDate: new Date('2025-12-31'),
+                validFrom: new Date('2025-01-01'),
+                validUntil: new Date('2025-12-31'),
                 isActive: true,
                 restaurant: testRestaurant._id,
-                usageLimit: 100,
-                currentUsage: 0
+                maxUsage: 100,
+                usageCount: 0
             });
 
             const orderData = {
@@ -204,7 +227,7 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
                     address: '123 Street',
                     location: { coordinates: [106.67, 10.77] }
                 },
-                paymentMethod: 'cash',
+                paymentMethod: 'COD',
                 deliveryFee: 15000,
                 voucherCode: 'DISCOUNT20'
             };
@@ -220,7 +243,7 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
             // total = 200k + 15k - 40k = 175k
             expect(response.body.data.subtotal).toBe(200000);
             expect(response.body.data.discountAmount).toBe(40000);
-            expect(response.body.data.total).toBe(175000);
+            expect(response.body.data.totalAmount).toBe(175000);
             expect(response.body.data.appliedVoucher).toBe(voucher._id.toString());
 
             // Verify VoucherUsage created
@@ -234,11 +257,12 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
         test('❌ REJECT voucher ĐÃ HẾT HẠN', async() => {
             const expiredVoucher = await Voucher.create({
                 code: 'EXPIRED',
+                name: 'Expired Voucher',
                 discountType: 'percentage',
                 discountValue: 20,
                 minOrder: 0,
-                startDate: new Date('2024-01-01'),
-                endDate: new Date('2024-12-31'), // Expired
+                validFrom: new Date('2024-01-01'),
+                validUntil: new Date('2024-12-31'), // Expired
                 isActive: true,
                 restaurant: testRestaurant._id
             });
@@ -251,7 +275,7 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
                     address: '123 Street',
                     location: { coordinates: [106.67, 10.77] }
                 },
-                paymentMethod: 'cash',
+                paymentMethod: 'COD',
                 voucherCode: 'EXPIRED'
             };
 
@@ -268,11 +292,12 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
         test('❌ REJECT khi ĐƠN HÀNG < MIN ORDER của voucher', async() => {
             const voucher = await Voucher.create({
                 code: 'MIN100K',
+                name: 'Minimum 100K Order',
                 discountType: 'percentage',
                 discountValue: 10,
                 minOrder: 100000, // Min 100k
-                startDate: new Date('2025-01-01'),
-                endDate: new Date('2025-12-31'),
+                validFrom: new Date('2025-01-01'),
+                validUntil: new Date('2025-12-31'),
                 isActive: true,
                 restaurant: testRestaurant._id
             });
@@ -285,7 +310,7 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
                     address: '123 Street',
                     location: { coordinates: [106.67, 10.77] }
                 },
-                paymentMethod: 'cash',
+                paymentMethod: 'COD',
                 voucherCode: 'MIN100K'
             };
 
@@ -310,7 +335,7 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
                     address: '123 Street',
                     location: { coordinates: [106.67, 10.77] }
                 },
-                paymentMethod: 'cash'
+                paymentMethod: 'COD'
             };
 
             const response = await request(app)
@@ -329,7 +354,7 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
             const orderData = {
                 items: [{ product: testProduct._id, quantity: 1, price: 100000 }],
                 // Missing deliveryInfo
-                paymentMethod: 'cash'
+                paymentMethod: 'COD'
             };
 
             const response = await request(app)
@@ -359,11 +384,11 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
                     phone: '0909999999',
                     address: '123 Street'
                 },
-                subtotal: 200000,
+                subtotalAmount: 200000,
                 deliveryFee: 15000,
-                total: 215000,
+                totalAmount: 215000,
                 status: 'pending',
-                paymentMethod: 'cash'
+                paymentMethod: 'COD'
             });
 
             const response = await request(app)
@@ -374,7 +399,7 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
             expect(response.body.success).toBe(true);
             expect(response.body.data._id).toBe(order._id.toString());
             expect(response.body.data.status).toBe('pending');
-            expect(response.body.data.total).toBe(215000);
+            expect(response.body.data.totalAmount).toBe(215000);
         });
     });
 
@@ -386,16 +411,16 @@ describe('📦 Order Management API - INTEGRATION TEST', () => {
                 restaurant: testRestaurant._id,
                 items: [{ product: testProduct._id, quantity: 1, price: 100000 }],
                 deliveryInfo: { name: 'Test', phone: '0909999999', address: '123' },
-                subtotal: 100000,
+                subtotalAmount: 100000,
                 deliveryFee: 15000,
-                total: 115000,
+                totalAmount: 115000,
                 status: 'pending',
-                paymentMethod: 'cash'
+                paymentMethod: 'COD'
             });
 
             const response = await request(app)
-                .put(`/api/orders/${order._id}/status`)
-                .set('Authorization', `Bearer ${userToken}`)
+                .patch(`/api/orders/${order._id}/status`)
+                .set('Authorization', `Bearer ${restaurantToken}`)
                 .send({ status: 'confirmed' })
                 .expect(200);
 
