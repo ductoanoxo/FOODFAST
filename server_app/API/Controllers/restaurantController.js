@@ -268,9 +268,9 @@ const updateRestaurant = asyncHandler(async(req, res) => {
         }
     }
 
-    // Handle image upload
+    // Handle image upload - Cloudinary URL
     if (req.file) {
-        updateData.image = `/uploads/${req.file.filename}`
+        updateData.image = req.file.path // Cloudinary URL
     }
 
     restaurant = await Restaurant.findByIdAndUpdate(

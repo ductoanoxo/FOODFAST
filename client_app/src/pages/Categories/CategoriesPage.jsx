@@ -60,14 +60,14 @@ const CategoriesPage = () => {
                       src={category.image}
                       alt={category.name}
                       className="category-img"
-                      onError={(e) => { e.currentTarget.src = 'http://localhost:5000/uploads/iconfastfood.jpg' }}
+                      onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/iconfastfood.jpg' }}
                     />
                   ) : category.icon && /^https?:\/\//i.test(category.icon) ? (
                     <img
                       src={category.icon}
                       alt={category.name}
                       className="category-img"
-                      onError={(e) => { e.currentTarget.src = 'http://localhost:5000/uploads/iconfastfood.jpg' }}
+                      onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/iconfastfood.jpg' }}
                     />
                   ) : (
                     <span className="category-emoji">{category.icon || '🍽️'}</span>

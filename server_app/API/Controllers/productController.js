@@ -156,9 +156,9 @@ const createProduct = asyncHandler(async(req, res) => {
         restaurant: req.user.restaurantId,
     }
 
-    // Handle image upload
+    // Handle image upload - Cloudinary URL
     if (req.file) {
-        productData.image = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
+        productData.image = req.file.path // Cloudinary URL
     }
 
     const product = await Product.create(productData)
@@ -193,9 +193,9 @@ const updateProduct = asyncHandler(async(req, res) => {
 
     const updateData = { ...req.body }
 
-    // Only update image if new file is uploaded
+    // Only update image if new file is uploaded - Cloudinary URL
     if (req.file) {
-        updateData.image = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
+        updateData.image = req.file.path // Cloudinary URL
     } else {
         // Don't update image field if no new file - remove it from updateData
         delete updateData.image

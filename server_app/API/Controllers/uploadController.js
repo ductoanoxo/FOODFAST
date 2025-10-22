@@ -1,6 +1,5 @@
 const asyncHandler = require('../Middleware/asyncHandler')
-const path = require('path')
-const fs = require('fs')
+const { cloudinary } = require('../../config/cloudinary')
 
 // @desc    Upload single image
 // @route   POST /api/upload/image
@@ -11,15 +10,12 @@ const uploadImage = asyncHandler(async (req, res) => {
         throw new Error('No file uploaded')
     }
 
-    // Generate file URL
-    const fileUrl = `/uploads/${req.file.filename}`
-
     res.json({
         success: true,
         data: {
             filename: req.file.filename,
-            url: fileUrl,
-            path: req.file.path,
+            url: req.file.path, // Cloudinary URL
+            publicId: req.file.filename,
         },
     })
 })
@@ -35,8 +31,8 @@ const uploadImages = asyncHandler(async (req, res) => {
 
     const files = req.files.map((file) => ({
         filename: file.filename,
-        url: `/uploads/${file.filename}`,
-        path: file.path,
+        url: file.path, // Cloudinary URL
+        publicId: file.filename,
     }))
 
     res.json({
@@ -46,27 +42,29 @@ const uploadImages = asyncHandler(async (req, res) => {
     })
 })
 
-// @desc    Delete image
-// @route   DELETE /api/upload/:filename
+// @desc    Delete image from Cloudinary
+// @route   DELETE /api/upload/:publicId
 // @access  Private (Admin)
 const deleteImage = asyncHandler(async (req, res) => {
-    const { filename } = req.params
+    const { publicId } = req.params
 
-    const filePath = path.join(__dirname, '../../uploads', filename)
+    try {
+        // Delete from Cloudinary
+        const result = await cloudinary.uploader.destroy(publicId)
 
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-        res.status(404)
-        throw new Error('File not found')
+        if (result.result === 'not found') {
+            res.status(404)
+            throw new Error('Image not found')
+        }
+
+        res.json({
+            success: true,
+            message: 'Image deleted successfully',
+        })
+    } catch (error) {
+        res.status(500)
+        throw new Error('Failed to delete image from Cloudinary')
     }
-
-    // Delete file
-    fs.unlinkSync(filePath)
-
-    res.json({
-        success: true,
-        message: 'File deleted successfully',
-    })
 })
 
 module.exports = {
