@@ -137,10 +137,7 @@
 <a name='L72'></a><a href='#L72'>72</a>
 <a name='L73'></a><a href='#L73'>73</a>
 <a name='L74'></a><a href='#L74'>74</a>
-<a name='L75'></a><a href='#L75'>75</a>
-<a name='L76'></a><a href='#L76'>76</a>
-<a name='L77'></a><a href='#L77'>77</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L75'></a><a href='#L75'>75</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -151,9 +148,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -195,18 +189,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -216,8 +212,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const asyncHandler = <span class="cstat-no" title="statement not covered" >require('../Middleware/asyncHandler')</span>
-const path = <span class="cstat-no" title="statement not covered" >require('path')</span>
-const fs = <span class="cstat-no" title="statement not covered" >require('fs')</span>
+const { cloudinary } = <span class="cstat-no" title="statement not covered" >require('../../config/cloudinary')</span>
 &nbsp;
 // @desc    Upload single image
 // @route   POST /api/upload/image
@@ -228,15 +223,12 @@ const uploadImage = <span class="cstat-no" title="statement not covered" >asyncH
 <span class="cstat-no" title="statement not covered" >        throw new Error('No file uploaded')</span>
     }
 &nbsp;
-    // Generate file URL
-    const fileUrl = <span class="cstat-no" title="statement not covered" >`/uploads/${req.file.filename}`</span>
-&nbsp;
 <span class="cstat-no" title="statement not covered" >    res.json({</span>
         success: true,
         data: {
             filename: req.file.filename,
-            url: fileUrl,
-            path: req.file.path,
+            url: req.file.path, // Cloudinary URL
+            publicId: req.file.filename,
         },
     })
 })
@@ -252,8 +244,8 @@ const uploadImages = <span class="cstat-no" title="statement not covered" >async
 &nbsp;
     const files = <span class="cstat-no" title="statement not covered" >req.files.map(<span class="fstat-no" title="function not covered" >(f</span>ile) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
         filename: file.filename,
-        url: `/uploads/${file.filename}`,
-        path: file.path,
+        url: file.path, // Cloudinary URL
+        publicId: file.filename,
     }))
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    res.json({</span>
@@ -263,27 +255,29 @@ const uploadImages = <span class="cstat-no" title="statement not covered" >async
     })
 })
 &nbsp;
-// @desc    Delete image
-// @route   DELETE /api/upload/:filename
+// @desc    Delete image from Cloudinary
+// @route   DELETE /api/upload/:publicId
 // @access  Private (Admin)
 const deleteImage = <span class="cstat-no" title="statement not covered" >asyncHandler(<span class="fstat-no" title="function not covered" >as</span>ync (req, res) =&gt; {</span>
-    const { filename } = <span class="cstat-no" title="statement not covered" >req.params</span>
+    const { publicId } = <span class="cstat-no" title="statement not covered" >req.params</span>
 &nbsp;
-    const filePath = <span class="cstat-no" title="statement not covered" >path.join(__dirname, '../../uploads', filename)</span>
+<span class="cstat-no" title="statement not covered" >    try {</span>
+        // Delete from Cloudinary
+        const result = <span class="cstat-no" title="statement not covered" >await cloudinary.uploader.destroy(publicId)</span>
 &nbsp;
-    // Check if file exists
-<span class="cstat-no" title="statement not covered" >    if (!fs.existsSync(filePath)) {</span>
-<span class="cstat-no" title="statement not covered" >        res.status(404)</span>
-<span class="cstat-no" title="statement not covered" >        throw new Error('File not found')</span>
+<span class="cstat-no" title="statement not covered" >        if (result.result === 'not found') {</span>
+<span class="cstat-no" title="statement not covered" >            res.status(404)</span>
+<span class="cstat-no" title="statement not covered" >            throw new Error('Image not found')</span>
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        res.json({</span>
+            success: true,
+            message: 'Image deleted successfully',
+        })
+    } catch (error) {
+<span class="cstat-no" title="statement not covered" >        res.status(500)</span>
+<span class="cstat-no" title="statement not covered" >        throw new Error('Failed to delete image from Cloudinary')</span>
     }
-&nbsp;
-    // Delete file
-<span class="cstat-no" title="statement not covered" >    fs.unlinkSync(filePath)</span>
-&nbsp;
-<span class="cstat-no" title="statement not covered" >    res.json({</span>
-        success: true,
-        message: 'File deleted successfully',
-    })
 })
 &nbsp;
 <span class="cstat-no" title="statement not covered" >module.exports = {</span>
@@ -298,7 +292,7 @@ const deleteImage = <span class="cstat-no" title="statement not covered" >asyncH
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-21T16:19:47.345Z
+                at 2025-10-22T11:46:22.387Z
             </div>
         <script src="../prettify.js"></script>
         <script>
