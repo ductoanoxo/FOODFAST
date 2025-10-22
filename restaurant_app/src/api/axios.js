@@ -32,7 +32,7 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response ? .status === 401) {
+        if (error.response?.status === 401) {
             localStorage.removeItem('restaurant_token');
             localStorage.removeItem('restaurant_user');
             window.location.href = '/login';
