@@ -61,19 +61,19 @@ const HomePage = () => {
 
   const carouselItems = [
     {
-      image: 'http://localhost:5000/uploads/drone.jpg',
+      image: 'https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/drone.jpg',
       title: 'Giao hàng nhanh bằng Drone',
       description: 'Nhận đồ ăn trong 15-20 phút với công nghệ drone hiện đại',
       color: '#ff6b35'
     },
     {
-      image: 'http://localhost:5000/uploads/khamphamonan.jpg',
+      image: 'https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/khamphamonan.jpg',
       title: 'Hàng ngàn món ngon',
       description: 'Khám phá đa dạng món ăn từ các nhà hàng hàng đầu',
       color: '#4ecdc4'
     },
     {
-      image: 'http://localhost:5000/uploads/sale.jpg',
+      image: 'https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/sale.jpg',
       title: 'Ưu đãi mỗi ngày',
       description: 'Giảm giá lên đến 50% cho đơn hàng đầu tiên',
       color: '#f7b731'
@@ -194,14 +194,14 @@ const HomePage = () => {
             src={category.image}
             alt={category.name}
             className="category-img"
-            onError={(e) => { e.currentTarget.src = 'http://localhost:5000/uploads/iconfastfood.jpg' }}
+            onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/iconfastfood.jpg' }}
           />
         ) : category.icon && /^https?:\/\//i.test(category.icon) ? (
           <img
             src={category.icon}
             alt={category.name}
             className="category-img"
-            onError={(e) => { e.currentTarget.src = 'http://localhost:5000/uploads/iconfastfood.jpg' }}
+            onError={(e) => { e.currentTarget.src = 'https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/iconfastfood.jpg' }}
           />
         ) : (
           <span className="category-emoji">{category.icon || '🍽️'}</span>

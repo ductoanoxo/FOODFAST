@@ -98,7 +98,7 @@ const Header = () => {
       <div className="header-container">
         {/* Logo */}
         <Link to="/" className="logo">
-          <img src="http://localhost:5000/uploads/logo.jpg" alt="FoodFast" style={{ height: 40 }} />
+          <img src="https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/logo.jpg" alt="FoodFast" style={{ height: 40 }} />
           <span className="logo-text">FoodFast</span>
         </Link>
 

@@ -229,10 +229,7 @@
 <a name='L164'></a><a href='#L164'>164</a>
 <a name='L165'></a><a href='#L165'>165</a>
 <a name='L166'></a><a href='#L166'>166</a>
-<a name='L167'></a><a href='#L167'>167</a>
-<a name='L168'></a><a href='#L168'>168</a>
-<a name='L169'></a><a href='#L169'>169</a>
-<a name='L170'></a><a href='#L170'>170</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L167'></a><a href='#L167'>167</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -274,7 +271,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -388,7 +384,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -396,7 +391,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -410,7 +404,7 @@ const Drone = <span class="cstat-no" title="statement not covered" >require('../
 // @desc    Get dashboard statistics
 // @route   GET /api/dashboard/stats
 // @access  Private/Admin
-const getDashboardStats = <span class="cstat-no" title="statement not covered" >asyncHandler(<span class="fstat-no" title="function not covered" >as</span>ync (req, res) =&gt; {</span>
+const getDashboardStats = <span class="cstat-no" title="statement not covered" >asyncHandler(<span class="fstat-no" title="function not covered" >as</span>ync(req, res) =&gt; {</span>
     // Get counts
     const totalUsers = <span class="cstat-no" title="statement not covered" >await User.countDocuments()</span>
     const totalRestaurants = <span class="cstat-no" title="statement not covered" >await Restaurant.countDocuments()</span>
@@ -437,17 +431,16 @@ const getDashboardStats = <span class="cstat-no" title="statement not covered" >
     // Today's statistics
     const today = <span class="cstat-no" title="statement not covered" >new Date()</span>
 <span class="cstat-no" title="statement not covered" >    today.setHours(0, 0, 0, 0)</span>
-    
-    const todayOrders = <span class="cstat-no" title="statement not covered" >await Order.countDocuments({ </span>
-        createdAt: { $gte: today } 
+&nbsp;
+    const todayOrders = <span class="cstat-no" title="statement not covered" >await Order.countDocuments({</span>
+        createdAt: { $gte: today }
     })
-    
-    const todayRevenue = <span class="cstat-no" title="statement not covered" >await Order.aggregate([</span>
-        { 
-            $match: { 
+&nbsp;
+    const todayRevenue = <span class="cstat-no" title="statement not covered" >await Order.aggregate([{</span>
+            $match: {
                 status: 'delivered',
                 createdAt: { $gte: today }
-            } 
+            }
         },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ])
@@ -486,7 +479,7 @@ const getDashboardStats = <span class="cstat-no" title="statement not covered" >
 // @desc    Get recent orders
 // @route   GET /api/dashboard/recent-orders
 // @access  Private/Admin
-const getRecentOrders = <span class="cstat-no" title="statement not covered" >asyncHandler(<span class="fstat-no" title="function not covered" >as</span>ync (req, res) =&gt; {</span>
+const getRecentOrders = <span class="cstat-no" title="statement not covered" >asyncHandler(<span class="fstat-no" title="function not covered" >as</span>ync(req, res) =&gt; {</span>
     const limit = <span class="cstat-no" title="statement not covered" >parseInt(req.query.limit) || 10</span>
 &nbsp;
     const orders = <span class="cstat-no" title="statement not covered" >await Order.find()</span>
@@ -504,7 +497,7 @@ const getRecentOrders = <span class="cstat-no" title="statement not covered" >as
 // @desc    Get top restaurants
 // @route   GET /api/dashboard/top-restaurants
 // @access  Private/Admin
-const getTopRestaurants = <span class="cstat-no" title="statement not covered" >asyncHandler(<span class="fstat-no" title="function not covered" >as</span>ync (req, res) =&gt; {</span>
+const getTopRestaurants = <span class="cstat-no" title="statement not covered" >asyncHandler(<span class="fstat-no" title="function not covered" >as</span>ync(req, res) =&gt; {</span>
     const limit = <span class="cstat-no" title="statement not covered" >parseInt(req.query.limit) || 5</span>
 &nbsp;
     const restaurants = <span class="cstat-no" title="statement not covered" >await Restaurant.find()</span>
@@ -521,15 +514,14 @@ const getTopRestaurants = <span class="cstat-no" title="statement not covered" >
 // @desc    Get order statistics by date
 // @route   GET /api/dashboard/order-stats
 // @access  Private/Admin
-const getOrderStatistics = <span class="cstat-no" title="statement not covered" >asyncHandler(<span class="fstat-no" title="function not covered" >as</span>ync (req, res) =&gt; {</span>
+const getOrderStatistics = <span class="cstat-no" title="statement not covered" >asyncHandler(<span class="fstat-no" title="function not covered" >as</span>ync(req, res) =&gt; {</span>
     const days = <span class="cstat-no" title="statement not covered" >parseInt(req.query.days) || 7</span>
 &nbsp;
     const startDate = <span class="cstat-no" title="statement not covered" >new Date()</span>
 <span class="cstat-no" title="statement not covered" >    startDate.setDate(startDate.getDate() - days)</span>
 <span class="cstat-no" title="statement not covered" >    startDate.setHours(0, 0, 0, 0)</span>
 &nbsp;
-    const stats = <span class="cstat-no" title="statement not covered" >await Order.aggregate([</span>
-        {
+    const stats = <span class="cstat-no" title="statement not covered" >await Order.aggregate([{</span>
             $match: {
                 createdAt: { $gte: startDate }
             }
@@ -542,14 +534,14 @@ const getOrderStatistics = <span class="cstat-no" title="statement not covered" 
                     day: { $dayOfMonth: '$createdAt' }
                 },
                 count: { $sum: 1 },
-                revenue: { 
-                    $sum: { 
+                revenue: {
+                    $sum: {
                         $cond: [
-                            { $eq: ['$status', 'delivered'] }, 
-                            '$totalAmount', 
+                            { $eq: ['$status', 'delivered'] },
+                            '$totalAmount',
                             0
-                        ] 
-                    } 
+                        ]
+                    }
                 }
             }
         },
@@ -569,15 +561,14 @@ const getOrderStatistics = <span class="cstat-no" title="statement not covered" 
     getRecentOrders,
     getTopRestaurants,
     getOrderStatistics,
-}
-&nbsp;</pre></td></tr></table></pre>
+}</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-18T15:38:31.871Z
+                at 2025-10-21T16:19:47.345Z
             </div>
         <script src="../prettify.js"></script>
         <script>

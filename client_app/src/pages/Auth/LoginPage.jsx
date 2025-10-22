@@ -59,7 +59,7 @@ const LoginPage = () => {
     <div className="login-page">
       <Card className="login-card">
         <div className="login-header">
-          <img src="http://localhost:5000/uploads/logo.jpg" alt="FoodFast" className="login-logo" />
+          <img src="https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/logo.jpg" alt="FoodFast" className="login-logo" />
           <Title level={2}>Đăng nhập</Title>
           <Text type="secondary">Chào mừng bạn quay lại!</Text>
         </div>

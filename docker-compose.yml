@@ -38,6 +38,10 @@ services:
       - VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
       - VNPAY_RETURN_URL=http://localhost:3000/payment/vnpay/return
       - VNPAY_API=https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
+      # Cloudinary
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
     networks:
       - foodfast_network
 

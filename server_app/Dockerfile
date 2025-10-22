@@ -5,7 +5,8 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install --production
+# Install production dependencies; allow legacy peer deps to avoid cloudinary/multer-storage conflict
+RUN npm install --production --legacy-peer-deps
 
 COPY . .
 

@@ -257,7 +257,7 @@ const CategoriesPage = () => {
 
           <Form.Item label="URL Hình ảnh" name="image">
             <Input
-              placeholder="http://localhost:5000/uploads/image.jpg"
+              placeholder="https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/image.jpg"
               onChange={(e) => setImageUrl(e.target.value)}
             />
           </Form.Item>

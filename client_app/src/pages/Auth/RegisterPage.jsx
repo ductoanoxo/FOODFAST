@@ -62,7 +62,7 @@ const RegisterPage = () => {
     <div className="register-page">
       <Card className="register-card">
         <div className="register-header">
-          <img src="http://localhost:5000/uploads/logo.jpg" alt="FoodFast" className="register-logo" />
+          <img src="https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/logo.jpg" alt="FoodFast" className="register-logo" />
           <Title level={2}>Đăng ký</Title>
           <Text type="secondary">Tạo tài khoản mới để bắt đầu</Text>
         </div>
