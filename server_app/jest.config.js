@@ -9,9 +9,4 @@ module.exports = {
     ],
     setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js'],
     verbose: true,
-    testTimeout: 30000,
-    // Separate coverage for unit and integration tests
-    collectCoverage: true,
-    coverageDirectory: 'coverage',
-    coverageReporters: ['text', 'lcov', 'json'],
 };
