@@ -1,44 +1,45 @@
 /**
- * Test Helper: Create Express App for Testing
- * Không initialize Socket.IO để tránh lỗi trong tests
+ * 🧪 TEST APP HELPER
+ * Tạo Express app instance cho integration tests
  */
 
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
-const { errorHandler } = require('../../API/Middleware/errorMiddleware');
+const compression = require('compression');
 
 // Import routers
+const authRouter = require('../../API/Routers/authRouter');
 const droneRouter = require('../../API/Routers/droneRouter');
 const orderRouter = require('../../API/Routers/orderRouter');
-const authRouter = require('../../API/Routers/authRouter');
-const userRouter = require('../../API/Routers/userRouter');
-const productRouter = require('../../API/Routers/productRouter');
 const restaurantRouter = require('../../API/Routers/restaurantRouter');
 
 function createTestApp() {
     const app = express();
 
-    // Middlewares
-    app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+    // Middleware
     app.use(cors());
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(cookieParser());
+    app.use(compression());
 
     // Routes
+    app.use('/api/auth', authRouter);
     app.use('/api/drones', droneRouter);
     app.use('/api/orders', orderRouter);
-    app.use('/api/auth', authRouter);
-    app.use('/api/users', userRouter);
-    app.use('/api/products', productRouter);
     app.use('/api/restaurants', restaurantRouter);
 
-    // Error handler
-    app.use(errorHandler);
+    // Error handling
+    app.use((err, req, res, next) => {
+        console.error('Test app error:', err);
+        res.status(err.status || 500).json({
+            success: false,
+            message: err.message || 'Internal server error'
+        });
+    });
 
     return app;
 }
 
-module.exports = createTestApp;
+module.exports = { createTestApp };
