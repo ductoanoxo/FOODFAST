@@ -1,138 +1,201 @@
 /**
- * UNIT TEST: Authentication (JWT Token)
- * Chức năng: Generate & Verify JWT token
+ * UNIT TEST: Authentication Controller
+ * Chức năng: Test register, login functions với mock data
  * Độ quan trọng: ⭐⭐⭐⭐⭐ (Critical - security)
  */
 
+const { register, login } = require('../../API/Controllers/authController');
+const User = require('../../API/Models/User');
 const jwt = require('jsonwebtoken');
 
-// Mock JWT functions
-const authService = {
+// Mock User Model
+jest.mock('../../API/Models/User');
 
-    // Generate JWT token
-    generateToken(userId, role = 'user') {
-        if (!userId) {
-            throw new Error('User ID is required');
-        }
+// Mock JWT
+jest.mock('jsonwebtoken');
 
-        const payload = {
-            id: userId,
-            role: role,
-            iat: Math.floor(Date.now() / 1000)
+describe('🔐 Authentication Controller - UNIT TEST', () => {
+
+    let mockReq, mockRes;
+
+    beforeEach(() => {
+        // Reset mocks
+        jest.clearAllMocks();
+
+        // Mock request object
+        mockReq = {
+            body: {},
+            user: {}
         };
 
-        const secret = process.env.JWT_SECRET || 'test-secret';
-        const token = jwt.sign(payload, secret, { expiresIn: '7d' });
-
-        return token;
-    },
-
-    // Verify JWT token
-    verifyToken(token) {
-        if (!token) {
-            throw new Error('Token is required');
-        }
-
-        try {
-            const secret = process.env.JWT_SECRET || 'test-secret';
-            const decoded = jwt.verify(token, secret);
-            return decoded;
-        } catch (error) {
-            if (error.name === 'TokenExpiredError') {
-                throw new Error('Token has expired');
-            }
-            throw new Error('Invalid token');
-        }
-    },
-
-    // Extract user from token
-    getUserFromToken(token) {
-        const decoded = this.verifyToken(token);
-        return {
-            id: decoded.id,
-            role: decoded.role
+        // Mock response object
+        mockRes = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis()
         };
-    }
-};
 
-describe('🔐 Authentication (JWT) - UNIT TEST', () => {
-
-    test('✅ GENERATE token thành công', () => {
-        const userId = '507f1f77bcf86cd799439011';
-        const token = authService.generateToken(userId, 'user');
-
-        expect(token).toBeDefined();
-        expect(typeof token).toBe('string');
-        expect(token.split('.').length).toBe(3); // JWT có 3 phần
+        // Mock JWT sign
+        jwt.sign.mockReturnValue('mock-jwt-token-12345');
     });
 
-    test('✅ TOKEN chứa ĐÚNG thông tin user', () => {
-        const userId = '507f1f77bcf86cd799439011';
-        const role = 'admin';
+    describe('📝 REGISTER - Đăng ký người dùng', () => {
 
-        const token = authService.generateToken(userId, role);
-        const decoded = authService.verifyToken(token);
+        test('✅ Đăng ký THÀNH CÔNG với dữ liệu hợp lệ', async() => {
+            // Mock data
+            mockReq.body = {
+                name: 'John Doe',
+                email: 'john@example.com',
+                password: 'password123',
+                phone: '0123456789'
+            };
 
-        expect(decoded.id).toBe(userId);
-        expect(decoded.role).toBe(role);
-        expect(decoded.iat).toBeDefined();
+            // Mock User.findOne trả về null (user chưa tồn tại)
+            User.findOne.mockResolvedValue(null);
+
+            // Mock User.create trả về user mới
+            const mockUser = {
+                _id: '507f1f77bcf86cd799439011',
+                name: 'John Doe',
+                email: 'john@example.com',
+                phone: '0123456789',
+                role: 'user',
+                avatar: null,
+                address: {}
+            };
+            User.create.mockResolvedValue(mockUser);
+
+            // Call function
+            await register(mockReq, mockRes);
+
+            // Assertions
+            expect(User.findOne).toHaveBeenCalledWith({ email: 'john@example.com' });
+            expect(User.create).toHaveBeenCalledWith({
+                name: 'John Doe',
+                email: 'john@example.com',
+                password: 'password123',
+                phone: '0123456789'
+            });
+            expect(mockRes.status).toHaveBeenCalledWith(201);
+            expect(mockRes.json).toHaveBeenCalledWith({
+                success: true,
+                user: expect.objectContaining({
+                    _id: '507f1f77bcf86cd799439011',
+                    name: 'John Doe',
+                    email: 'john@example.com'
+                }),
+                token: 'mock-jwt-token-12345'
+            });
+        });
+
+        test('❌ Đăng ký THẤT BẠI - Email đã tồn tại', async() => {
+            // Mock data
+            mockReq.body = {
+                name: 'John Doe',
+                email: 'existing@example.com',
+                password: 'password123',
+                phone: '0123456789'
+            };
+
+            // Mock User.findOne trả về user đã tồn tại
+            User.findOne.mockResolvedValue({
+                _id: '123',
+                email: 'existing@example.com'
+            });
+
+            // Call function và expect error
+            await expect(register(mockReq, mockRes)).rejects.toThrow('User already exists');
+
+            expect(User.findOne).toHaveBeenCalledWith({ email: 'existing@example.com' });
+            expect(User.create).not.toHaveBeenCalled();
+        });
+
+        test('❌ Đăng ký THẤT BẠI - User.create trả về null', async() => {
+            mockReq.body = {
+                name: 'John Doe',
+                email: 'john@example.com',
+                password: 'password123',
+                phone: '0123456789'
+            };
+
+            User.findOne.mockResolvedValue(null);
+            User.create.mockResolvedValue(null);
+
+            await expect(register(mockReq, mockRes)).rejects.toThrow('Invalid user data');
+            expect(mockRes.status).toHaveBeenCalledWith(400);
+        });
     });
 
-    test('✅ VERIFY token hợp lệ', () => {
-        const token = authService.generateToken('user123', 'user');
+    describe('🔑 LOGIN - Đăng nhập người dùng', () => {
 
-        const decoded = authService.verifyToken(token);
+        test('✅ Đăng nhập THÀNH CÔNG với email & password đúng', async() => {
+            mockReq.body = {
+                email: 'john@example.com',
+                password: 'password123'
+            };
 
-        expect(decoded.id).toBe('user123');
-        expect(decoded.role).toBe('user');
-    });
+            const mockUser = {
+                _id: '507f1f77bcf86cd799439011',
+                name: 'John Doe',
+                email: 'john@example.com',
+                phone: '0123456789',
+                role: 'user',
+                avatar: null,
+                address: {},
+                restaurantId: null,
+                matchPassword: jest.fn().mockResolvedValue(true)
+            };
 
-    test('✅ EXTRACT user từ token', () => {
-        const userId = '507f1f77bcf86cd799439011';
-        const token = authService.generateToken(userId, 'admin');
+            User.findOne.mockReturnValue({
+                select: jest.fn().mockResolvedValue(mockUser)
+            });
 
-        const user = authService.getUserFromToken(token);
+            await login(mockReq, mockRes);
 
-        expect(user.id).toBe(userId);
-        expect(user.role).toBe('admin');
-    });
+            expect(User.findOne).toHaveBeenCalledWith({ email: 'john@example.com' });
+            expect(mockUser.matchPassword).toHaveBeenCalledWith('password123');
+            expect(mockRes.json).toHaveBeenCalledWith({
+                success: true,
+                user: expect.objectContaining({
+                    _id: '507f1f77bcf86cd799439011',
+                    email: 'john@example.com'
+                }),
+                token: 'mock-jwt-token-12345'
+            });
+        });
 
-    test('❌ REJECT khi thiếu user ID', () => {
-        expect(() => {
-            authService.generateToken(null);
-        }).toThrow('User ID is required');
-    });
+        test('❌ Đăng nhập THẤT BẠI - Email không tồn tại', async() => {
+            mockReq.body = {
+                email: 'notfound@example.com',
+                password: 'password123'
+            };
 
-    test('❌ REJECT token không hợp lệ', () => {
-        const invalidToken = 'invalid.token.here';
+            User.findOne.mockReturnValue({
+                select: jest.fn().mockResolvedValue(null)
+            });
 
-        expect(() => {
-            authService.verifyToken(invalidToken);
-        }).toThrow('Invalid token');
-    });
+            await expect(login(mockReq, mockRes)).rejects.toThrow('Invalid email or password');
+            expect(mockRes.status).toHaveBeenCalledWith(401);
+        });
 
-    test('❌ REJECT khi thiếu token', () => {
-        expect(() => {
-            authService.verifyToken(null);
-        }).toThrow('Token is required');
+        test('❌ Đăng nhập THẤT BẠI - Password sai', async() => {
+            mockReq.body = {
+                email: 'john@example.com',
+                password: 'wrongpassword'
+            };
 
-        expect(() => {
-            authService.verifyToken('');
-        }).toThrow('Token is required');
-    });
+            const mockUser = {
+                _id: '507f1f77bcf86cd799439011',
+                email: 'john@example.com',
+                matchPassword: jest.fn().mockResolvedValue(false)
+            };
 
-    test('✅ Token có EXPIRATION time', () => {
-        const token = authService.generateToken('user123', 'user');
-        const decoded = authService.verifyToken(token);
+            User.findOne.mockReturnValue({
+                select: jest.fn().mockResolvedValue(mockUser)
+            });
 
-        expect(decoded.exp).toBeDefined();
-        expect(decoded.exp).toBeGreaterThan(decoded.iat);
-    });
-
-    test('✅ Tạo token với ROLE mặc định = user', () => {
-        const token = authService.generateToken('user123');
-        const decoded = authService.verifyToken(token);
-
-        expect(decoded.role).toBe('user');
+            await expect(login(mockReq, mockRes)).rejects.toThrow('Invalid email or password');
+            expect(mockUser.matchPassword).toHaveBeenCalledWith('wrongpassword');
+            expect(mockRes.status).toHaveBeenCalledWith(401);
+        });
     });
 });
