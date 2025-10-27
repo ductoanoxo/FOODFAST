@@ -8,6 +8,7 @@ on:
       - develop
       - DUCTOAN
       - kiet
+      - deploy
   pull_request:
     branches:
       - main

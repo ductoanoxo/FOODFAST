@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
+
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
     timeout: 10000,
     headers: {
@@ -23,16 +24,23 @@ instance.interceptors.request.use(
 );
 
 // Response interceptor
+
 instance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        // Trả về response bình thường
+        return response;
+    },
     (error) => {
-        if (error.response?.status === 401) {
+        // Nếu có response và status là 401
+        if (error.response && error.response.status === 401) {
             localStorage.removeItem('admin_token');
             localStorage.removeItem('admin_user');
             window.location.href = '/login';
         }
+        // Luôn reject để chỗ khác có thể xử lý tiếp
         return Promise.reject(error);
     }
 );
+
 
 export default instance;
