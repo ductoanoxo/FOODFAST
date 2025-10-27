@@ -1,9 +1,9 @@
-# 🍔🚁 FOODFAST DRONE DELIVERY - MAIN BRANCH VERSION
+# 🍔🚁 FOODFAST DRONE DELIVERY - DEPLOY BRANCH VERSION
 
 > Hệ thống đặt đồ ăn với giao hàng bằng drone - Food delivery system with drone management
 > 
-> **Version:** Main Branch - Production Ready
-> **Status:** Stable Release
+> **Version:** Deploy Branch - Testing Conflict Resolution
+> **CI/CD Status:** GitHub Actions + Vercel + Railway
 
 ---
 
