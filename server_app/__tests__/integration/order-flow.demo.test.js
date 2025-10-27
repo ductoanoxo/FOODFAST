@@ -4,6 +4,8 @@
  * Độ quan trọng: ⭐⭐⭐⭐⭐ (Critical)
  * 
  * Flow: User Login → Create Order → Auto Assign Drone → Payment
+ * 
+ * Test branch protection rules - CI must pass before merge
  */
 
 const request = require('supertest');
