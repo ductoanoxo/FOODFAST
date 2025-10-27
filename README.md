@@ -1,6 +1,9 @@
-P# 🍔🚁 FOODFAST DRONE DELIVERY
+# 🍔🚁 FOODFAST DRONE DELIVERY - MAIN BRANCH VERSION
 
 > Hệ thống đặt đồ ăn với giao hàng bằng drone - Food delivery system with drone management
+> 
+> **Version:** Main Branch - Production Ready
+> **Status:** Stable Release
 
 ---
 
