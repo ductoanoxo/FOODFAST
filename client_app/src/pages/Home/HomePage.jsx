@@ -62,7 +62,7 @@ const HomePage = () => {
   const carouselItems = [
     {
       image: 'https://res.cloudinary.com/dp4o6la8b/image/upload/v1761115010/drone.jpg',
-      title: 'Giao hàng nhanh bằng Drone',
+      title: 'Giao hàng nhanh bằng Drone tiện lợi ',
       description: 'Nhận đồ ăn trong 15-20 phút với công nghệ drone hiện đại',
       color: '#ff6b35'
     },
