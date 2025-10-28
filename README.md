@@ -4,6 +4,14 @@
 > 
 > **Version:** Deploy Branch - Testing Conflict Resolution
 > **CI/CD Status:** GitHub Actions + Vercel + Railway
+## Công cụ & Hạ tầng
+Hình ảnh các công cụ và nền tảng đã sử dụng (từ `asset/readme/`):
+
+![Docker](asset/readme/docker.png) ![React](asset/readme/reactjs.png) ![MongoDB](asset/readme/mongodb.png)
+
+![Cloudinary](asset/readme/cloudinary.png) ![Vercel](asset/readme/vercel.jpg) ![AWS EC2](asset/readme/awsec2.jpg)
+![MERN](asset/readme/mern.jpg) ![NODEJS](asset/readme/nodejs.png)
+
 
 ---
 
@@ -248,16 +256,71 @@ npm test
 ## 📝 License
 
 MIT License - Copyright (c) 2025
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## 👥 Đóng góp
 
 Mọi đóng góp đều được chào đón! Vui lòng tạo Pull Request hoặc Issue.
 
-## 📞 Liên hệ
+## 📞 Liên hệ & Đường dẫn
 
-- Email: support@foodfast.com
-- Website: https://foodfast.com
-- GitHub: https://github.com/your-repo
+Đây là các đường dẫn chính đến các thành phần của ứng dụng **FoodFast**:
+
+* **🌐 Ứng dụng Khách hàng (Client/User)**:
+    * Truy cập tại: [https://foodfast.vercel.app/](https://foodfast.vercel.app/)
+
+* **🔑 Ứng dụng Quản trị viên (Admin)**:
+    * Truy cập tại: [https://foodfast-admin.vercel.app/login](https://foodfast-admin.vercel.app/login)
+
+* **🍴 Ứng dụng Nhà hàng (Restaurant)**:
+    * Truy cập tại: [https://foodfast-restaurant.vercel.app/dashboard](https://foodfast-restaurant.vercel.app/dashboard)
+
+---
+<h1 align="center">🎨 Demo Giao Diện</h1>
+<table>
+  <tr>
+    <th>🧑‍🍳 Client</th>
+    <th>🏪 Restaurant</th>
+    <th>👨‍💼 Admin</th>
+  </tr>
+  <tr>
+    <td align="center" valign="top">
+      <img src="./asset/Client/CacCuaHangClient.png" width="280"><br>
+      <img src="./asset/Client/LichSuDonHangClient.png" width="280"><br>
+      <img src="./asset/Client/ThucDonClientApp.png" width="280"><br>
+      <img src="./asset/Client/TrangCaNhanClientAPP.png" width="280"><br>
+      <img src="./asset/Client/TrangChuClientAPP.png" width="280"><br>
+      <img src="./asset/Client/TrangChuClientAPP2.png" width="280"><br>
+    </td>
+    <td align="center" valign="top">
+      <img src="./asset/Restaurant/1.png" width="280"><br>
+      <img src="./asset/Restaurant/2.png" width="280"><br>
+      <img src="./asset/Restaurant/3.png" width="280"><br>
+      <img src="./asset/Restaurant/4.png" width="280"><br>
+      <img src="./asset/Restaurant/5.png" width="280"><br>
+      <img src="./asset/Restaurant/6.png" width="280"><br>
+      <img src="./asset/Restaurant/7.png" width="280"><br>
+      <img src="./asset/Restaurant/8.png" width="280"><br>
+      <img src="./asset/Restaurant/9.png" width="280"><br>
+      <img src="./asset/Restaurant/10.png" width="280"><br>
+    </td>
+    <td align="center" valign="top">
+      <img src="./asset/Admin/1.png" width="280"><br>
+      <img src="./asset/Admin/2.png" width="280"><br>
+      <img src="./asset/Admin/3.png" width="280"><br>
+      <img src="./asset/Admin/4.png" width="280"><br>
+      <img src="./asset/Admin/5.png" width="280"><br>
+      <img src="./asset/Admin/6.png" width="280"><br>
+      <img src="./asset/Admin/7.png" width="280"><br>
+      <img src="./asset/Admin/7.png" width="280"><br>
+    </td>
+  </tr>
+</table>
+
+
+
+### Ghi chú:
+Các đường dẫn này đều đang được triển khai trên **Vercel**. Vui lòng đăng nhập vào các ứng dụng **Admin** và **Restaurant** để truy cập các chức năng.
 
 ---
 

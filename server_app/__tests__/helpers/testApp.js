@@ -15,6 +15,8 @@ const orderRouter = require('../../API/Routers/orderRouter');
 const authRouter = require('../../API/Routers/authRouter');
 const userRouter = require('../../API/Routers/userRouter');
 const productRouter = require('../../API/Routers/productRouter');
+const paymentRouter = require('../../API/Routers/paymentRouter');
+const promotionRouter = require('../../API/Routers/promotionRouter');
 const restaurantRouter = require('../../API/Routers/restaurantRouter');
 
 function createTestApp() {
@@ -33,6 +35,8 @@ function createTestApp() {
     app.use('/api/auth', authRouter);
     app.use('/api/users', userRouter);
     app.use('/api/products', productRouter);
+    app.use('/api/promotions', promotionRouter);
+    app.use('/api/payment', paymentRouter);
     app.use('/api/restaurants', restaurantRouter);
 
     // Error handler

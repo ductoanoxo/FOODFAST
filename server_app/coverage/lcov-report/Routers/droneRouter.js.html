@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>16/16</span>
+                <span class='fraction'>0/16</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>16/16</span>
+                <span class='fraction'>0/16</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -92,8 +92,8 @@
 <a name='L27'></a><a href='#L27'>27</a>
 <a name='L28'></a><a href='#L28'>28</a>
 <a name='L29'></a><a href='#L29'>29</a>
-<a name='L30'></a><a href='#L30'>30</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<a name='L30'></a><a href='#L30'>30</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -106,23 +106,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">const express = require('express')
-const router = express.Router()
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const express = <span class="cstat-no" title="statement not covered" >require('express')</span>
+const router = <span class="cstat-no" title="statement not covered" >express.Router()</span>
 const {
     getDrones,
     getDroneById,
@@ -135,29 +135,29 @@ const {
     assignDroneToOrder,
     getNearbyDrones,
     getDroneStats,
-} = require('../Controllers/droneController')
-const { protect, authorize } = require('../Middleware/authMiddleware')
+} = <span class="cstat-no" title="statement not covered" >require('../Controllers/droneController')</span>
+const { protect, authorize } = <span class="cstat-no" title="statement not covered" >require('../Middleware/authMiddleware')</span>
 &nbsp;
-router.get('/nearby', protect, authorize('admin'), getNearbyDrones)
-router.get('/', getDrones)
-router.post('/', protect, authorize('admin'), createDrone)
-router.get('/:id', getDroneById)
-router.put('/:id', protect, authorize('drone', 'admin'), updateDrone)
-router.delete('/:id', protect, authorize('admin'), deleteDrone)
-router.patch('/:id/location', protect, authorize('drone', 'admin'), updateDroneLocation)
-router.patch('/:id/status', protect, authorize('drone', 'admin'), updateDroneStatus)
-router.patch('/:id/battery', protect, authorize('drone', 'admin'), updateDroneBattery)
-router.post('/:id/assign', protect, authorize('admin'), assignDroneToOrder)
-router.get('/:id/stats', protect, authorize('admin'), getDroneStats)
+<span class="cstat-no" title="statement not covered" >router.get('/nearby', protect, authorize('admin'), getNearbyDrones)</span>
+<span class="cstat-no" title="statement not covered" >router.get('/', getDrones)</span>
+<span class="cstat-no" title="statement not covered" >router.post('/', protect, authorize('admin'), createDrone)</span>
+<span class="cstat-no" title="statement not covered" >router.get('/:id', getDroneById)</span>
+<span class="cstat-no" title="statement not covered" >router.put('/:id', protect, authorize('drone', 'admin'), updateDrone)</span>
+<span class="cstat-no" title="statement not covered" >router.delete('/:id', protect, authorize('admin'), deleteDrone)</span>
+<span class="cstat-no" title="statement not covered" >router.patch('/:id/location', protect, authorize('drone', 'admin'), updateDroneLocation)</span>
+<span class="cstat-no" title="statement not covered" >router.patch('/:id/status', protect, authorize('drone', 'admin'), updateDroneStatus)</span>
+<span class="cstat-no" title="statement not covered" >router.patch('/:id/battery', protect, authorize('drone', 'admin'), updateDroneBattery)</span>
+<span class="cstat-no" title="statement not covered" >router.post('/:id/assign', protect, authorize('admin'), assignDroneToOrder)</span>
+<span class="cstat-no" title="statement not covered" >router.get('/:id/stats', protect, authorize('admin'), getDroneStats)</span>
 &nbsp;
-module.exports = router</pre></td></tr></table></pre>
+<span class="cstat-no" title="statement not covered" >module.exports = router</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-27T14:06:20.351Z
+                at 2025-10-28T07:49:17.445Z
             </div>
         <script src="../prettify.js"></script>
         <script>

@@ -1,4 +1,7 @@
-﻿├── admin_app
+﻿Project tree (trimmed) - 2025-10-28 01:05:59
+Root: C:\Users\ADMIN\Desktop\FOODFAST
+
+├── admin_app
 │   ├── src
 │   │   ├── api
 │   │   │   ├── adminAPI.js
@@ -57,8 +60,8 @@
 │   ├── index.html
 │   ├── jsconfig.json
 │   ├── nginx.conf
-│   ├── package-lock.json
 │   ├── package.json
+│   ├── package-lock.json
 │   └── vite.config.js
 ├── client_app
 │   ├── public
@@ -155,17 +158,14 @@
 │   │   │   └── store.js
 │   │   ├── services
 │   │   │   └── socketService.js
-│   │   ├── tests
-│   │   │   └── api
-│   │   ├── utils
 │   │   ├── App.jsx
 │   │   ├── index.css
 │   │   └── main.jsx
 │   ├── Dockerfile
 │   ├── index.html
 │   ├── nginx.conf
-│   ├── package-lock.json
 │   ├── package.json
+│   ├── package-lock.json
 │   └── vite.config.js
 ├── cypress
 │   └── e2e
@@ -192,6 +192,8 @@
 │   │   │   │   ├── MapController.jsx
 │   │   │   │   └── RoutePolyline.jsx
 │   │   │   └── ProtectedRoute.jsx
+│   │   ├── constants
+│   │   │   └── index.js
 │   │   ├── pages
 │   │   │   ├── Auth
 │   │   │   │   └── LoginPage.jsx
@@ -223,8 +225,8 @@
 │   ├── index.html
 │   ├── LOGIN_GUIDE.md
 │   ├── nginx.conf
-│   ├── package-lock.json
 │   ├── package.json
+│   ├── package-lock.json
 │   ├── README.md
 │   └── vite.config.js
 ├── restaurant_app
@@ -257,7 +259,6 @@
 │   │   │   └── ProductFormModal.jsx
 │   │   ├── constants
 │   │   │   └── index.js
-│   │   ├── contexts
 │   │   ├── pages
 │   │   │   ├── Auth
 │   │   │   │   └── LoginPage.jsx
@@ -307,14 +308,27 @@
 │   ├── Dockerfile
 │   ├── index.html
 │   ├── nginx.conf
-│   ├── package-lock.json
 │   ├── package.json
-│   ├── README.md
+│   ├── package-lock.json
 │   ├── READ_ME_FIRST.md
+│   ├── README.md
 │   ├── START_HERE.md
 │   ├── USER_GUIDE.md
 │   └── vite.config.js
 ├── server_app
+│   ├── __tests__
+│   │   ├── helpers
+│   │   │   └── testApp.js
+│   │   ├── integration
+│   │   │   └── order-flow.demo.test.js
+│   │   ├── unit
+│   │   │   ├── authentication.test.js
+│   │   │   └── product.test.js
+│   │   ├── DEMO_GUIDE.md
+│   │   ├── INTEGRATION_TEST_GUIDE.md
+│   │   ├── README.md
+│   │   ├── setup.js
+│   │   └── TEST_STRATEGY.md
 │   ├── API
 │   │   ├── Controllers
 │   │   │   ├── adminController.js
@@ -368,10 +382,8 @@
 │   │       ├── logger.js
 │   │       └── mapService.js
 │   ├── config
+│   │   ├── cloudinary.js
 │   │   └── db.js
-│   ├── logs
-│   │   ├── combined.log
-│   │   └── error.log
 │   ├── services
 │   │   └── socketService.js
 │   ├── uploads
@@ -398,22 +410,6 @@
 │   │   ├── pho.jpg
 │   │   ├── sale.jpg
 │   │   └── trada.jpg
-│   ├── __tests__
-│   │   ├── helpers
-│   │   │   └── testApp.js
-│   │   ├── integration
-│   │   │   ├── auth.integration.test.js
-│   │   │   ├── drone.integration.test.js
-│   │   │   ├── order.integration.test.js
-│   │   │   └── simple.test.js
-│   │   ├── unit
-│   │   │   ├── authentication.test.js
-│   │   │   ├── droneAssignment.test.js
-│   │   │   ├── orderCalculation.test.js
-│   │   │   └── validation.test.js
-│   │   ├── INTEGRATION_TEST_GUIDE.md
-│   │   ├── README.md
-│   │   └── setup.js
 │   ├── API_ENDPOINTS.md
 │   ├── check-drone-status.js
 │   ├── check-products.js
@@ -421,40 +417,42 @@
 │   ├── fix-stuck-drones.js
 │   ├── index.js
 │   ├── jest.config.js
-│   ├── package-lock.json
 │   ├── package.json
 │   ├── package.test.json
+│   ├── package-lock.json
 │   ├── seed.js
 │   └── test-order.js
+├── .dockerignore
 ├── .env
 ├── .env.example
 ├── API_DOCUMENTATION.md
 ├── API_TESTING.md
 ├── CICD_SETUP_GUIDE.md
+├── CLOUDINARY_MIGRATION_SUMMARY.md
 ├── cypress.config.js
 ├── cypress.package.json
-├── docker-compose.yml
 ├── DOCKER_COMMANDS.md
 ├── DOCKER_QUICKSTART.md
+├── docker-compose.yml
 ├── install.ps1
 ├── INTEGRATION_TESTS_GUIDE.md
-├── package-lock.json
 ├── package.json
+├── package-lock.json
 ├── PRICE_FIX_SUMMARY.md
 ├── PROJECT_COMPLETE.md
 ├── QUICKSTART.md
-├── QUICK_START_CICD.md
 ├── README.md
 ├── seed.ps1
-├── setup-cicd.ps1
 ├── setup.ps1
 ├── SETUP_GUIDE.md
-├── start-docker.ps1
-├── start-docker.sh
 ├── start.ps1
 ├── START_HERE.md
 ├── START_WITH_DOCKER.md
+├── start-docker.ps1
+├── start-docker.sh
 ├── STRUCTURE.md
 ├── TESTING_SUMMARY.md
 ├── TREE.txt
 └── UNIT_TESTS_GUIDE.md
+
+(Excluded: node_modules, .git, dist, build, coverage, .next, .turbo, .cache, logs, public\assets)
