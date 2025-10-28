@@ -24,8 +24,6 @@ router.post('/momo/create', protect, createMomoPayment)
 router.post('/momo/callback', momoCallback)
 
 // Get payment info
-router.get('/:orderId', protect, getPaymentInfo)
-
 // Payment methods
 router.get('/methods', (req, res) => {
     res.json({
@@ -37,5 +35,8 @@ router.get('/methods', (req, res) => {
         ],
     })
 })
+
+// Get payment info
+router.get('/:orderId', protect, getPaymentInfo)
 
 module.exports = router
