@@ -7,11 +7,31 @@
 ## Công cụ & Hạ tầng
 Hình ảnh các công cụ và nền tảng đã sử dụng (từ `asset/readme/`):
 
-![Docker](asset/readme/docker.png) ![React](asset/readme/reactjs.png) ![MongoDB](asset/readme/mongodb.png)
+<p align="center">
+  <i>Những công nghệ và nền tảng được FOODFAST Team sử dụng để xây dựng hệ thống</i>
+</p>
 
-![Cloudinary](asset/readme/cloudinary.png) ![Vercel](asset/readme/vercel.jpg) ![AWS EC2](asset/readme/awsec2.jpg)
-![MERN](asset/readme/mern.jpg) ![NODEJS](asset/readme/nodejs.png)
+---
 
+### 🧠 Frontend
+<p align="center">
+  <a href="#"><img src="asset/readme/reactjs.png" alt="ReactJS" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
+</p>
+
+### 💾 Backend & DevOps
+<p align="center">
+  <a href="#"><img src="asset/readme/nodejs.png" alt="NodeJS" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
+  <a href="#"><img src="asset/readme/mongodb.png" alt="MongoDB" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
+  <a href="#"><img src="asset/readme/docker.png" alt="Docker" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
+  <a href="#"><img src="asset/readme/cloudinary.png" alt="Cloudinary" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
+</p>
+
+### ☁️ Deployment & Cloud
+<p align="center">
+  <a href="#"><img src="asset/readme/vercel.jpg" alt="Vercel" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
+  <a href="#"><img src="asset/readme/awsec2.jpg" alt="AWS EC2" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
+  <a href="#"><img src="asset/readme/mern.jpg" alt="MERN Stack" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
+</p>
 
 ---
 
@@ -276,6 +296,15 @@ Mọi đóng góp đều được chào đón! Vui lòng tạo Pull Request ho�
     * Truy cập tại: [https://foodfast-restaurant.vercel.app/dashboard](https://foodfast-restaurant.vercel.app/dashboard)
 
 ---
+ 
+## 📚 Tài liệu dự án
+
+Các tài liệu liên quan tới dự án (thiết kế, hướng dẫn, báo cáo) được lưu trên Google Drive:
+
+- Link: https://drive.google.com/drive/folders/1fDCRw3aPJLWgHBDVebtkhJkbzpHZQ9YL?usp=sharing
+
+Vui lòng truy cập link để xem chi tiết các tài liệu và file liên quan.
+
 <h1 align="center">🎨 Demo Giao Diện</h1>
 <table>
   <tr>
@@ -321,7 +350,65 @@ Mọi đóng góp đều được chào đón! Vui lòng tạo Pull Request ho�
 
 ### Ghi chú:
 Các đường dẫn này đều đang được triển khai trên **Vercel**. Vui lòng đăng nhập vào các ứng dụng **Admin** và **Restaurant** để truy cập các chức năng.
+## 📚 Tài liệu Dự án
+
+Tất cả các **tài liệu liên quan đến dự án** (bao gồm thiết kế, hướng dẫn, báo cáo, v.v.) được lưu trữ trên **Google Drive**.
 
 ---
 
-Made with ❤️ by FOODFAST Team SGU
+<p align="center">
+  <b>📁 Bấm vào logo bên dưới để mở thư mục Google Drive:</b><br><br>
+  <a href="https://drive.google.com/drive/folders/1fDCRw3aPJLWgHBDVebtkhJkbzpHZQ9YL?usp=sharing">
+    <img src="./asset/readme/drive.png" alt="Google Drive" width="150"/>
+  </a>
+</p>
+
+---
+
+### 📂 Nội dung bao gồm:
+- 🧩 **Thiết kế hệ thống**  
+- 🧭 **Tài liệu hướng dẫn sử dụng & triển khai**  
+- 📈 **Báo cáo tiến độ và tổng kết dự án**  
+- 🗂️ **Các file hỗ trợ khác**
+
+---
+
+> 💡 **Lưu ý:** Hãy đảm bảo bạn có quyền truy cập trước khi mở liên kết.  
+> Nếu không thể truy cập, vui lòng liên hệ quản trị viên dự án để được cấp quyền.
+
+---
+## 👥 Liên hệ / Thành viên Dự án
+
+<p align="center">
+  <b>FOODFAST Team - Đại học Sài Gòn (SGU)</b><br>
+  Cùng nhau xây dựng & phát triển dự án 
+</p>
+
+<table align="center">
+  <tr>
+    <th>Thành viên</th>
+    <th>Liên kết GitHub</th>
+  </tr>
+  <tr>
+    <td>🧑‍💻 <b>Đức Toàn</b></td>
+    <td><a href="https://github.com/ductoanoxo" target="_blank">github.com/ductoanoxo</a></td>
+  </tr>
+  <tr>
+    <td>👨‍💻 <b>Kiệt</b></td>
+    <td><a href="https://github.com/Kietnehi" target="_blank">github.com/Kietnehi</a></td>
+  </tr>
+</table>
+
+---
+
+<p align="center">
+  💬 Mọi thắc mắc hoặc góp ý vui lòng liên hệ qua GitHub để được hỗ trợ nhanh nhất.
+</p>
+
+---
+
+<p align="center">
+  Made with by <b>FOODFAST Team SGU</b>
+</p>
+
+
