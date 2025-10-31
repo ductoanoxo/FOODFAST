@@ -31,6 +31,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
+      # ⬇️ ĐÃ THAY ĐOẠN NÀY
       - name: Create remote script
         run: |
           cat > remote-deploy.sh <<'SCRIPT'
@@ -43,22 +44,14 @@ jobs:
           MONGO_URI="${MONGO_URI}"
           API_URL="${API_URL}"
 
-          pull_safe () {
-            local image="$1"
-            local tag="$2"
-
-            if sudo docker pull "${image}:${tag}" >/dev/null 2>&1; then
-              echo "${tag}"
-              return
-            fi
-
-            if sudo docker pull "${image}:latest" >/dev/null 2>&1; then
-              echo "latest"
-              return
-            fi
-
-            echo "none"
-          }
+          # Danh sách service cần deploy
+          SERVICES=(
+            "foodfast-server"
+            "foodfast-client"
+            "foodfast-admin"
+            "foodfast-restaurant"
+            "foodfast-drone"
+          )
 
           echo "== Login GHCR =="
           echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${OWNER}" --password-stdin
@@ -66,81 +59,71 @@ jobs:
           echo "== Create network (if not exists) =="
           sudo docker network create foodfast-net >/dev/null 2>&1 || true
 
+          echo "== Remove old containers =="
+          # server phiên bản cũ có thể tên server_app nên xóa cả 2
+          sudo docker rm -f server_app >/dev/null 2>&1 || true
+          for svc in "${SERVICES[@]}"; do
+            sudo docker rm -f "$svc" >/dev/null 2>&1 || true
+          done
+
+          echo "== Remove old images (same tag) =="
+          for svc in "${SERVICES[@]}"; do
+            IMG="${REGISTRY}/${OWNER}/${svc}"
+            sudo docker rmi "${IMG}:${TAG}" >/dev/null 2>&1 || true
+            # Nếu muốn sạch hơn nữa thì mở dòng dưới để xóa luôn latest
+            # sudo docker rmi "${IMG}:latest" >/dev/null 2>&1 || true
+          done
+
+          echo "== Pull new images =="
+          for svc in "${SERVICES[@]}"; do
+            IMG="${REGISTRY}/${OWNER}/${svc}"
+            echo "--- Pulling ${IMG}:${TAG} ---"
+            if ! sudo docker pull "${IMG}:${TAG}"; then
+              echo "❌ Không pull được ${IMG}:${TAG}"
+              exit 1
+            fi
+          done
+
+          echo "== Run containers =="
+
           # 1) SERVER
           echo "=== Deploy foodfast-server ==="
-          SERVER_IMAGE="${REGISTRY}/${OWNER}/foodfast-server"
-          REAL_SERVER_TAG=$(pull_safe "${SERVER_IMAGE}" "${TAG}")
-          if [ "${REAL_SERVER_TAG}" != "none" ]; then
-            sudo docker rm -f server_app >/dev/null 2>&1 || true
-            sudo docker rm -f foodfast-server >/dev/null 2>&1 || true
-
-            sudo docker run -d --name server_app --restart unless-stopped \
-              --network foodfast-net -p 5000:5000 \
-              -e MONGO_URI="${MONGO_URI}" \
-              "${SERVER_IMAGE}:${REAL_SERVER_TAG}"
-          else
-            echo "⚠️  Không tìm thấy image cho foodfast-server"
-          fi
+          sudo docker run -d --name foodfast-server --restart unless-stopped \
+            --network foodfast-net -p 5000:5000 \
+            -e MONGO_URI="${MONGO_URI}" \
+            "${REGISTRY}/${OWNER}/foodfast-server:${TAG}"
 
           # 2) CLIENT (3000)
           echo "=== Deploy foodfast-client ==="
-          CLIENT_IMAGE="${REGISTRY}/${OWNER}/foodfast-client"
-          REAL_CLIENT_TAG=$(pull_safe "${CLIENT_IMAGE}" "${TAG}")
-          if [ "${REAL_CLIENT_TAG}" != "none" ]; then
-            sudo docker rm -f foodfast-client >/dev/null 2>&1 || true
-            sudo docker run -d --name foodfast-client --restart unless-stopped \
-              --network foodfast-net -p 3000:80 \
-              -e VITE_API_URL="${API_URL}" \
-              -e REACT_APP_API_URL="${API_URL}" \
-              "${CLIENT_IMAGE}:${REAL_CLIENT_TAG}"
-          else
-            echo "⚠️  Không tìm thấy image cho foodfast-client"
-          fi
+          sudo docker run -d --name foodfast-client --restart unless-stopped \
+            --network foodfast-net -p 3000:80 \
+            -e VITE_API_URL="${API_URL}" \
+            -e REACT_APP_API_URL="${API_URL}" \
+            "${REGISTRY}/${OWNER}/foodfast-client:${TAG}"
 
           # 3) ADMIN (3001)
           echo "=== Deploy foodfast-admin ==="
-          ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin"
-          REAL_ADMIN_TAG=$(pull_safe "${ADMIN_IMAGE}" "${TAG}")
-          if [ "${REAL_ADMIN_TAG}" != "none" ]; then
-            sudo docker rm -f foodfast-admin >/dev/null 2>&1 || true
-            sudo docker run -d --name foodfast-admin --restart unless-stopped \
-              --network foodfast-net -p 3001:80 \
-              -e VITE_API_URL="${API_URL}" \
-              -e REACT_APP_API_URL="${API_URL}" \
-              "${ADMIN_IMAGE}:${REAL_ADMIN_TAG}"
-          else
-            echo "⚠️  Không tìm thấy image cho foodfast-admin"
-          fi
+          sudo docker run -d --name foodfast-admin --restart unless-stopped \
+            --network foodfast-net -p 3001:80 \
+            -e VITE_API_URL="${API_URL}" \
+            -e REACT_APP_API_URL="${API_URL}" \
+            "${REGISTRY}/${OWNER}/foodfast-admin:${TAG}"
 
           # 4) RESTAURANT (3002)
           echo "=== Deploy foodfast-restaurant ==="
-          REST_IMAGE="${REGISTRY}/${OWNER}/foodfast-restaurant"
-          REAL_REST_TAG=$(pull_safe "${REST_IMAGE}" "${TAG}")
-          if [ "${REAL_REST_TAG}" != "none" ]; then
-            sudo docker rm -f foodfast-restaurant >/dev/null 2>&1 || true
-            sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
-              --network foodfast-net -p 3002:80 \
-              -e VITE_API_URL="${API_URL}" \
-              -e REACT_APP_API_URL="${API_URL}" \
-              "${REST_IMAGE}:${REAL_REST_TAG}"
-          else
-            echo "⚠️  Không tìm thấy image cho foodfast-restaurant"
-          fi
+          sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
+            --network foodfast-net -p 3002:80 \
+            -e VITE_API_URL="${API_URL}" \
+            -e REACT_APP_API_URL="${API_URL}" \
+            "${REGISTRY}/${OWNER}/foodfast-restaurant:${TAG}"
 
-          # 5) DRONE (không cần API_URL)
+          # 5) DRONE
           echo "=== Deploy foodfast-drone ==="
-          DRONE_IMAGE="${REGISTRY}/${OWNER}/foodfast-drone"
-          REAL_DRONE_TAG=$(pull_safe "${DRONE_IMAGE}" "${TAG}")
-          if [ "${REAL_DRONE_TAG}" != "none" ]; then
-            sudo docker rm -f foodfast-drone >/dev/null 2>&1 || true
-            sudo docker run -d --name foodfast-drone --restart unless-stopped \
-              --network foodfast-net \
-              "${DRONE_IMAGE}:${REAL_DRONE_TAG}"
-          else
-            echo "⚠️  Không tìm thấy image cho foodfast-drone"
-          fi
+          sudo docker run -d --name foodfast-drone --restart unless-stopped \
+            --network foodfast-net \
+            "${REGISTRY}/${OWNER}/foodfast-drone:${TAG}"
 
-          echo "✅ Done deploy all containers."
+          echo "✅ Done deploy all containers (clean → pull → run)."
           SCRIPT
 
       - name: Run remote script on EC2
