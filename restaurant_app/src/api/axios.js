@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
+    // Prefer same-origin '/api' so the nginx in container can proxy to the backend.
     baseURL: import.meta.env.VITE_API_URL || '/api',
     timeout: 10000,
     headers: {

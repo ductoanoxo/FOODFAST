@@ -1,8 +1,7 @@
 import axios from 'axios'
 
-// Use the Vite-provided API URL when building (import.meta.env.VITE_API_URL).
-// In production (Docker/nginx) we prefer a relative path so the browser
-// requests the same origin and nginx can proxy `/api` to the backend service.
+// Prefer same-origin API served by nginx reverse-proxy ("/api").
+// If you explicitly set VITE_API_URL at build time it will still be used.
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 const axiosInstance = axios.create({

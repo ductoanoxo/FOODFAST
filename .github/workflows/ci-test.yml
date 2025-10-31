@@ -8,27 +8,27 @@ on:
       - DUCTOAN
       - kiet
       - deploy
+    # nếu bạn muốn tag nào cũng build docker thì để '*'
     tags:
-      - 'v*'
+      - '*'          # trước đây bạn để 'v*' nên tag preserve/... sẽ không chạy
   pull_request:
     branches:
       - main
       - develop
 
-# quyền tối thiểu
 permissions:
   contents: read
   security-events: write
-  packages: write  # để push GHCR
+  packages: write        # để push GHCR
 
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ github.repository_owner }}
 
 jobs:
-  # =========================
+  # =====================================================
   # 1. TEST SERVER
-  # =========================
+  # =====================================================
   test-server:
     name: Test Server App
     runs-on: ubuntu-latest
@@ -74,9 +74,9 @@ jobs:
         working-directory: ./server_app
         run: node -c index.js
 
-  # =========================
+  # =====================================================
   # 2. TEST 4 FRONTEND APPS
-  # =========================
+  # =====================================================
   test-client-apps:
     name: Test Frontend Apps
     runs-on: ubuntu-latest
@@ -119,9 +119,9 @@ jobs:
           path: ${{ matrix.app }}/dist
           retention-days: 7
 
-  # =========================
+  # =====================================================
   # 3. SECURITY SCAN
-  # =========================
+  # =====================================================
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
@@ -144,20 +144,21 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-  # =========================
-  # 4. BUILD + PUSH DOCKER (chỉ chạy khi 3 job trên pass)
-  # =========================
+  # =====================================================
+  # 4. BUILD + PUSH DOCKER
+  #    - chỉ chạy khi 3 job trên pass
+  #    - không chạy khi là PR
+  # =====================================================
   build-and-push:
     name: Docker Build and Push
     runs-on: ubuntu-latest
 
-    # bắt buộc 3 job trên phải xanh
     needs:
       - test-server
       - test-client-apps
       - security-scan
 
-    # không push khi là PR
+    # chỉ push image khi không phải PR
     if: github.event_name != 'pull_request'
 
     strategy:
@@ -188,17 +189,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # ---- chỗ này mình sửa gọn lại tag ----
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}
           tags: |
+            # 1) nếu là push tag (vd: v1.0.0 hay preserve/...) -> gắn đúng tên git tag vào image
+            type=ref,event=tag
+            # 2) nếu là push branch -> gắn tên branch (main, develop, kiet, deploy)
             type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            # 3) luôn có 1 tag theo commit để trace
             type=sha
+            # 4) chỉ nhánh default (thường là main) mới được tag latest
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
@@ -209,6 +213,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # cache để build nhanh
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}:buildcache,mode=max
           platforms: linux/amd64,linux/arm64
