@@ -76,16 +76,16 @@ jobs:
 
           # ====================== 1) SERVER ======================
           echo "=== Deploy foodfast-server ==="
-          SERVER_IMAGE="${REGISTRY}/${OWNER}/foodfast-server"
-          REAL_SERVER_TAG=$(pull_safe "${SERVER_IMAGE}" "${TAG}")
+          REAL_SERVER_TAG=$(pull_safe "${REGISTRY}/${OWNER}/foodfast-server" "${TAG}")
           if [ "${REAL_SERVER_TAG}" = "none" ]; then
             echo "⚠️  Không tìm thấy image cho foodfast-server, bỏ qua."
           else
-            sudo docker rm -f foodfast-server >/dev/null 2>&1 || true
-            sudo docker run -d --name foodfast-server --restart unless-stopped \
+            # Đổi tên container thành server_app để client (nginx) lookup được
+            sudo docker rm -f server_app >/dev/null 2>&1 || true
+            sudo docker run -d --name server_app --restart unless-stopped \
               --network foodfast-net -p 5000:5000 \
               -e MONGO_URI="${MONGO_URI}" \
-              "${SERVER_IMAGE}:${REAL_SERVER_TAG}"
+              "${REGISTRY}/${OWNER}/foodfast-server:${REAL_SERVER_TAG}"
           fi
 
           # ====================== 2) CLIENT ======================
