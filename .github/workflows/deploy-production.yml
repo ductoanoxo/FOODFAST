@@ -9,11 +9,8 @@ on:
   workflow_dispatch:
 
 env:
-  # registry + owner cố định
   REGISTRY: ghcr.io
   OWNER: ductoanoxo
-
-  # luôn lấy tag theo commit hiện tại
   IMAGE_TAG: sha-${{ github.sha }}
 
 jobs:
@@ -45,26 +42,22 @@ jobs:
           GHCR_TOKEN="${GHCR_TOKEN}"
           MONGO_URI="${MONGO_URI}"
 
-          # ========== HÀM KÉO IMAGE AN TOÀN ==========
-          # Trả về đúng 1 từ: tag thực sự đã kéo (vd: sha-abc, latest)
-          # Nếu kéo cả 2 cái đều fail → in ra "none"
           pull_safe () {
             local image="$1"
             local tag="$2"
 
-            # thử pull tag theo sha trước
+            # thử tag theo SHA
             if sudo docker pull "${image}:${tag}" >/dev/null 2>&1; then
               echo "${tag}"
               return
             fi
 
-            # thử pull latest
+            # thử latest
             if sudo docker pull "${image}:latest" >/dev/null 2>&1; then
               echo "latest"
               return
             fi
 
-            # không kéo được
             echo "none"
           }
 
@@ -76,16 +69,19 @@ jobs:
 
           # ====================== 1) SERVER ======================
           echo "=== Deploy foodfast-server ==="
-          REAL_SERVER_TAG=$(pull_safe "${REGISTRY}/${OWNER}/foodfast-server" "${TAG}")
+          SERVER_IMAGE="${REGISTRY}/${OWNER}/foodfast-server"
+          REAL_SERVER_TAG=$(pull_safe "${SERVER_IMAGE}" "${TAG}")
           if [ "${REAL_SERVER_TAG}" = "none" ]; then
             echo "⚠️  Không tìm thấy image cho foodfast-server, bỏ qua."
           else
-            # Đổi tên container thành server_app để client (nginx) lookup được
+            # 💥 xoá cả 2 tên cũ có thể có để giải phóng port 5000
             sudo docker rm -f server_app >/dev/null 2>&1 || true
+            sudo docker rm -f foodfast-server >/dev/null 2>&1 || true
+
             sudo docker run -d --name server_app --restart unless-stopped \
               --network foodfast-net -p 5000:5000 \
               -e MONGO_URI="${MONGO_URI}" \
-              "${REGISTRY}/${OWNER}/foodfast-server:${REAL_SERVER_TAG}"
+              "${SERVER_IMAGE}:${REAL_SERVER_TAG}"
           fi
 
           # ====================== 2) CLIENT ======================
