@@ -21,6 +21,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Login to GHCR
+        run: |
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ env.OWNER }} --password-stdin
+
+      - name: Build and push frontend images (client/admin/restaurant)
+        run: |
+          # Build & push client
+          docker build --build-arg VITE_API_URL="${{ secrets.PROD_API_URL }}" -t ${REGISTRY}/${OWNER}/foodfast-client:${{ env.IMAGE_TAG }} ./client_app
+          docker push ${REGISTRY}/${OWNER}/foodfast-client:${{ env.IMAGE_TAG }}
+
+          # Build & push admin
+          docker build --build-arg VITE_API_URL="${{ secrets.PROD_API_URL }}" -t ${REGISTRY}/${OWNER}/foodfast-admin:${{ env.IMAGE_TAG }} ./admin_app
+          docker push ${REGISTRY}/${OWNER}/foodfast-admin:${{ env.IMAGE_TAG }}
+
+          # Build & push restaurant
+          docker build --build-arg VITE_API_URL="${{ secrets.PROD_API_URL }}" -t ${REGISTRY}/${OWNER}/foodfast-restaurant:${{ env.IMAGE_TAG }} ./restaurant_app
+          docker push ${REGISTRY}/${OWNER}/foodfast-restaurant:${{ env.IMAGE_TAG }}
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
