@@ -1,26 +1,20 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # 👇 chỉ chạy sau khi workflow build chạy xong
-  workflow_run:
-    workflows: ["Docker Build and Push"]   # tên phải đúng với file build bạn vừa sửa
-    types:
-      - completed
-
-  # 👇 vẫn cho phép bấm tay để deploy lại
+  push:
+    branches:
+      - main
+      - kiet
+      - DUCTOAN
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
   OWNER: ductoanoxo
-  # nếu bạn muốn đúng commit từ workflow_run thì có thể truyền qua env khác,
-  # tạm thời mình giữ lại kiểu cũ
   IMAGE_TAG: sha-${{ github.sha }}
 
 jobs:
   deploy:
-    # 👇 nếu build fail thì KHÔNG deploy
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -105,7 +99,7 @@ jobs:
 
           # 3) ADMIN (3001)
           echo "=== Deploy foodfast-admin ==="
-          ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin}"
+          ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin"
           REAL_ADMIN_TAG=$(pull_safe "${ADMIN_IMAGE}" "${TAG}")
           if [ "${REAL_ADMIN_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-admin >/dev/null 2>&1 || true
@@ -133,7 +127,7 @@ jobs:
             echo "⚠️  Không tìm thấy image cho foodfast-restaurant"
           fi
 
-          # 5) DRONE
+          # 5) DRONE (không cần API_URL)
           echo "=== Deploy foodfast-drone ==="
           DRONE_IMAGE="${REGISTRY}/${OWNER}/foodfast-drone"
           REAL_DRONE_TAG=$(pull_safe "${DRONE_IMAGE}" "${TAG}")
