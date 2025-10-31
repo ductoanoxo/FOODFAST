@@ -6,6 +6,8 @@ on:
       - main
       - kiet
       - DUCTOAN
+  workflow_dispatch:
+
 env:
   REGISTRY: ghcr.io
   OWNER: ductoanoxo
@@ -31,13 +33,14 @@ jobs:
       - name: Add EC2 to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H 13.220.113.217 >> ~/.ssh/known_hosts
 
       - name: Deploy to EC2
         env:
-          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
-          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+          SERVER_HOST: 13.220.113.217
+          SERVER_USER: ubuntu
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
           SERVER_TAG: ${{ env.SERVER_TAG }}
@@ -105,6 +108,6 @@ jobs:
       - name: Healthcheck backend
         run: |
           sleep 10
-          curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/health \
-            || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/api/health \
+          curl -f http://13.220.113.217:5000/health \
+            || curl -f http://13.220.113.217:5000/api/health \
             || (echo "healthcheck failed" && exit 1)
