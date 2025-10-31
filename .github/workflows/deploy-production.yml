@@ -1,80 +1,109 @@
-name: Deploy to Production
+name: Auto Deploy Foodfast to EC2
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deployment environment'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-          - production
-          - staging
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: ductoanoxo
+  SERVER_TAG: sha-cfccd2f
+  RESTAURANT_TAG: buildcache
+  CLIENT_TAG: buildcache
+  ADMIN_TAG: buildcache
+  DRONE_TAG: buildcache
 
 jobs:
   deploy:
-    name: Deploy to Server
     runs-on: ubuntu-latest
-    environment: 
-      name: ${{ github.event.inputs.environment || 'production' }}
-    
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.8.0
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: |
+            ${{ secrets.PROD_SSH_KEY }}
 
-      - name: Add server to known hosts
+      - name: Add EC2 to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Copy docker-compose to server
+      - name: Deploy to EC2
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          REGISTRY: ${{ env.REGISTRY }}
+          OWNER: ${{ env.OWNER }}
+          SERVER_TAG: ${{ env.SERVER_TAG }}
+          RESTAURANT_TAG: ${{ env.RESTAURANT_TAG }}
+          CLIENT_TAG: ${{ env.CLIENT_TAG }}
+          ADMIN_TAG: ${{ env.ADMIN_TAG }}
+          DRONE_TAG: ${{ env.DRONE_TAG }}
         run: |
-          scp docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/foodfast/
+          ssh $SERVER_USER@$SERVER_HOST << 'EOF'
+            set -e
 
-      - name: Deploy with Docker Compose
-        run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            cd ~/foodfast
-            
-            # Pull latest images
-            export IMAGE_TAG=${{ github.ref_name }}
-            export DOCKER_REGISTRY=ghcr.io
-            export DOCKER_USERNAME=${{ github.repository_owner }}
-            
-            docker-compose pull
-            
-            # Stop and remove old containers
-            docker-compose down
-            
-            # Start new containers
-            docker-compose up -d
-            
-            # Clean up old images
-            docker image prune -af --filter "until=72h"
-            
-            # Show running containers
-            docker-compose ps
+            REGISTRY="${REGISTRY}"
+            OWNER="${OWNER}"
+
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${OWNER} --password-stdin
+
+            declare -A SERVICES
+            SERVICES[foodfast-server]="${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
+            SERVICES[foodfast-restaurant]="${REGISTRY}/${OWNER}/foodfast-restaurant:${RESTAURANT_TAG}"
+            SERVICES[foodfast-client]="${REGISTRY}/${OWNER}/foodfast-client:${CLIENT_TAG}"
+            SERVICES[foodfast-admin]="${REGISTRY}/${OWNER}/foodfast-admin:${ADMIN_TAG}"
+            SERVICES[foodfast-drone]="${REGISTRY}/${OWNER}/foodfast-drone:${DRONE_TAG}"
+
+            docker network create foodfast-net || true
+
+            for NAME in "\${!SERVICES[@]}"; do
+              IMAGE="\${SERVICES[\$NAME]}"
+              echo "-----------------------------"
+              echo "Deploying \$NAME with image \$IMAGE"
+              docker pull \$IMAGE
+
+              if [ "\$(docker ps -aq -f name=\$NAME)" ]; then
+                docker stop \$NAME || true
+                docker rm \$NAME || true
+              fi
+
+              PORT_OPT=""
+              case "\$NAME" in
+                foodfast-server)
+                  PORT_OPT="-p 5000:5000"
+                  ;;
+                foodfast-client)
+                  PORT_OPT="-p 3000:80"
+                  ;;
+                foodfast-admin)
+                  PORT_OPT="-p 3001:80"
+                  ;;
+                foodfast-restaurant)
+                  PORT_OPT="-p 3002:80"
+                  ;;
+                foodfast-drone)
+                  PORT_OPT=""
+                  ;;
+              esac
+
+              docker run -d \
+                --name \$NAME \
+                --restart unless-stopped \
+                --network foodfast-net \
+                \$PORT_OPT \
+                \$IMAGE
+            done
           EOF
 
-      - name: Health check
+      - name: Healthcheck backend
         run: |
-          sleep 30
-          curl -f http://${{ secrets.SERVER_HOST }}:5000/api/health || exit 1
-
-      - name: Notify deployment status
-        if: always()
-        run: |
-          if [ ${{ job.status }} == 'success' ]; then
-            echo "✅ Deployment successful!"
-          else
-            echo "❌ Deployment failed!"
-          fi
+          sleep 10
+          curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/health \
+            || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/api/health \
+            || (echo "healthcheck failed" && exit 1)
