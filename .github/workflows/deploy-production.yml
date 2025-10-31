@@ -52,10 +52,11 @@ jobs:
           DRONE_TAG="${DRONE_TAG}"
           GHCR_TOKEN="${GHCR_TOKEN}"
           MONGO_URI="${MONGO_URI}"
+
           # login GHCR
           echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${OWNER}" --password-stdin
 
-          # network chung cho các service
+          # network chung
           sudo docker network create foodfast-net || true
 
           echo "=== Deploy foodfast-server ==="
@@ -63,6 +64,7 @@ jobs:
           sudo docker rm -f foodfast-server 2>/dev/null || true
           sudo docker run -d --name foodfast-server --restart unless-stopped \
             --network foodfast-net -p 5000:5000 \
+            -e MONGO_URI="${MONGO_URI}" \
             "${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
 
           echo "=== Deploy foodfast-client ==="
@@ -122,6 +124,7 @@ jobs:
           ADMIN_TAG: ${{ env.ADMIN_TAG }}
           DRONE_TAG: ${{ env.DRONE_TAG }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
           echo "Connecting to $SERVER_USER@$SERVER_HOST ..."
           scp remote-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/remote-deploy.sh
@@ -134,11 +137,21 @@ jobs:
             ADMIN_TAG='${ADMIN_TAG}' \
             DRONE_TAG='${DRONE_TAG}' \
             GHCR_TOKEN='${GHCR_TOKEN}' \
+            MONGO_URI='${MONGO_URI}' \
             /tmp/remote-deploy.sh"
 
       - name: Healthcheck backend
         run: |
-          sleep 10
-          curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/health \
-            || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/api/health \
-            || (echo "healthcheck failed" && exit 1)
+          echo "Waiting for backend..."
+          for i in {1..6}; do
+            echo "Attempt $i"
+            if curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/health \
+              || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/api/health \
+              || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/ ; then
+              echo "✅ Backend is up"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "❌ Backend is NOT responding on port 5000"
+          exit 1
