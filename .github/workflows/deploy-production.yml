@@ -40,7 +40,6 @@ jobs:
           SERVER_HOST: 13.220.113.217
           SERVER_USER: ubuntu
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
           SERVER_TAG: ${{ env.SERVER_TAG }}
@@ -49,13 +48,13 @@ jobs:
           ADMIN_TAG: ${{ env.ADMIN_TAG }}
           DRONE_TAG: ${{ env.DRONE_TAG }}
         run: |
-          ssh $SERVER_USER@$SERVER_HOST << 'EOF'
+          ssh $SERVER_USER@$SERVER_HOST << EOF
             set -e
 
             REGISTRY="${REGISTRY}"
             OWNER="${OWNER}"
 
-            echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${OWNER} --password-stdin
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${OWNER}" --password-stdin
 
             declare -A SERVICES
             SERVICES[foodfast-server]="${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
@@ -70,11 +69,11 @@ jobs:
               IMAGE="\${SERVICES[\$NAME]}"
               echo "-----------------------------"
               echo "Deploying \$NAME with image \$IMAGE"
-              docker pull \$IMAGE
+              docker pull "\$IMAGE"
 
               if [ "\$(docker ps -aq -f name=\$NAME)" ]; then
-                docker stop \$NAME || true
-                docker rm \$NAME || true
+                docker stop "\$NAME" || true
+                docker rm "\$NAME" || true
               fi
 
               PORT_OPT=""
@@ -97,13 +96,13 @@ jobs:
               esac
 
               docker run -d \
-                --name \$NAME \
+                --name "\$NAME" \
                 --restart unless-stopped \
                 --network foodfast-net \
                 \$PORT_OPT \
-                \$IMAGE
+                "\$IMAGE"
             done
-          EOF
+EOF
 
       - name: Healthcheck backend
         run: |
