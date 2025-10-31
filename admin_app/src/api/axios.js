@@ -2,8 +2,7 @@ import axios from 'axios';
 
 const instance = axios.create({
 
-    // Use same-origin '/api' by default so nginx can proxy to backend service on the docker network.
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
