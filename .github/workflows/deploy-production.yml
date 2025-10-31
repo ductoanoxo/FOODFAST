@@ -1,80 +1,157 @@
-name: Deploy to Production
+name: Auto Deploy Foodfast to EC2
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
+      - kiet
+      - DUCTOAN
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deployment environment'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-          - production
-          - staging
+
+env:
+  # registry + owner cố định
+  REGISTRY: ghcr.io
+  OWNER: ductoanoxo
+
+  # tag mặc định
+  SERVER_TAG: sha-cfccd2f
+  RESTAURANT_TAG: buildcache
+  CLIENT_TAG: buildcache
+  ADMIN_TAG: buildcache
+  DRONE_TAG: buildcache
 
 jobs:
   deploy:
-    name: Deploy to Server
     runs-on: ubuntu-latest
-    environment: 
-      name: ${{ github.event.inputs.environment || 'production' }}
-    
+
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.8.0
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.PROD_SSH_KEY }}
 
-      - name: Add server to known hosts
+      - name: Add EC2 to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Copy docker-compose to server
+      - name: Create remote script
         run: |
-          scp docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/foodfast/
+          cat > remote-deploy.sh <<'SCRIPT'
+          set -e
 
-      - name: Deploy with Docker Compose
-        run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            cd ~/foodfast
-            
-            # Pull latest images
-            export IMAGE_TAG=${{ github.ref_name }}
-            export DOCKER_REGISTRY=ghcr.io
-            export DOCKER_USERNAME=${{ github.repository_owner }}
-            
-            docker-compose pull
-            
-            # Stop and remove old containers
-            docker-compose down
-            
-            # Start new containers
-            docker-compose up -d
-            
-            # Clean up old images
-            docker image prune -af --filter "until=72h"
-            
-            # Show running containers
-            docker-compose ps
-          EOF
+          REGISTRY="${REGISTRY}"
+          OWNER="${OWNER}"
+          SERVER_TAG="${SERVER_TAG}"
+          RESTAURANT_TAG="${RESTAURANT_TAG}"
+          CLIENT_TAG="${CLIENT_TAG}"
+          ADMIN_TAG="${ADMIN_TAG}"
+          DRONE_TAG="${DRONE_TAG}"
+          GHCR_TOKEN="${GHCR_TOKEN}"
+          MONGO_URI="${MONGO_URI}"
 
-      - name: Health check
-        run: |
-          sleep 30
-          curl -f http://${{ secrets.SERVER_HOST }}:5000/api/health || exit 1
+          # login GHCR
+          echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${OWNER}" --password-stdin
 
-      - name: Notify deployment status
-        if: always()
-        run: |
-          if [ ${{ job.status }} == 'success' ]; then
-            echo "✅ Deployment successful!"
+          # network chung
+          sudo docker network create foodfast-net || true
+
+          echo "=== Deploy foodfast-server ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
+          sudo docker rm -f foodfast-server 2>/dev/null || true
+          sudo docker run -d --name foodfast-server --restart unless-stopped \
+            --network foodfast-net -p 5000:5000 \
+            -e MONGO_URI="${MONGO_URI}" \
+            "${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
+
+          echo "=== Deploy foodfast-client ==="
+          if [ "${CLIENT_TAG}" != "buildcache" ]; then
+            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-client:${CLIENT_TAG}"
+            sudo docker rm -f foodfast-client 2>/dev/null || true
+            sudo docker run -d --name foodfast-client --restart unless-stopped \
+              --network foodfast-net -p 3000:80 \
+              "${REGISTRY}/${OWNER}/foodfast-client:${CLIENT_TAG}"
           else
-            echo "❌ Deployment failed!"
+            echo "skip foodfast-client (tag=buildcache)"
           fi
+
+          echo "=== Deploy foodfast-admin ==="
+          if [ "${ADMIN_TAG}" != "buildcache" ]; then
+            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-admin:${ADMIN_TAG}"
+            sudo docker rm -f foodfast-admin 2>/dev/null || true
+            sudo docker run -d --name foodfast-admin --restart unless-stopped \
+              --network foodfast-net -p 3001:80 \
+              "${REGISTRY}/${OWNER}/foodfast-admin:${ADMIN_TAG}"
+          else
+            echo "skip foodfast-admin (tag=buildcache)"
+          fi
+
+          echo "=== Deploy foodfast-restaurant ==="
+          if [ "${RESTAURANT_TAG}" != "buildcache" ]; then
+            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-restaurant:${RESTAURANT_TAG}"
+            sudo docker rm -f foodfast-restaurant 2>/dev/null || true
+            sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
+              --network foodfast-net -p 3002:80 \
+              "${REGISTRY}/${OWNER}/foodfast-restaurant:${RESTAURANT_TAG}"
+          else
+            echo "skip foodfast-restaurant (tag=buildcache)"
+          fi
+
+          echo "=== Deploy foodfast-drone ==="
+          if [ "${DRONE_TAG}" != "buildcache" ]; then
+            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-drone:${DRONE_TAG}"
+            sudo docker rm -f foodfast-drone 2>/dev/null || true
+            sudo docker run -d --name foodfast-drone --restart unless-stopped \
+              --network foodfast-net \
+              "${REGISTRY}/${OWNER}/foodfast-drone:${DRONE_TAG}"
+          else
+            echo "skip foodfast-drone (tag=buildcache)"
+          fi
+          SCRIPT
+
+      - name: Run remote script on EC2
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+          REGISTRY: ${{ env.REGISTRY }}
+          OWNER: ${{ env.OWNER }}
+          SERVER_TAG: ${{ env.SERVER_TAG }}
+          RESTAURANT_TAG: ${{ env.RESTAURANT_TAG }}
+          CLIENT_TAG: ${{ env.CLIENT_TAG }}
+          ADMIN_TAG: ${{ env.ADMIN_TAG }}
+          DRONE_TAG: ${{ env.DRONE_TAG }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: |
+          echo "Connecting to $SERVER_USER@$SERVER_HOST ..."
+          scp remote-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/remote-deploy.sh
+          ssh $SERVER_USER@$SERVER_HOST "chmod +x /tmp/remote-deploy.sh && \
+            REGISTRY='${REGISTRY}' \
+            OWNER='${OWNER}' \
+            SERVER_TAG='${SERVER_TAG}' \
+            RESTAURANT_TAG='${RESTAURANT_TAG}' \
+            CLIENT_TAG='${CLIENT_TAG}' \
+            ADMIN_TAG='${ADMIN_TAG}' \
+            DRONE_TAG='${DRONE_TAG}' \
+            GHCR_TOKEN='${GHCR_TOKEN}' \
+            MONGO_URI='${MONGO_URI}' \
+            /tmp/remote-deploy.sh"
+
+      - name: Healthcheck backend
+        run: |
+          echo "Waiting for backend..."
+          for i in {1..6}; do
+            echo "Attempt $i"
+            if curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/health \
+              || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/api/health \
+              || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/ ; then
+              echo "✅ Backend is up"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "❌ Backend is NOT responding on port 5000"
+          exit 1
