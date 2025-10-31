@@ -9,8 +9,11 @@ on:
   workflow_dispatch:
 
 env:
+  # registry + owner cố định
   REGISTRY: ghcr.io
   OWNER: ductoanoxo
+
+  # tag mặc định
   SERVER_TAG: sha-cfccd2f
   RESTAURANT_TAG: buildcache
   CLIENT_TAG: buildcache
@@ -20,6 +23,7 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,39 +52,62 @@ jobs:
           DRONE_TAG="${DRONE_TAG}"
           GHCR_TOKEN="${GHCR_TOKEN}"
 
-          echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${OWNER}" --password-stdin
+          # login GHCR
+          echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${OWNER}" --password-stdin
 
-          docker network create foodfast-net || true
+          # network chung cho các service
+          sudo docker network create foodfast-net || true
 
-          docker pull "${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
-          docker rm -f foodfast-server 2>/dev/null || true
-          docker run -d --name foodfast-server --restart unless-stopped \
+          echo "=== Deploy foodfast-server ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
+          sudo docker rm -f foodfast-server 2>/dev/null || true
+          sudo docker run -d --name foodfast-server --restart unless-stopped \
             --network foodfast-net -p 5000:5000 \
             "${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
 
-          docker pull "${REGISTRY}/${OWNER}/foodfast-client:${CLIENT_TAG}"
-          docker rm -f foodfast-client 2>/dev/null || true
-          docker run -d --name foodfast-client --restart unless-stopped \
-            --network foodfast-net -p 3000:80 \
-            "${REGISTRY}/${OWNER}/foodfast-client:${CLIENT_TAG}"
+          echo "=== Deploy foodfast-client ==="
+          if [ "${CLIENT_TAG}" != "buildcache" ]; then
+            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-client:${CLIENT_TAG}"
+            sudo docker rm -f foodfast-client 2>/dev/null || true
+            sudo docker run -d --name foodfast-client --restart unless-stopped \
+              --network foodfast-net -p 3000:80 \
+              "${REGISTRY}/${OWNER}/foodfast-client:${CLIENT_TAG}"
+          else
+            echo "skip foodfast-client (tag=buildcache)"
+          fi
 
-          docker pull "${REGISTRY}/${OWNER}/foodfast-admin:${ADMIN_TAG}"
-          docker rm -f foodfast-admin 2>/dev/null || true
-          docker run -d --name foodfast-admin --restart unless-stopped \
-            --network foodfast-net -p 3001:80 \
-            "${REGISTRY}/${OWNER}/foodfast-admin:${ADMIN_TAG}"
+          echo "=== Deploy foodfast-admin ==="
+          if [ "${ADMIN_TAG}" != "buildcache" ]; then
+            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-admin:${ADMIN_TAG}"
+            sudo docker rm -f foodfast-admin 2>/dev/null || true
+            sudo docker run -d --name foodfast-admin --restart unless-stopped \
+              --network foodfast-net -p 3001:80 \
+              "${REGISTRY}/${OWNER}/foodfast-admin:${ADMIN_TAG}"
+          else
+            echo "skip foodfast-admin (tag=buildcache)"
+          fi
 
-          docker pull "${REGISTRY}/${OWNER}/foodfast-restaurant:${RESTAURANT_TAG}"
-          docker rm -f foodfast-restaurant 2>/dev/null || true
-          docker run -d --name foodfast-restaurant --restart unless-stopped \
-            --network foodfast-net -p 3002:80 \
-            "${REGISTRY}/${OWNER}/foodfast-restaurant:${RESTAURANT_TAG}"
+          echo "=== Deploy foodfast-restaurant ==="
+          if [ "${RESTAURANT_TAG}" != "buildcache" ]; then
+            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-restaurant:${RESTAURANT_TAG}"
+            sudo docker rm -f foodfast-restaurant 2>/dev/null || true
+            sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
+              --network foodfast-net -p 3002:80 \
+              "${REGISTRY}/${OWNER}/foodfast-restaurant:${RESTAURANT_TAG}"
+          else
+            echo "skip foodfast-restaurant (tag=buildcache)"
+          fi
 
-          docker pull "${REGISTRY}/${OWNER}/foodfast-drone:${DRONE_TAG}"
-          docker rm -f foodfast-drone 2>/dev/null || true
-          docker run -d --name foodfast-drone --restart unless-stopped \
-            --network foodfast-net \
-            "${REGISTRY}/${OWNER}/foodfast-drone:${DRONE_TAG}"
+          echo "=== Deploy foodfast-drone ==="
+          if [ "${DRONE_TAG}" != "buildcache" ]; then
+            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-drone:${DRONE_TAG}"
+            sudo docker rm -f foodfast-drone 2>/dev/null || true
+            sudo docker run -d --name foodfast-drone --restart unless-stopped \
+              --network foodfast-net \
+              "${REGISTRY}/${OWNER}/foodfast-drone:${DRONE_TAG}"
+          else
+            echo "skip foodfast-drone (tag=buildcache)"
+          fi
           SCRIPT
 
       - name: Run remote script on EC2
@@ -96,6 +123,7 @@ jobs:
           DRONE_TAG: ${{ env.DRONE_TAG }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
+          echo "Connecting to $SERVER_USER@$SERVER_HOST ..."
           scp remote-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/remote-deploy.sh
           ssh $SERVER_USER@$SERVER_HOST "chmod +x /tmp/remote-deploy.sh && \
             REGISTRY='${REGISTRY}' \
