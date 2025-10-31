@@ -13,7 +13,7 @@ env:
   REGISTRY: ghcr.io
   OWNER: ductoanoxo
 
-  # tag mặc định: luôn lấy theo commit hiện tại
+  # luôn lấy tag theo commit hiện tại
   IMAGE_TAG: sha-${{ github.sha }}
 
 jobs:
@@ -45,18 +45,27 @@ jobs:
           GHCR_TOKEN="${GHCR_TOKEN}"
           MONGO_URI="${MONGO_URI}"
 
-          # hàm: pull tag nếu có, nếu không có thì fallback sang latest
-          pull_or_latest () {
-            local image="$1"   # ví dụ: ghcr.io/ductoanoxo/foodfast-server
-            local tag="$2"     # ví dụ: sha-123abc
-            echo "---- pulling ${image}:${tag} ----"
-            if sudo docker pull "${image}:${tag}"; then
+          # ========== HÀM KÉO IMAGE AN TOÀN ==========
+          # Trả về đúng 1 từ: tag thực sự đã kéo (vd: sha-abc, latest)
+          # Nếu kéo cả 2 cái đều fail → in ra "none"
+          pull_safe () {
+            local image="$1"
+            local tag="$2"
+
+            # thử pull tag theo sha trước
+            if sudo docker pull "${image}:${tag}" >/dev/null 2>&1; then
               echo "${tag}"
-            else
-              echo "⚠️  tag ${tag} không tồn tại, fallback sang :latest"
-              sudo docker pull "${image}:latest"
-              echo "latest"
+              return
             fi
+
+            # thử pull latest
+            if sudo docker pull "${image}:latest" >/dev/null 2>&1; then
+              echo "latest"
+              return
+            fi
+
+            # không kéo được
+            echo "none"
           }
 
           echo "== Login GHCR =="
@@ -65,46 +74,71 @@ jobs:
           echo "== Create network (if not exists) =="
           sudo docker network create foodfast-net >/dev/null 2>&1 || true
 
-          # 1) SERVER
+          # ====================== 1) SERVER ======================
           echo "=== Deploy foodfast-server ==="
-          REAL_SERVER_TAG=$(pull_or_latest "${REGISTRY}/${OWNER}/foodfast-server" "${TAG}")
-          sudo docker rm -f foodfast-server 2>/dev/null || true
-          sudo docker run -d --name foodfast-server --restart unless-stopped \
-            --network foodfast-net -p 5000:5000 \
-            -e MONGO_URI="${MONGO_URI}" \
-            "${REGISTRY}/${OWNER}/foodfast-server:${REAL_SERVER_TAG}"
+          SERVER_IMAGE="${REGISTRY}/${OWNER}/foodfast-server"
+          REAL_SERVER_TAG=$(pull_safe "${SERVER_IMAGE}" "${TAG}")
+          if [ "${REAL_SERVER_TAG}" = "none" ]; then
+            echo "⚠️  Không tìm thấy image cho foodfast-server, bỏ qua."
+          else
+            sudo docker rm -f foodfast-server >/dev/null 2>&1 || true
+            sudo docker run -d --name foodfast-server --restart unless-stopped \
+              --network foodfast-net -p 5000:5000 \
+              -e MONGO_URI="${MONGO_URI}" \
+              "${SERVER_IMAGE}:${REAL_SERVER_TAG}"
+          fi
 
-          # 2) CLIENT
+          # ====================== 2) CLIENT ======================
           echo "=== Deploy foodfast-client ==="
-          REAL_CLIENT_TAG=$(pull_or_latest "${REGISTRY}/${OWNER}/foodfast-client" "${TAG}")
-          sudo docker rm -f foodfast-client 2>/dev/null || true
-          sudo docker run -d --name foodfast-client --restart unless-stopped \
-            --network foodfast-net -p 3000:80 \
-            "${REGISTRY}/${OWNER}/foodfast-client:${REAL_CLIENT_TAG}"
+          CLIENT_IMAGE="${REGISTRY}/${OWNER}/foodfast-client"
+          REAL_CLIENT_TAG=$(pull_safe "${CLIENT_IMAGE}" "${TAG}")
+          if [ "${REAL_CLIENT_TAG}" = "none" ]; then
+            echo "⚠️  Không tìm thấy image cho foodfast-client, bỏ qua."
+          else
+            sudo docker rm -f foodfast-client >/dev/null 2>&1 || true
+            sudo docker run -d --name foodfast-client --restart unless-stopped \
+              --network foodfast-net -p 3000:80 \
+              "${CLIENT_IMAGE}:${REAL_CLIENT_TAG}"
+          fi
 
-          # 3) ADMIN
+          # ====================== 3) ADMIN ======================
           echo "=== Deploy foodfast-admin ==="
-          REAL_ADMIN_TAG=$(pull_or_latest "${REGISTRY}/${OWNER}/foodfast-admin" "${TAG}")
-          sudo docker rm -f foodfast-admin 2>/dev/null || true
-          sudo docker run -d --name foodfast-admin --restart unless-stopped \
-            --network foodfast-net -p 3001:80 \
-            "${REGISTRY}/${OWNER}/foodfast-admin:${REAL_ADMIN_TAG}"
+          ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin"
+          REAL_ADMIN_TAG=$(pull_safe "${ADMIN_IMAGE}" "${TAG}")
+          if [ "${REAL_ADMIN_TAG}" = "none" ]; then
+            echo "⚠️  Không tìm thấy image cho foodfast-admin, bỏ qua."
+          else
+            sudo docker rm -f foodfast-admin >/dev/null 2>&1 || true
+            sudo docker run -d --name foodfast-admin --restart unless-stopped \
+              --network foodfast-net -p 3001:80 \
+              "${ADMIN_IMAGE}:${REAL_ADMIN_TAG}"
+          fi
 
-          # 4) RESTAURANT
+          # ====================== 4) RESTAURANT ======================
           echo "=== Deploy foodfast-restaurant ==="
-          REAL_RESTAURANT_TAG=$(pull_or_latest "${REGISTRY}/${OWNER}/foodfast-restaurant" "${TAG}")
-          sudo docker rm -f foodfast-restaurant 2>/dev/null || true
-          sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
-            --network foodfast-net -p 3002:80 \
-            "${REGISTRY}/${OWNER}/foodfast-restaurant:${REAL_RESTAURANT_TAG}"
+          REST_IMAGE="${REGISTRY}/${OWNER}/foodfast-restaurant"
+          REAL_REST_TAG=$(pull_safe "${REST_IMAGE}" "${TAG}")
+          if [ "${REAL_REST_TAG}" = "none" ]; then
+            echo "⚠️  Không tìm thấy image cho foodfast-restaurant, bỏ qua."
+          else
+            sudo docker rm -f foodfast-restaurant >/dev/null 2>&1 || true
+            sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
+              --network foodfast-net -p 3002:80 \
+              "${REST_IMAGE}:${REAL_REST_TAG}"
+          fi
 
-          # 5) DRONE
+          # ====================== 5) DRONE ======================
           echo "=== Deploy foodfast-drone ==="
-          REAL_DRONE_TAG=$(pull_or_latest "${REGISTRY}/${OWNER}/foodfast-drone" "${TAG}")
-          sudo docker rm -f foodfast-drone 2>/dev/null || true
-          sudo docker run -d --name foodfast-drone --restart unless-stopped \
-            --network foodfast-net \
-            "${REGISTRY}/${OWNER}/foodfast-drone:${REAL_DRONE_TAG}"
+          DRONE_IMAGE="${REGISTRY}/${OWNER}/foodfast-drone"
+          REAL_DRONE_TAG=$(pull_safe "${DRONE_IMAGE}" "${TAG}")
+          if [ "${REAL_DRONE_TAG}" = "none" ]; then
+            echo "⚠️  Không tìm thấy image cho foodfast-drone, bỏ qua."
+          else
+            sudo docker rm -f foodfast-drone >/dev/null 2>&1 || true
+            sudo docker run -d --name foodfast-drone --restart unless-stopped \
+              --network foodfast-net \
+              "${DRONE_IMAGE}:${REAL_DRONE_TAG}"
+          fi
 
           echo "✅ Done deploy all containers."
           SCRIPT
@@ -115,7 +149,7 @@ jobs:
           SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
-          TAG: ${{ env.IMAGE_TAG }}              # truyền sha-xxxx xuống EC2
+          TAG: ${{ env.IMAGE_TAG }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
