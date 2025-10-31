@@ -14,11 +14,11 @@ env:
   OWNER: ductoanoxo
 
   # tag mặc định
-  SERVER_TAG: sha-cfccd2f
-  RESTAURANT_TAG: buildcache
-  CLIENT_TAG: buildcache
-  ADMIN_TAG: buildcache
-  DRONE_TAG: buildcache
+  SERVER_TAG: ${{ github.sha }}
+  RESTAURANT_TAG: ${{ github.sha }}
+  CLIENT_TAG: ${{ github.sha }}
+  ADMIN_TAG: ${{ github.sha }}
+  DRONE_TAG: ${{ github.sha }}
 
 jobs:
   deploy:
