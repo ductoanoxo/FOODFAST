@@ -11,7 +11,8 @@ on:
 env:
   REGISTRY: ghcr.io
   OWNER: ductoanoxo
-  IMAGE_TAG: sha-${{ github.sha }}
+  # tag mặc định để fallback (giống workflow build)
+  IMAGE_TAG: sha-${{ github.sha_short }}
 
 jobs:
   deploy:
@@ -31,6 +32,9 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
+      # ===============================
+      # Tạo script để đẩy lên EC2
+      # ===============================
       - name: Create remote script
         run: |
           cat > remote-deploy.sh <<'SCRIPT'
@@ -42,16 +46,20 @@ jobs:
           GHCR_TOKEN="${GHCR_TOKEN}"
           MONGO_URI="${MONGO_URI}"
           API_URL="${API_URL}"
+          DIGEST="${DIGEST}"
 
+          # pull theo tag, nếu không có thì latest
           pull_safe () {
             local image="$1"
             local tag="$2"
 
+            echo "→ Trying to pull ${image}:${tag} ..."
             if sudo docker pull "${image}:${tag}" >/dev/null 2>&1; then
               echo "${tag}"
               return
             fi
 
+            echo "→ Fallback to ${image}:latest ..."
             if sudo docker pull "${image}:latest" >/dev/null 2>&1; then
               echo "latest"
               return
@@ -60,82 +68,132 @@ jobs:
             echo "none"
           }
 
+          # ưu tiên digest (nếu có), nếu không được thì quay về tag → latest
+          pull_by_digest_or_tag () {
+            local image="$1"
+            local tag="$2"
+            local digest="$3"
+
+            # nếu có digest thì thử trước
+            if [ -n "$digest" ]; then
+              local ref="${image}@${digest}"
+              echo "→ Trying digest ${ref} ..."
+              if sudo docker pull "${ref}" >/dev/null 2>&1; then
+                # trả về nguyên dạng image@sha256:...
+                echo "${ref}"
+                return
+              else
+                echo "→ Digest doesn't match ${image}, will fallback to tag..."
+              fi
+            fi
+
+            # nếu digest không kéo được (hoặc không có) thì quay về kiểu cũ: tag → latest
+            local real_tag
+            real_tag=$(pull_safe "${image}" "${tag}")
+            if [ "${real_tag}" = "none" ]; then
+              echo "none"
+            else
+              echo "${image}:${real_tag}"
+            fi
+          }
+
           echo "== Login GHCR =="
           echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${OWNER}" --password-stdin
 
           echo "== Create network (if not exists) =="
           sudo docker network create foodfast-net >/dev/null 2>&1 || true
 
+          # -------------------------------------------------
           # 1) SERVER
+          # -------------------------------------------------
           echo "=== Deploy foodfast-server ==="
           SERVER_IMAGE="${REGISTRY}/${OWNER}/foodfast-server"
-          REAL_SERVER_TAG=$(pull_safe "${SERVER_IMAGE}" "${TAG}")
-          if [ "${REAL_SERVER_TAG}" != "none" ]; then
+          SERVER_REF=$(pull_by_digest_or_tag "${SERVER_IMAGE}" "${TAG}" "${DIGEST}")
+
+          if [ "${SERVER_REF}" != "none" ]; then
             sudo docker rm -f server_app >/dev/null 2>&1 || true
             sudo docker rm -f foodfast-server >/dev/null 2>&1 || true
 
             sudo docker run -d --name server_app --restart unless-stopped \
               --network foodfast-net -p 5000:5000 \
               -e MONGO_URI="${MONGO_URI}" \
-              "${SERVER_IMAGE}:${REAL_SERVER_TAG}"
+              -e NODE_ENV=production \
+              --log-opt max-size=10m --log-opt max-file=3 \
+              "${SERVER_REF}"
           else
             echo "⚠️  Không tìm thấy image cho foodfast-server"
           fi
 
+          # -------------------------------------------------
           # 2) CLIENT (3000)
+          # -------------------------------------------------
           echo "=== Deploy foodfast-client ==="
           CLIENT_IMAGE="${REGISTRY}/${OWNER}/foodfast-client"
-          REAL_CLIENT_TAG=$(pull_safe "${CLIENT_IMAGE}" "${TAG}")
-          if [ "${REAL_CLIENT_TAG}" != "none" ]; then
+          CLIENT_REF=$(pull_by_digest_or_tag "${CLIENT_IMAGE}" "${TAG}" "${DIGEST}")
+
+          if [ "${CLIENT_REF}" != "none" ]; then
             sudo docker rm -f foodfast-client >/dev/null 2>&1 || true
             sudo docker run -d --name foodfast-client --restart unless-stopped \
               --network foodfast-net -p 3000:80 \
               -e VITE_API_URL="${API_URL}" \
               -e REACT_APP_API_URL="${API_URL}" \
-              "${CLIENT_IMAGE}:${REAL_CLIENT_TAG}"
+              --log-opt max-size=10m --log-opt max-file=3 \
+              "${CLIENT_REF}"
           else
             echo "⚠️  Không tìm thấy image cho foodfast-client"
           fi
 
+          # -------------------------------------------------
           # 3) ADMIN (3001)
+          # -------------------------------------------------
           echo "=== Deploy foodfast-admin ==="
           ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin"
-          REAL_ADMIN_TAG=$(pull_safe "${ADMIN_IMAGE}" "${TAG}")
-          if [ "${REAL_ADMIN_TAG}" != "none" ]; then
+          ADMIN_REF=$(pull_by_digest_or_tag "${ADMIN_IMAGE}" "${TAG}" "${DIGEST}")
+
+          if [ "${ADMIN_REF}" != "none" ]; then
             sudo docker rm -f foodfast-admin >/dev/null 2>&1 || true
             sudo docker run -d --name foodfast-admin --restart unless-stopped \
               --network foodfast-net -p 3001:80 \
               -e VITE_API_URL="${API_URL}" \
               -e REACT_APP_API_URL="${API_URL}" \
-              "${ADMIN_IMAGE}:${REAL_ADMIN_TAG}"
+              --log-opt max-size=10m --log-opt max-file=3 \
+              "${ADMIN_REF}"
           else
             echo "⚠️  Không tìm thấy image cho foodfast-admin"
           fi
 
+          # -------------------------------------------------
           # 4) RESTAURANT (3002)
+          # -------------------------------------------------
           echo "=== Deploy foodfast-restaurant ==="
           REST_IMAGE="${REGISTRY}/${OWNER}/foodfast-restaurant"
-          REAL_REST_TAG=$(pull_safe "${REST_IMAGE}" "${TAG}")
-          if [ "${REAL_REST_TAG}" != "none" ]; then
+          REST_REF=$(pull_by_digest_or_tag "${REST_IMAGE}" "${TAG}" "${DIGEST}")
+
+          if [ "${REST_REF}" != "none" ]; then
             sudo docker rm -f foodfast-restaurant >/dev/null 2>&1 || true
             sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
               --network foodfast-net -p 3002:80 \
               -e VITE_API_URL="${API_URL}" \
               -e REACT_APP_API_URL="${API_URL}" \
-              "${REST_IMAGE}:${REAL_REST_TAG}"
+              --log-opt max-size=10m --log-opt max-file=3 \
+              "${REST_REF}"
           else
             echo "⚠️  Không tìm thấy image cho foodfast-restaurant"
           fi
 
-          # 5) DRONE (không cần API_URL)
+          # -------------------------------------------------
+          # 5) DRONE
+          # -------------------------------------------------
           echo "=== Deploy foodfast-drone ==="
           DRONE_IMAGE="${REGISTRY}/${OWNER}/foodfast-drone"
-          REAL_DRONE_TAG=$(pull_safe "${DRONE_IMAGE}" "${TAG}")
-          if [ "${REAL_DRONE_TAG}" != "none" ]; then
+          DRONE_REF=$(pull_by_digest_or_tag "${DRONE_IMAGE}" "${TAG}" "${DIGEST}")
+
+          if [ "${DRONE_REF}" != "none" ]; then
             sudo docker rm -f foodfast-drone >/dev/null 2>&1 || true
             sudo docker run -d --name foodfast-drone --restart unless-stopped \
               --network foodfast-net \
-              "${DRONE_IMAGE}:${REAL_DRONE_TAG}"
+              --log-opt max-size=10m --log-opt max-file=3 \
+              "${DRONE_REF}"
           else
             echo "⚠️  Không tìm thấy image cho foodfast-drone"
           fi
@@ -143,16 +201,21 @@ jobs:
           echo "✅ Done deploy all containers."
           SCRIPT
 
+      # ===============================
+      # Chạy script trên EC2
+      # ===============================
       - name: Run remote script on EC2
         env:
           SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
           SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
-          TAG: ${{ env.IMAGE_TAG }}
+          TAG: ${{ env.IMAGE_TAG }}   # ví dụ: sha-abc1234
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
           API_URL: ${{ secrets.PROD_API_URL }}
+          # digest bạn muốn thử cho "full repo"
+          DIGEST: sha256:01658d772f84d42d205db8bb52689e845694afe24143a6b4de31b09b2659cfe4
         run: |
           echo "Connecting to $SERVER_USER@$SERVER_HOST ..."
           scp remote-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/remote-deploy.sh
@@ -163,12 +226,16 @@ jobs:
             GHCR_TOKEN='${GHCR_TOKEN}' \
             MONGO_URI='${MONGO_URI}' \
             API_URL='${API_URL}' \
+            DIGEST='${DIGEST}' \
             /tmp/remote-deploy.sh"
 
+      # ===============================
+      # Kiểm tra backend sau deploy
+      # ===============================
       - name: Healthcheck backend
         run: |
           echo "Waiting for backend..."
-          for i in {1..6}; do
+          for i in {1..12}; do
             echo "Attempt $i"
             if curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/api/health \
               || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/health \
