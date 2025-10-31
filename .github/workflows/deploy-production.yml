@@ -51,7 +51,7 @@ jobs:
           ADMIN_TAG="${ADMIN_TAG}"
           DRONE_TAG="${DRONE_TAG}"
           GHCR_TOKEN="${GHCR_TOKEN}"
-
+          MONGO_URI="${MONGO_URI}"
           # login GHCR
           echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${OWNER}" --password-stdin
 
