@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 const API = axios.create({
+    // Prefer same-origin '/api' so nginx reverse-proxy will forward requests to server_app.
     baseURL: import.meta.env.VITE_API_URL || '/api',
     headers: {
         'Content-Type': 'application/json',
