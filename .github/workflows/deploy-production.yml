@@ -12,33 +12,57 @@ env:
   REGISTRY: ghcr.io
   OWNER: ductoanoxo
   IMAGE_TAG: sha-${{ github.sha }}
+  # 👉 nếu bạn muốn: FRONTEND_API_URL có thể dùng lại ở nhiều chỗ
+  FRONTEND_API_URL: ${{ secrets.PROD_API_URL }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1) Lấy code
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Login to GHCR
+      # 2) Login GHCR để BUILD & PUSH
+      # 👉 GHCR_TOKEN PHẢI là PAT có scope: read:packages, write:packages, delete:packages
+      - name: Login to GHCR (with sudo)
         run: |
-          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ env.OWNER }} --password-stdin
+          echo "${{ secrets.GHCR_TOKEN }}" | sudo docker login ghcr.io -u ${{ env.OWNER }} --password-stdin
 
+      # 3) Build + push 3 frontend
+      # 👉 đảm bảo thư mục: ./client_app, ./admin_app, ./restaurant_app
+      # 👉 nếu PROD_API_URL của bạn đã có /api rồi thì giữ nguyên
       - name: Build and push frontend images (client/admin/restaurant)
         run: |
-          # Build & push client
-          docker build --build-arg VITE_API_URL="${{ secrets.PROD_API_URL }}" -t ${REGISTRY}/${OWNER}/foodfast-client:${{ env.IMAGE_TAG }} ./client_app
-          docker push ${REGISTRY}/${OWNER}/foodfast-client:${{ env.IMAGE_TAG }}
+          # -------- CLIENT --------
+          sudo docker build \
+            --build-arg VITE_API_URL="${{ env.FRONTEND_API_URL }}" \
+            -t ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-client:${{ env.IMAGE_TAG }} \
+            -t ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-client:latest \
+            ./client_app
+          sudo docker push ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-client:${{ env.IMAGE_TAG }}
+          sudo docker push ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-client:latest
 
-          # Build & push admin
-          docker build --build-arg VITE_API_URL="${{ secrets.PROD_API_URL }}" -t ${REGISTRY}/${OWNER}/foodfast-admin:${{ env.IMAGE_TAG }} ./admin_app
-          docker push ${REGISTRY}/${OWNER}/foodfast-admin:${{ env.IMAGE_TAG }}
+          # -------- ADMIN --------
+          sudo docker build \
+            --build-arg VITE_API_URL="${{ env.FRONTEND_API_URL }}" \
+            -t ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-admin:${{ env.IMAGE_TAG }} \
+            -t ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-admin:latest \
+            ./admin_app
+          sudo docker push ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-admin:${{ env.IMAGE_TAG }}
+          sudo docker push ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-admin:latest
 
-          # Build & push restaurant
-          docker build --build-arg VITE_API_URL="${{ secrets.PROD_API_URL }}" -t ${REGISTRY}/${OWNER}/foodfast-restaurant:${{ env.IMAGE_TAG }} ./restaurant_app
-          docker push ${REGISTRY}/${OWNER}/foodfast-restaurant:${{ env.IMAGE_TAG }}
+          # -------- RESTAURANT --------
+          sudo docker build \
+            --build-arg VITE_API_URL="${{ env.FRONTEND_API_URL }}" \
+            -t ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-restaurant:${{ env.IMAGE_TAG }} \
+            -t ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-restaurant:latest \
+            ./restaurant_app
+          sudo docker push ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-restaurant:${{ env.IMAGE_TAG }}
+          sudo docker push ${{ env.REGISTRY }}/${{ env.OWNER }}/foodfast-restaurant:latest
 
+      # 4) SSH setup
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -49,6 +73,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
+      # 5) Tạo script deploy từ xa
       - name: Create remote script
         run: |
           cat > remote-deploy.sh <<'SCRIPT'
@@ -145,7 +170,7 @@ jobs:
             echo "⚠️  Không tìm thấy image cho foodfast-restaurant"
           fi
 
-          # 5) DRONE (không cần API_URL)
+          # 5) DRONE
           echo "=== Deploy foodfast-drone ==="
           DRONE_IMAGE="${REGISTRY}/${OWNER}/foodfast-drone"
           REAL_DRONE_TAG=$(pull_safe "${DRONE_IMAGE}" "${TAG}")
@@ -161,6 +186,7 @@ jobs:
           echo "✅ Done deploy all containers."
           SCRIPT
 
+      # 6) Chạy script trên EC2
       - name: Run remote script on EC2
         env:
           SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
@@ -183,6 +209,7 @@ jobs:
             API_URL='${API_URL}' \
             /tmp/remote-deploy.sh"
 
+      # 7) Healthcheck
       - name: Healthcheck backend
         run: |
           echo "Waiting for backend..."
