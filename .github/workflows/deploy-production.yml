@@ -11,6 +11,7 @@ on:
 env:
   REGISTRY: ghcr.io
   OWNER: ductoanoxo
+  IMAGE_TAG: sha-${{ github.sha }}
 
 jobs:
   deploy:
@@ -19,16 +20,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # Chỉ main mới dùng latest, còn lại dùng sha
-      - name: Set image tag
-        id: set-tag
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "TAG=latest" >> $GITHUB_OUTPUT
-          else
-            echo "TAG=sha-${{ github.sha }}" >> $GITHUB_OUTPUT
-          fi
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
@@ -52,8 +43,6 @@ jobs:
           MONGO_URI="${MONGO_URI}"
           API_URL="${API_URL}"
 
-          # pull_safe: nếu tag là "latest" thì cho phép fallback sang latest,
-          # còn nếu tag là sha-... thì chỉ kéo đúng tag đó thôi, không fallback.
           pull_safe () {
             local image="$1"
             local tag="$2"
@@ -63,12 +52,9 @@ jobs:
               return
             fi
 
-            # chỉ fallback nếu ban đầu đã bảo là latest
-            if [ "${tag}" = "latest" ]; then
-              if sudo docker pull "${image}:latest" >/dev/null 2>&1; then
-                echo "latest"
-                return
-              fi
+            if sudo docker pull "${image}:latest" >/dev/null 2>&1; then
+              echo "latest"
+              return
             fi
 
             echo "none"
@@ -93,8 +79,7 @@ jobs:
               -e MONGO_URI="${MONGO_URI}" \
               "${SERVER_IMAGE}:${REAL_SERVER_TAG}"
           else
-            echo "⚠️  Không tìm thấy image cho foodfast-server (tag=${TAG})"
-            exit 1
+            echo "⚠️  Không tìm thấy image cho foodfast-server"
           fi
 
           # 2) CLIENT (3000)
@@ -109,12 +94,12 @@ jobs:
               -e REACT_APP_API_URL="${API_URL}" \
               "${CLIENT_IMAGE}:${REAL_CLIENT_TAG}"
           else
-            echo "⚠️  Không tìm thấy image cho foodfast-client (tag=${TAG})"
+            echo "⚠️  Không tìm thấy image cho foodfast-client"
           fi
 
           # 3) ADMIN (3001)
           echo "=== Deploy foodfast-admin ==="
-          ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin"}
+          ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin"
           REAL_ADMIN_TAG=$(pull_safe "${ADMIN_IMAGE}" "${TAG}")
           if [ "${REAL_ADMIN_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-admin >/dev/null 2>&1 || true
@@ -124,7 +109,7 @@ jobs:
               -e REACT_APP_API_URL="${API_URL}" \
               "${ADMIN_IMAGE}:${REAL_ADMIN_TAG}"
           else
-            echo "⚠️  Không tìm thấy image cho foodfast-admin (tag=${TAG})"
+            echo "⚠️  Không tìm thấy image cho foodfast-admin"
           fi
 
           # 4) RESTAURANT (3002)
@@ -139,10 +124,10 @@ jobs:
               -e REACT_APP_API_URL="${API_URL}" \
               "${REST_IMAGE}:${REAL_REST_TAG}"
           else
-            echo "⚠️  Không tìm thấy image cho foodfast-restaurant (tag=${TAG})"
+            echo "⚠️  Không tìm thấy image cho foodfast-restaurant"
           fi
 
-          # 5) DRONE
+          # 5) DRONE (không cần API_URL)
           echo "=== Deploy foodfast-drone ==="
           DRONE_IMAGE="${REGISTRY}/${OWNER}/foodfast-drone"
           REAL_DRONE_TAG=$(pull_safe "${DRONE_IMAGE}" "${TAG}")
@@ -152,7 +137,7 @@ jobs:
               --network foodfast-net \
               "${DRONE_IMAGE}:${REAL_DRONE_TAG}"
           else
-            echo "⚠️  Không tìm thấy image cho foodfast-drone (tag=${TAG})"
+            echo "⚠️  Không tìm thấy image cho foodfast-drone"
           fi
 
           echo "✅ Done deploy all containers."
@@ -164,7 +149,7 @@ jobs:
           SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
-          TAG: ${{ steps.set-tag.outputs.TAG }}
+          TAG: ${{ env.IMAGE_TAG }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
           API_URL: ${{ secrets.PROD_API_URL }}
