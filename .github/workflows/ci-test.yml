@@ -8,9 +8,8 @@ on:
       - DUCTOAN
       - kiet
       - deploy
-    # nếu bạn muốn tag nào cũng build docker thì để '*'
     tags:
-      - '*'          # trước đây bạn để 'v*' nên tag preserve/... sẽ không chạy
+      - '*'          # push tag -> CD
   pull_request:
     branches:
       - main
@@ -19,7 +18,7 @@ on:
 permissions:
   contents: read
   security-events: write
-  packages: write        # để push GHCR
+  packages: write        # để push GHCR (chỉ dùng ở job CD)
 
 env:
   REGISTRY: ghcr.io
@@ -27,7 +26,7 @@ env:
 
 jobs:
   # =====================================================
-  # 1. TEST SERVER
+  # 1. TEST SERVER  (CI: chạy ở mọi branch, mọi PR)
   # =====================================================
   test-server:
     name: Test Server App
@@ -75,7 +74,7 @@ jobs:
         run: node -c index.js
 
   # =====================================================
-  # 2. TEST 4 FRONTEND APPS
+  # 2. TEST 4 FRONTEND APPS  (CI: chạy ở mọi branch, mọi PR)
   # =====================================================
   test-client-apps:
     name: Test Frontend Apps
@@ -120,7 +119,7 @@ jobs:
           retention-days: 7
 
   # =====================================================
-  # 3. SECURITY SCAN
+  # 3. SECURITY SCAN  (CI: chạy ở mọi branch, mọi PR)
   # =====================================================
   security-scan:
     name: Security Scan
@@ -145,12 +144,13 @@ jobs:
           sarif_file: 'trivy-results.sarif'
 
   # =====================================================
-  # 4. BUILD + PUSH DOCKER
-  #    - chỉ chạy khi 3 job trên pass
-  #    - không chạy khi là PR
+  # 4. (OPTIONAL CI) BUILD DOCKER ĐỂ CHECK Ở PR
+  #    - chạy khi: pull_request vào main/develop
+  #    - mục đích: chắc chắn Dockerfile build được
+  #    - KHÔNG push
   # =====================================================
-  build-and-push:
-    name: Docker Build and Push
+  docker-build-check:
+    name: Docker Build Check (PR only)
     runs-on: ubuntu-latest
 
     needs:
@@ -158,8 +158,56 @@ jobs:
       - test-client-apps
       - security-scan
 
-    # chỉ push image khi không phải PR
-    if: github.event_name != 'pull_request'
+    # chỉ chạy cho PR
+    if: github.event_name == 'pull_request'
+
+    strategy:
+      matrix:
+        service:
+          - name: client_app
+          - name: restaurant_app
+          - name: admin_app
+          - name: drone_manage
+          - name: server_app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # không cần login vì không push
+      - name: Build image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service.name }}
+          file: ./${{ matrix.service.name }}/Dockerfile
+          push: false      # <-- quan trọng
+          load: false      # hoặc true nếu bạn cần chạy container test
+          platforms: linux/amd64
+
+  # =====================================================
+  # 5. CD: BUILD + PUSH DOCKER
+  #    - chỉ chạy khi 3 job CI pass
+  #    - chỉ chạy khi: push vào main HOẶC push tag
+  #    - đây mới là CD thực sự
+  # =====================================================
+  build-and-push:
+    name: Docker Build and Push (CD)
+    runs-on: ubuntu-latest
+
+    needs:
+      - test-server
+      - test-client-apps
+      - security-scan
+
+    # CHỈ chạy khi push (không phải PR) và là main hoặc tag
+    if: >
+      github.event_name == 'push' && (
+        github.ref == 'refs/heads/main' ||
+        startsWith(github.ref, 'refs/tags/')
+      )
 
     strategy:
       matrix:
@@ -189,7 +237,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # ---- chỗ này mình sửa gọn lại tag ----
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -198,7 +245,7 @@ jobs:
           tags: |
             # 1) nếu là push tag (vd: v1.0.0 hay preserve/...) -> gắn đúng tên git tag vào image
             type=ref,event=tag
-            # 2) nếu là push branch -> gắn tên branch (main, develop, kiet, deploy)
+            # 2) nếu là push branch (main) -> gắn tên branch
             type=ref,event=branch
             # 3) luôn có 1 tag theo commit để trace
             type=sha
@@ -210,10 +257,9 @@ jobs:
         with:
           context: ./${{ matrix.service.name }}
           file: ./${{ matrix.service.name }}/Dockerfile
-          push: true
+          push: true            # <-- CD: push
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # cache để build nhanh
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}:buildcache,mode=max
           platforms: linux/amd64,linux/arm64
