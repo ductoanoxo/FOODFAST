@@ -34,23 +34,11 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy on EC2
-        env:
-          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
-          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          REGISTRY: ${{ env.REGISTRY }}
-          OWNER: ${{ env.OWNER }}
-          SERVER_TAG: ${{ env.SERVER_TAG }}
-          RESTAURANT_TAG: ${{ env.RESTAURANT_TAG }}
-          CLIENT_TAG: ${{ env.CLIENT_TAG }}
-          ADMIN_TAG: ${{ env.ADMIN_TAG }}
-          DRONE_TAG: ${{ env.DRONE_TAG }}
+      - name: Create remote script
         run: |
-          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "bash -s" <<'REMOTE'
+          cat > remote-deploy.sh <<'SCRIPT'
           set -e
 
-          # lấy biến từ env GitHub đã đổ xuống
           REGISTRY="${REGISTRY}"
           OWNER="${OWNER}"
           SERVER_TAG="${SERVER_TAG}"
@@ -58,47 +46,67 @@ jobs:
           CLIENT_TAG="${CLIENT_TAG}"
           ADMIN_TAG="${ADMIN_TAG}"
           DRONE_TAG="${DRONE_TAG}"
+          GHCR_TOKEN="${GHCR_TOKEN}"
 
-          # login GHCR
           echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${OWNER}" --password-stdin
 
           docker network create foodfast-net || true
 
-          # server
           docker pull "${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
           docker rm -f foodfast-server 2>/dev/null || true
           docker run -d --name foodfast-server --restart unless-stopped \
             --network foodfast-net -p 5000:5000 \
             "${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
 
-          # client
           docker pull "${REGISTRY}/${OWNER}/foodfast-client:${CLIENT_TAG}"
           docker rm -f foodfast-client 2>/dev/null || true
           docker run -d --name foodfast-client --restart unless-stopped \
             --network foodfast-net -p 3000:80 \
             "${REGISTRY}/${OWNER}/foodfast-client:${CLIENT_TAG}"
 
-          # admin
           docker pull "${REGISTRY}/${OWNER}/foodfast-admin:${ADMIN_TAG}"
           docker rm -f foodfast-admin 2>/dev/null || true
           docker run -d --name foodfast-admin --restart unless-stopped \
             --network foodfast-net -p 3001:80 \
             "${REGISTRY}/${OWNER}/foodfast-admin:${ADMIN_TAG}"
 
-          # restaurant
           docker pull "${REGISTRY}/${OWNER}/foodfast-restaurant:${RESTAURANT_TAG}"
           docker rm -f foodfast-restaurant 2>/dev/null || true
           docker run -d --name foodfast-restaurant --restart unless-stopped \
             --network foodfast-net -p 3002:80 \
             "${REGISTRY}/${OWNER}/foodfast-restaurant:${RESTAURANT_TAG}"
 
-          # drone (không expose)
           docker pull "${REGISTRY}/${OWNER}/foodfast-drone:${DRONE_TAG}"
           docker rm -f foodfast-drone 2>/dev/null || true
           docker run -d --name foodfast-drone --restart unless-stopped \
             --network foodfast-net \
             "${REGISTRY}/${OWNER}/foodfast-drone:${DRONE_TAG}"
-REMOTE
+          SCRIPT
+
+      - name: Run remote script on EC2
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+          REGISTRY: ${{ env.REGISTRY }}
+          OWNER: ${{ env.OWNER }}
+          SERVER_TAG: ${{ env.SERVER_TAG }}
+          RESTAURANT_TAG: ${{ env.RESTAURANT_TAG }}
+          CLIENT_TAG: ${{ env.CLIENT_TAG }}
+          ADMIN_TAG: ${{ env.ADMIN_TAG }}
+          DRONE_TAG: ${{ env.DRONE_TAG }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          scp remote-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/remote-deploy.sh
+          ssh $SERVER_USER@$SERVER_HOST "chmod +x /tmp/remote-deploy.sh && \
+            REGISTRY='${REGISTRY}' \
+            OWNER='${OWNER}' \
+            SERVER_TAG='${SERVER_TAG}' \
+            RESTAURANT_TAG='${RESTAURANT_TAG}' \
+            CLIENT_TAG='${CLIENT_TAG}' \
+            ADMIN_TAG='${ADMIN_TAG}' \
+            DRONE_TAG='${DRONE_TAG}' \
+            GHCR_TOKEN='${GHCR_TOKEN}' \
+            /tmp/remote-deploy.sh"
 
       - name: Healthcheck backend
         run: |
