@@ -981,3 +981,5 @@
 {"level":"error","message":"Not authorized, token failed","stack":"Error: Not authorized, token failed\n    at D:\\TESTFOOD\\FOODFAST\\server_app\\API\\Middleware\\authMiddleware.js:28:19\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-10-28T15:13:51.912Z"}
 {"level":"error","message":"Not authorized, token failed","stack":"Error: Not authorized, token failed\n    at D:\\TESTFOOD\\FOODFAST\\server_app\\API\\Middleware\\authMiddleware.js:28:19\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-10-28T15:14:07.321Z"}
 {"level":"error","message":"Not authorized, token failed","stack":"Error: Not authorized, token failed\n    at D:\\TESTFOOD\\FOODFAST\\server_app\\API\\Middleware\\authMiddleware.js:28:19\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-10-28T15:14:13.079Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-29T01:10:05.842Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-10-29T01:11:23.660Z"}

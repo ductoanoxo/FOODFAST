@@ -2,17 +2,17 @@
 name: CI - Test and Lint (Deploy Branch - Testing Conflict)
 
 on:
-  push:
-    branches:
+    push:
+      branches:
       - main
       - develop
       - DUCTOAN
       - kiet
       - deploy
-  pull_request:
-    branches:
-      - main
-      - develop
+    pull_request:
+      branches:
+        - main
+        - develop
 
 # Grant minimal permissions required for uploading SARIF/code-scanning results
 permissions:
