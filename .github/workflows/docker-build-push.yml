@@ -1,11 +1,18 @@
 name: Docker Build and Push
 
 on:
-  # 👇 CHỈ chạy khi workflow CI - Test and Lint chạy xong
-  workflow_run:
-    workflows: ["CI - Test and Lint"]   # tên phải trùng với workflow CI của bạn
-    types:
-      - completed
+  push:
+    branches:
+      - main
+      - develop
+      - DUCTOAN
+      - kiet
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - develop
 
 env:
   REGISTRY: ghcr.io
@@ -13,8 +20,6 @@ env:
 
 jobs:
   build-and-push:
-    # 👇 nếu CI fail thì KHÔNG build
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -58,17 +63,16 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            # dùng sha để biết image gắn với commit nào
+            # Use plain sha tag (no branch prefix) to avoid producing tags that start with a hyphen
+            # when branch is empty (e.g., certain PR contexts). This prevents invalid tags like
+            # "-5c12ec3" from being produced.
             type=sha
-            # nếu branch là default (thường là main) thì gắn thêm latest
             type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./${{ matrix.service.name }}
           file: ./${{ matrix.service.name }}/Dockerfile
-          # PR thì build test thôi, không push
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
