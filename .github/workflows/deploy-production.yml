@@ -1,11 +1,14 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  push:
+  # Chạy sau khi Docker Build and Push hoàn thành
+  workflow_run:
+    workflows:
+      - Docker Build and Push
+    types:
+      - completed
     branches:
       - main
-      - kiet
-      - DUCTOAN
   workflow_dispatch:
 
 env:
@@ -13,20 +16,25 @@ env:
   REGISTRY: ghcr.io
   OWNER: ductoanoxo
 
-  # tag mặc định
-  SERVER_TAG: sha-cfccd2f
-  RESTAURANT_TAG: buildcache
-  CLIENT_TAG: buildcache
-  ADMIN_TAG: buildcache
-  DRONE_TAG: buildcache
-
 jobs:
   deploy:
+    # Chỉ chạy khi workflow Docker Build and Push thành công
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # Lấy SHA ngắn để làm tag cho image
+      - name: Get short SHA
+        id: sha
+        run: |
+          SHORT_SHA=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
+          echo "short_sha=sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "Image tag will be: sha-${SHORT_SHA}"
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
@@ -44,11 +52,7 @@ jobs:
 
           REGISTRY="${REGISTRY}"
           OWNER="${OWNER}"
-          SERVER_TAG="${SERVER_TAG}"
-          RESTAURANT_TAG="${RESTAURANT_TAG}"
-          CLIENT_TAG="${CLIENT_TAG}"
-          ADMIN_TAG="${ADMIN_TAG}"
-          DRONE_TAG="${DRONE_TAG}"
+          IMAGE_TAG="${IMAGE_TAG}"
           GHCR_TOKEN="${GHCR_TOKEN}"
           MONGO_URI="${MONGO_URI}"
 
@@ -58,57 +62,41 @@ jobs:
           # network chung
           sudo docker network create foodfast-net || true
 
-          echo "=== Deploy foodfast-server ==="
-          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
+          echo "=== Deploy foodfast-server với tag ${IMAGE_TAG} ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
           sudo docker rm -f foodfast-server 2>/dev/null || true
           sudo docker run -d --name foodfast-server --restart unless-stopped \
             --network foodfast-net -p 5000:5000 \
             -e MONGO_URI="${MONGO_URI}" \
-            "${REGISTRY}/${OWNER}/foodfast-server:${SERVER_TAG}"
+            "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-client ==="
-          if [ "${CLIENT_TAG}" != "buildcache" ]; then
-            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-client:${CLIENT_TAG}"
-            sudo docker rm -f foodfast-client 2>/dev/null || true
-            sudo docker run -d --name foodfast-client --restart unless-stopped \
-              --network foodfast-net -p 3000:80 \
-              "${REGISTRY}/${OWNER}/foodfast-client:${CLIENT_TAG}"
-          else
-            echo "skip foodfast-client (tag=buildcache)"
-          fi
+          echo "=== Deploy foodfast-client với tag ${IMAGE_TAG} ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-client:${IMAGE_TAG}"
+          sudo docker rm -f foodfast-client 2>/dev/null || true
+          sudo docker run -d --name foodfast-client --restart unless-stopped \
+            --network foodfast-net -p 3000:80 \
+            "${REGISTRY}/${OWNER}/foodfast-client:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-admin ==="
-          if [ "${ADMIN_TAG}" != "buildcache" ]; then
-            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-admin:${ADMIN_TAG}"
-            sudo docker rm -f foodfast-admin 2>/dev/null || true
-            sudo docker run -d --name foodfast-admin --restart unless-stopped \
-              --network foodfast-net -p 3001:80 \
-              "${REGISTRY}/${OWNER}/foodfast-admin:${ADMIN_TAG}"
-          else
-            echo "skip foodfast-admin (tag=buildcache)"
-          fi
+          echo "=== Deploy foodfast-admin với tag ${IMAGE_TAG} ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-admin:${IMAGE_TAG}"
+          sudo docker rm -f foodfast-admin 2>/dev/null || true
+          sudo docker run -d --name foodfast-admin --restart unless-stopped \
+            --network foodfast-net -p 3001:80 \
+            "${REGISTRY}/${OWNER}/foodfast-admin:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-restaurant ==="
-          if [ "${RESTAURANT_TAG}" != "buildcache" ]; then
-            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-restaurant:${RESTAURANT_TAG}"
-            sudo docker rm -f foodfast-restaurant 2>/dev/null || true
-            sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
-              --network foodfast-net -p 3002:80 \
-              "${REGISTRY}/${OWNER}/foodfast-restaurant:${RESTAURANT_TAG}"
-          else
-            echo "skip foodfast-restaurant (tag=buildcache)"
-          fi
+          echo "=== Deploy foodfast-restaurant với tag ${IMAGE_TAG} ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-restaurant:${IMAGE_TAG}"
+          sudo docker rm -f foodfast-restaurant 2>/dev/null || true
+          sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
+            --network foodfast-net -p 3002:80 \
+            "${REGISTRY}/${OWNER}/foodfast-restaurant:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-drone ==="
-          if [ "${DRONE_TAG}" != "buildcache" ]; then
-            sudo docker pull "${REGISTRY}/${OWNER}/foodfast-drone:${DRONE_TAG}"
-            sudo docker rm -f foodfast-drone 2>/dev/null || true
-            sudo docker run -d --name foodfast-drone --restart unless-stopped \
-              --network foodfast-net \
-              "${REGISTRY}/${OWNER}/foodfast-drone:${DRONE_TAG}"
-          else
-            echo "skip foodfast-drone (tag=buildcache)"
-          fi
+          echo "=== Deploy foodfast-drone với tag ${IMAGE_TAG} ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}"
+          sudo docker rm -f foodfast-drone 2>/dev/null || true
+          sudo docker run -d --name foodfast-drone --restart unless-stopped \
+            --network foodfast-net \
+            "${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}"
           SCRIPT
 
       - name: Run remote script on EC2
@@ -117,24 +105,17 @@ jobs:
           SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
-          SERVER_TAG: ${{ env.SERVER_TAG }}
-          RESTAURANT_TAG: ${{ env.RESTAURANT_TAG }}
-          CLIENT_TAG: ${{ env.CLIENT_TAG }}
-          ADMIN_TAG: ${{ env.ADMIN_TAG }}
-          DRONE_TAG: ${{ env.DRONE_TAG }}
+          IMAGE_TAG: ${{ steps.sha.outputs.short_sha }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
           echo "Connecting to $SERVER_USER@$SERVER_HOST ..."
+          echo "Deploying with image tag: ${IMAGE_TAG}"
           scp remote-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/remote-deploy.sh
           ssh $SERVER_USER@$SERVER_HOST "chmod +x /tmp/remote-deploy.sh && \
             REGISTRY='${REGISTRY}' \
             OWNER='${OWNER}' \
-            SERVER_TAG='${SERVER_TAG}' \
-            RESTAURANT_TAG='${RESTAURANT_TAG}' \
-            CLIENT_TAG='${CLIENT_TAG}' \
-            ADMIN_TAG='${ADMIN_TAG}' \
-            DRONE_TAG='${DRONE_TAG}' \
+            IMAGE_TAG='${IMAGE_TAG}' \
             GHCR_TOKEN='${GHCR_TOKEN}' \
             MONGO_URI='${MONGO_URI}' \
             /tmp/remote-deploy.sh"
