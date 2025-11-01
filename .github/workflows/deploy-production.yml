@@ -1,41 +1,77 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # Chạy sau khi Docker Build and Push hoàn thành
+  # Tự chạy sau khi workflow build image xong
   workflow_run:
     workflows:
-      - Docker Build and Push
+      - Docker Build and Push     # tên workflow build của bạn
     types:
       - completed
     branches:
-      - main
+      - main                      # prod
+      - kiet                      # staging
+  # Cho phép bấm tay để deploy lại
   workflow_dispatch:
 
 env:
-  # registry + owner cố định
   REGISTRY: ghcr.io
-  OWNER: ductoanoxo
+  OWNER: ${{ github.repository_owner }}
 
 jobs:
   deploy:
-    # Chỉ chạy khi workflow Docker Build and Push thành công
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Chỉ chạy nếu workflow build trước đó thành công
+    # (khi chạy tay thì github.event.workflow_run không có -> expression này là false? → ta cho phép ở dưới)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      # ======================
+      # 1) Checkout
+      # ======================
+      # Nếu được trigger bởi workflow_run thì checkout đúng commit vừa build
+      - name: Checkout (from workflow_run)
+        if: ${{ github.event_name == 'workflow_run' }}
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      # Lấy SHA ngắn để làm tag cho image
-      - name: Get short SHA
-        id: sha
-        run: |
-          SHORT_SHA=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
-          echo "short_sha=sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
-          echo "Image tag will be: sha-${SHORT_SHA}"
+      # Nếu bấm tay thì checkout HEAD hiện tại
+      - name: Checkout (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/checkout@v4
 
+      # ======================
+      # 2) Xác định tag image sẽ dùng để deploy
+      # ======================
+      - name: Decide image tag
+        id: imagetag
+        run: |
+          # default
+          TAG="latest"
+
+          # nếu chạy do workflow_run thì ta biết nó build từ branch nào
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            BRANCH="${{ github.event.workflow_run.head_branch }}"
+            echo "Detected branch from build workflow: $BRANCH"
+
+            if [ "$BRANCH" = "main" ]; then
+              TAG="latest"
+            else
+              # ví dụ: kiet -> image :kiet
+              TAG="$BRANCH"
+            fi
+          else
+            # chạy tay thì cho phép nhập từ input sau này,
+            # còn tạm thời để latest
+            echo "Manual dispatch -> default to latest"
+          fi
+
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Will deploy image tag: $TAG"
+
+      # ======================
+      # 3) SSH Setup
+      # ======================
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -45,6 +81,10 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      # ======================
+      # 4) Tạo script deploy để chép lên EC2
+      # ======================
       - name: Create remote script
         run: |
           cat > remote-deploy.sh <<'SCRIPT'
@@ -56,63 +96,73 @@ jobs:
           GHCR_TOKEN="${GHCR_TOKEN}"
           MONGO_URI="${MONGO_URI}"
 
-          # login GHCR
+          echo "==> Login GHCR as \$OWNER"
           echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${OWNER}" --password-stdin
 
-          # network chung
+          echo "==> Create network"
           sudo docker network create foodfast-net || true
 
-          echo "=== Deploy foodfast-server với tag ${IMAGE_TAG} ==="
+          echo "=== Deploy foodfast-server:\${IMAGE_TAG} ==="
           sudo docker pull "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
           sudo docker rm -f foodfast-server 2>/dev/null || true
-          # Provide a network alias 'server_app' so nginx upstreams inside other containers can resolve this host
           sudo docker run -d --name foodfast-server --restart unless-stopped \
-            --network foodfast-net --network-alias server_app -p 5000:5000 \
+            --network foodfast-net --network-alias server_app \
+            -p 5000:5000 \
             -e MONGO_URI="${MONGO_URI}" \
             "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-client với tag ${IMAGE_TAG} ==="
+          echo "=== Deploy foodfast-client:\${IMAGE_TAG} ==="
           sudo docker pull "${REGISTRY}/${OWNER}/foodfast-client:${IMAGE_TAG}"
           sudo docker rm -f foodfast-client 2>/dev/null || true
           sudo docker run -d --name foodfast-client --restart unless-stopped \
-            --network foodfast-net -p 3000:80 \
+            --network foodfast-net \
+            -p 3000:80 \
             "${REGISTRY}/${OWNER}/foodfast-client:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-admin với tag ${IMAGE_TAG} ==="
+          echo "=== Deploy foodfast-admin:\${IMAGE_TAG} ==="
           sudo docker pull "${REGISTRY}/${OWNER}/foodfast-admin:${IMAGE_TAG}"
           sudo docker rm -f foodfast-admin 2>/dev/null || true
           sudo docker run -d --name foodfast-admin --restart unless-stopped \
-            --network foodfast-net -p 3001:80 \
+            --network foodfast-net \
+            -p 3001:80 \
             "${REGISTRY}/${OWNER}/foodfast-admin:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-restaurant với tag ${IMAGE_TAG} ==="
+          echo "=== Deploy foodfast-restaurant:\${IMAGE_TAG} ==="
           sudo docker pull "${REGISTRY}/${OWNER}/foodfast-restaurant:${IMAGE_TAG}"
           sudo docker rm -f foodfast-restaurant 2>/dev/null || true
           sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
-            --network foodfast-net -p 3002:80 \
+            --network foodfast-net \
+            -p 3002:80 \
             "${REGISTRY}/${OWNER}/foodfast-restaurant:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-drone với tag ${IMAGE_TAG} ==="
+          echo "=== Deploy foodfast-drone:\${IMAGE_TAG} ==="
           sudo docker pull "${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}"
           sudo docker rm -f foodfast-drone 2>/dev/null || true
           sudo docker run -d --name foodfast-drone --restart unless-stopped \
             --network foodfast-net \
             "${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}"
+
+          echo "✅ Deploy done."
           SCRIPT
 
+      # ======================
+      # 5) Chạy script trên EC2
+      # ======================
       - name: Run remote script on EC2
         env:
           SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
           SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
-          IMAGE_TAG: ${{ steps.sha.outputs.short_sha }}
+          IMAGE_TAG: ${{ steps.imagetag.outputs.tag }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
           echo "Connecting to $SERVER_USER@$SERVER_HOST ..."
           echo "Deploying with image tag: ${IMAGE_TAG}"
+
           scp remote-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/remote-deploy.sh
+
           ssh $SERVER_USER@$SERVER_HOST "chmod +x /tmp/remote-deploy.sh && \
             REGISTRY='${REGISTRY}' \
             OWNER='${OWNER}' \
@@ -121,6 +171,9 @@ jobs:
             MONGO_URI='${MONGO_URI}' \
             /tmp/remote-deploy.sh"
 
+      # ======================
+      # 6) Healthcheck
+      # ======================
       - name: Healthcheck backend
         run: |
           echo "Waiting for backend..."
