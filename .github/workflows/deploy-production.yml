@@ -1,19 +1,14 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # Deploy triggers:
-  # - When the build workflow "Docker Build and Push" completes successfully (workflow_run)
-  # - When there's a direct push to `main` (merge) -> treat as merge -> deploy
-  # - Manual dispatch for re-deploys
+  # Chỉ tự chạy sau khi workflow build image xong VÀ build đó là của branch main
   workflow_run:
     workflows:
       - Docker Build and Push     # tên workflow build của bạn
     types:
       - completed
-  push:
     branches:
-      - main                       # run deploy for direct pushes/merges to main
-  workflow_dispatch:
+      - main                      # chỉ main mới deploy
 
 env:
   REGISTRY: ghcr.io
@@ -22,61 +17,26 @@ env:
 jobs:
   deploy:
     # Chỉ chạy nếu workflow build trước đó thành công
-    # (khi chạy tay thì github.event.workflow_run không có -> expression này là false? → ta cho phép ở dưới)
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
       # ======================
-      # 1) Checkout
+      # 1) Checkout đúng commit vừa build
       # ======================
-      # Nếu được trigger bởi workflow_run thì checkout đúng commit vừa build
       - name: Checkout (from workflow_run)
-        if: ${{ github.event_name == 'workflow_run' }}
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      # Nếu bấm tay thì checkout HEAD hiện tại
-      - name: Checkout (manual/push)
-        if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
-        uses: actions/checkout@v4
-
       # ======================
       # 2) Xác định tag image sẽ dùng để deploy
+      # Vì giờ chỉ deploy cho main nên luôn là latest
       # ======================
       - name: Decide image tag
         id: imagetag
         run: |
-          # default
           TAG="latest"
-
-          # If triggered by completed build workflow, get the branch from the workflow_run
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            BRANCH="${{ github.event.workflow_run.head_branch }}"
-            echo "Detected branch from build workflow: $BRANCH"
-
-            if [ "$BRANCH" = "main" ]; then
-              TAG="latest"
-            else
-              TAG="$BRANCH"
-            fi
-
-          # If triggered directly by a push (e.g. merge to main), derive branch from GITHUB_REF
-          elif [ "${{ github.event_name }}" = "push" ]; then
-            BRANCH="${GITHUB_REF#refs/heads/}"
-            echo "Detected push branch: $BRANCH"
-            if [ "$BRANCH" = "main" ]; then
-              TAG="latest"
-            else
-              TAG="$BRANCH"
-            fi
-
-          else
-            # Manual dispatch -> default to latest (could be extended to accept inputs)
-            echo "Manual dispatch -> default to latest"
-          fi
-
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Will deploy image tag: $TAG"
 
