@@ -1,24 +1,17 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  workflow_call:
-    inputs:
-      branch_name:
-        required: true
-        type: string
-    secrets:
-      PROD_SSH_KEY:
-        required: true
-      PROD_SERVER_HOST:
-        required: true
-      PROD_SERVER_USER:
-        required: true
-      GHCR_TOKEN:
-        required: true
-      MONGO_URI:
-        required: true
-      PROD_API_URL:
-        required: true
+  # 1) CHẾ ĐỘ CHUẨN (sau khi merge lên main):
+  #    Khi workflow CI build xong thì chạy
+  workflow_run:
+    workflows: ["CI - Test, Lint and Docker Build"]
+    types: [completed]
+
+  # 2) CHẾ ĐỘ TEST (đang dùng bây giờ):
+  #    Hễ push vào kiet là deploy luôn để bạn thấy nó chạy
+  push:
+    branches:
+      - kiet
 
 env:
   REGISTRY: ghcr.io
@@ -26,6 +19,24 @@ env:
 
 jobs:
   deploy:
+    # Giải thích cái if này:
+    # - nếu là workflow_run (tức là CI gọi) thì:
+    #     + CI phải success
+    #     + và CI đó phải chạy từ branch main HOẶC kiet
+    # - nếu là push thì chỉ cho phép push từ kiet (giai đoạn test)
+    if: >
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        (github.event.workflow_run.head_branch == 'main' ||
+         github.event.workflow_run.head_branch == 'kiet')
+      )
+      ||
+      (
+        github.event_name == 'push' &&
+        github.ref_name == 'kiet'
+      )
+
     runs-on: ubuntu-latest
 
     steps:
@@ -108,7 +119,8 @@ jobs:
           fi
 
           echo "=== Deploy foodfast-admin ==="
-          ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin"
+          ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin}"
+          ADMIN_IMAGE="ghcr.io/${OWNER}/foodfast-admin"
           REAL_ADMIN_TAG=$(pull_safe "${ADMIN_IMAGE}" "${TAG}")
           if [ "${REAL_ADMIN_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-admin >/dev/null 2>&1 || true
@@ -157,7 +169,11 @@ jobs:
           SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
-          TAG: ${{ inputs.branch_name }}   # 👈 lấy từ CI truyền sang
+
+          # nếu là workflow_run → lấy tên branch từ CI
+          # nếu là push (đang test) → chính là kiet
+          TAG: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
           API_URL: ${{ secrets.PROD_API_URL }}
