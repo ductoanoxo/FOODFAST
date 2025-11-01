@@ -64,6 +64,54 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
           </Descriptions>
         </div>
 
+        {/* Drone Info */}
+        {order.drone && (
+          <>
+            <Divider />
+            <div>
+              <Title level={5}>Thông tin Drone 🚁</Title>
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="Tên drone">
+                  {order.drone.name || 'N/A'}
+                </Descriptions.Item>
+                <Descriptions.Item label="Model">
+                  {order.drone.model || 'N/A'}
+                </Descriptions.Item>
+                <Descriptions.Item label="Trạng thái">
+                  <Tag color={order.drone.status === 'available' ? 'green' : 'orange'}>
+                    {order.drone.status === 'available' ? 'Sẵn sàng' : 'Đang bận'}
+                  </Tag>
+                </Descriptions.Item>
+                {order.drone.batteryLevel && (
+                  <Descriptions.Item label="Pin">
+                    <Text style={{ color: order.drone.batteryLevel > 50 ? '#52c41a' : '#ff4d4f' }}>
+                      🔋 {order.drone.batteryLevel}%
+                    </Text>
+                  </Descriptions.Item>
+                )}
+              </Descriptions>
+            </div>
+          </>
+        )}
+
+        {/* Warning if no drone assigned and order is ready */}
+        {!order.drone && order.status === 'ready' && (
+          <>
+            <Divider />
+            <div style={{ 
+              background: '#fff7e6', 
+              border: '1px solid #ffd591',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              textAlign: 'center'
+            }}>
+              <Text style={{ color: '#fa8c16', fontSize: '14px' }}>
+                ⚠️ Đơn hàng đã sẵn sàng nhưng chưa có drone được phân công. Vui lòng chờ admin phân công drone.
+              </Text>
+            </div>
+          </>
+        )}
+
         <Divider />
 
         {/* Order Items */}
