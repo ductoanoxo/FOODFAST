@@ -29,7 +29,9 @@ const joinRestaurantRoom = () => {
 export const initSocket = () => {
   if (socket) return socket;
 
-  socket = io('http://localhost:5000', {
+  const SOCKET_ENDPOINT = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+
+  socket = io(SOCKET_ENDPOINT, {
     auth: { token: localStorage.getItem('restaurant_token') || '' },
     // Tùy chọn nên có để kết nối ổn định hơn:
     reconnection: true,
