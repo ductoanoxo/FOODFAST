@@ -37,7 +37,6 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
-
       - name: Create remote script
         run: |
           cat > remote-deploy.sh <<'SCRIPT'
