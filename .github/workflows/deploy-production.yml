@@ -1,14 +1,17 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # Chỉ tự chạy sau khi workflow build image xong VÀ build đó là của branch main
+  # Chỉ chạy khi workflow build xong VÀ build đó là của branch main
   workflow_run:
     workflows:
       - Docker Build and Push     # tên workflow build của bạn
     types:
       - completed
     branches:
-      - main                      # chỉ main mới deploy
+      - main                      # <== chỉ main mới kích hoạt deploy này
+
+# KHÔNG cho bấm tay nữa để tránh ai đó tự deploy nhầm
+    workflow_dispatch:   
 
 env:
   REGISTRY: ghcr.io
@@ -16,23 +19,20 @@ env:
 
 jobs:
   deploy:
-    # Chỉ chạy nếu workflow build trước đó thành công
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Chỉ chạy nếu:
+    # 1) workflow build báo success
+    # 2) workflow build đó là từ branch main
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-latest
 
     steps:
-      # ======================
       # 1) Checkout đúng commit vừa build
-      # ======================
       - name: Checkout (from workflow_run)
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      # ======================
-      # 2) Xác định tag image sẽ dùng để deploy
-      # Vì giờ chỉ deploy cho main nên luôn là latest
-      # ======================
+      # 2) Tag image (main -> latest)
       - name: Decide image tag
         id: imagetag
         run: |
@@ -40,9 +40,7 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Will deploy image tag: $TAG"
 
-      # ======================
       # 3) SSH Setup
-      # ======================
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -53,9 +51,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      # ======================
-      # 4) Tạo script deploy để chép lên EC2
-      # ======================
+      # 4) Tạo script deploy
       - name: Create remote script
         run: |
           cat > remote-deploy.sh <<'SCRIPT'
@@ -116,9 +112,7 @@ jobs:
           echo "✅ Deploy done."
           SCRIPT
 
-      # ======================
       # 5) Chạy script trên EC2
-      # ======================
       - name: Run remote script on EC2
         env:
           SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
@@ -142,9 +136,7 @@ jobs:
             MONGO_URI='${MONGO_URI}' \
             /tmp/remote-deploy.sh"
 
-      # ======================
       # 6) Healthcheck
-      # ======================
       - name: Healthcheck backend
         run: |
           echo "Waiting for backend..."
