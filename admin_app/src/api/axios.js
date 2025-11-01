@@ -1,15 +1,8 @@
 import axios from 'axios';
 
-// Trong production sẽ dùng /api (nginx proxy)
-// Trong dev local sẽ dùng http://localhost:5000/api
-const API_URL = import.meta.env.VITE_API_URL || (
-    window.location.hostname === 'localhost' 
-        ? 'http://localhost:5000/api'
-        : '/api'
-);
-
 const instance = axios.create({
-    baseURL: API_URL,
+
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
