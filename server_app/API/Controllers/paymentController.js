@@ -4,11 +4,15 @@ const querystring = require('qs')
 const moment = require('moment')
 
 // VNPay Configuration
+// Build the return URL dynamically so the app works both locally and when deployed.
+// Priority: explicit VNPAY_RETURN_URL env var -> CLIENT_URL env var -> localhost fallback
+const clientBase = process.env.CLIENT_URL || 'http://localhost:3000'
+const vnpReturnFromEnv = process.env.VNPAY_RETURN_URL
 const vnpayConfig = {
     vnp_TmnCode: process.env.VNPAY_TMN_CODE || '1C1PQ01T',
     vnp_HashSecret: process.env.VNPAY_HASH_SECRET || 'VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L',
     vnp_Url: process.env.VNPAY_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
-    vnp_ReturnUrl: process.env.VNPAY_RETURN_URL || 'http://localhost:3000/payment/vnpay/return',
+    vnp_ReturnUrl: vnpReturnFromEnv || `${clientBase.replace(/\/$/, '')}/payment/vnpay/return`,
     vnp_Api: process.env.VNPAY_API || 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',
 }
 
