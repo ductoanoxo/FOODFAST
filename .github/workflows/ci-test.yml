@@ -1,40 +1,32 @@
-name: CI - Test, Lint and Docker Build
+
+name: CI - Test and Lint (Deploy Branch - Testing Conflict)
 
 on:
-  push:
-    branches:
+    push:
+      branches:
       - main
       - develop
       - DUCTOAN
       - kiet
       - deploy
-    # nếu bạn muốn tag nào cũng build docker thì để '*'
-    tags:
-      - '*'          # trước đây bạn để 'v*' nên tag preserve/... sẽ không chạy
-  pull_request:
-    branches:
-      - main
-      - develop
+    pull_request:
+      branches:
+        - main
+        - develop
 
+# Grant minimal permissions required for uploading SARIF/code-scanning results
 permissions:
   contents: read
   security-events: write
-  packages: write        # để push GHCR
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository_owner }}
 
 jobs:
-  # =====================================================
-  # 1. TEST SERVER
-  # =====================================================
   test-server:
     name: Test Server App
     runs-on: ubuntu-latest
-
+    
     services:
       mongodb:
+        # Use the official MongoDB 7.0 image (alpine variant '7.0-alpine' does not exist)
         image: mongo:7.0
         ports:
           - 27017:27017
@@ -46,7 +38,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -74,13 +65,10 @@ jobs:
         working-directory: ./server_app
         run: node -c index.js
 
-  # =====================================================
-  # 2. TEST 4 FRONTEND APPS
-  # =====================================================
   test-client-apps:
     name: Test Frontend Apps
     runs-on: ubuntu-latest
-
+    
     strategy:
       matrix:
         app:
@@ -119,13 +107,10 @@ jobs:
           path: ${{ matrix.app }}/dist
           retention-days: 7
 
-  # =====================================================
-  # 3. SECURITY SCAN
-  # =====================================================
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -140,83 +125,10 @@ jobs:
 
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
+        # Only attempt upload when workflow runs in the repository (not a fork),
+        # otherwise the runner's token may not have permission and you'll see
+        # 'Resource not accessible by integration'. Keep 'always()' to allow
+        # the step to be evaluated for post-job/cleanup semantics.
         if: always() && github.repository == github.event.repository.full_name
         with:
           sarif_file: 'trivy-results.sarif'
-
-  # =====================================================
-  # 4. BUILD + PUSH DOCKER
-  #    - chỉ chạy khi 3 job trên pass
-  #    - không chạy khi là PR
-  # =====================================================
-  build-and-push:
-    name: Docker Build and Push
-    runs-on: ubuntu-latest
-
-    needs:
-      - test-server
-      - test-client-apps
-      - security-scan
-
-    # chỉ push image khi không phải PR
-    if: github.event_name != 'pull_request'
-
-    strategy:
-      matrix:
-        service:
-          - name: client_app
-            image: foodfast-client
-          - name: restaurant_app
-            image: foodfast-restaurant
-          - name: admin_app
-            image: foodfast-admin
-          - name: drone_manage
-            image: foodfast-drone
-          - name: server_app
-            image: foodfast-server
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # ---- chỗ này mình sửa gọn lại tag ----
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}
-          tags: |
-            # 1) nếu là push tag (vd: v1.0.0 hay preserve/...) -> gắn đúng tên git tag vào image
-            type=ref,event=tag
-            # 2) nếu là push branch -> gắn tên branch (main, develop, kiet, deploy)
-            type=ref,event=branch
-            # 3) luôn có 1 tag theo commit để trace
-            type=sha
-            # 4) chỉ nhánh default (thường là main) mới được tag latest
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./${{ matrix.service.name }}
-          file: ./${{ matrix.service.name }}/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          # cache để build nhanh
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}:buildcache,mode=max
-          platforms: linux/amd64,linux/arm64
-
-      - name: Image digest
-        run: echo ${{ steps.meta.outputs.digest }}
