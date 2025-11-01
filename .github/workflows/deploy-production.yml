@@ -1,14 +1,17 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # Chỉ tự chạy sau khi workflow build image xong VÀ build đó là của branch main
+  # 1) TỰ ĐỘNG: chỉ chạy khi workflow build xong
   workflow_run:
     workflows:
-      - Docker Build and Push     # tên workflow build của bạn
+      - Docker Build and Push      # phải đúng tên workflow build của bạn
     types:
       - completed
     branches:
-      - main                      # chỉ main mới deploy
+      - main                       # CHỈ build của main mới gọi deploy
+
+  # 2) (TUỲ CHỌN) cho phép bấm tay để redeploy
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -16,26 +19,32 @@ env:
 
 jobs:
   deploy:
-    # Chỉ chạy nếu workflow build trước đó thành công
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Cửa chặn thứ 2: cho dù ai cấu hình sai ở trên thì ở đây cũng chỉ cho main
+    if: ${{ 
+      (github.event_name == 'workflow_run'
+        && github.event.workflow_run.conclusion == 'success'
+        && github.event.workflow_run.head_branch == 'main')
+      || github.event_name == 'workflow_dispatch'
+    }}
     runs-on: ubuntu-latest
 
     steps:
       # ======================
-      # 1) Checkout đúng commit vừa build
+      # 1) Checkout đúng commit
       # ======================
-      - name: Checkout (from workflow_run)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          # workflow_run thì có head_sha, còn dispatch thì lấy ref hiện tại
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
       # ======================
-      # 2) Xác định tag image sẽ dùng để deploy
-      # Vì giờ chỉ deploy cho main nên luôn là latest
+      # 2) Quyết định tag image
       # ======================
       - name: Decide image tag
         id: imagetag
         run: |
+          # Vì chỉ deploy cho main nên luôn dùng latest
           TAG="latest"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Will deploy image tag: $TAG"
