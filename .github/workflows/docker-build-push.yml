@@ -4,6 +4,12 @@ on:
   workflow_run:
     workflows: ["CI - Test and Lint (Deploy Branch - Testing Conflict)"]
     types: [completed]
+    branches:
+      - main
+      - develop
+      - DUCTOAN
+      - kiet
+      - deploy
 
 env:
   REGISTRY: ghcr.io
@@ -11,18 +17,9 @@ env:
 
 jobs:
   build-and-push:
-    # CI phải xanh + branch phải nằm trong danh sách của bạn
-    if: >
-      ${{
-        github.event.workflow_run.conclusion == 'success' &&
-        (
-          github.event.workflow_run.head_branch == 'main' ||
-          github.event.workflow_run.head_branch == 'develop' ||
-          github.event.workflow_run.head_branch == 'DUCTOAN' ||
-          github.event.workflow_run.head_branch == 'kiet' ||
-          github.event.workflow_run.head_branch == 'deploy'
-        )
-      }}
+    name: Build and Push Docker Images
+    # Chỉ chạy khi CI workflow thành công
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
