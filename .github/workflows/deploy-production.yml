@@ -1,49 +1,77 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # 1) CHẾ ĐỘ CHUẨN (sau khi merge lên main):
-  #    Khi workflow CI build xong thì chạy
+  # Tự chạy sau khi workflow build image xong
   workflow_run:
-    workflows: ["CI - Test, Lint and Docker Build"]
-    types: [completed]
-
-  # 2) CHẾ ĐỘ TEST (đang dùng bây giờ):
-  #    Hễ push vào kiet là deploy luôn để bạn thấy nó chạy
-  push:
+    workflows:
+      - Docker Build and Push     # tên workflow build của bạn
+    types:
+      - completed
     branches:
-      - kiet
+      - main                      # prod
+      - kiet                      # staging
+  # Cho phép bấm tay để deploy lại
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  OWNER: ductoanoxo
+  OWNER: ${{ github.repository_owner }}
 
 jobs:
   deploy:
-    # Giải thích cái if này:
-    # - nếu là workflow_run (tức là CI gọi) thì:
-    #     + CI phải success
-    #     + và CI đó phải chạy từ branch main HOẶC kiet
-    # - nếu là push thì chỉ cho phép push từ kiet (giai đoạn test)
-    if: >
-      (
-        github.event_name == 'workflow_run' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        (github.event.workflow_run.head_branch == 'main' ||
-         github.event.workflow_run.head_branch == 'kiet')
-      )
-      ||
-      (
-        github.event_name == 'push' &&
-        github.ref_name == 'kiet'
-      )
-
+    # Chỉ chạy nếu workflow build trước đó thành công
+    # (khi chạy tay thì github.event.workflow_run không có -> expression này là false? → ta cho phép ở dưới)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      # ======================
+      # 1) Checkout
+      # ======================
+      # Nếu được trigger bởi workflow_run thì checkout đúng commit vừa build
+      - name: Checkout (from workflow_run)
+        if: ${{ github.event_name == 'workflow_run' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # Nếu bấm tay thì checkout HEAD hiện tại
+      - name: Checkout (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         uses: actions/checkout@v4
 
-      # ===== SSH =====
+      # ======================
+      # 2) Xác định tag image sẽ dùng để deploy
+      # ======================
+      - name: Decide image tag
+        id: imagetag
+        run: |
+          # default
+          TAG="latest"
+
+          # nếu chạy do workflow_run thì ta biết nó build từ branch nào
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            BRANCH="${{ github.event.workflow_run.head_branch }}"
+            echo "Detected branch from build workflow: $BRANCH"
+
+            if [ "$BRANCH" = "main" ]; then
+              TAG="latest"
+            else
+              # ví dụ: kiet -> image :kiet
+              TAG="$BRANCH"
+            fi
+          else
+            # chạy tay thì cho phép nhập từ input sau này,
+            # còn tạm thời để latest
+            echo "Manual dispatch -> default to latest"
+          fi
+
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Will deploy image tag: $TAG"
+
+      # ======================
+      # 3) SSH Setup
+      # ======================
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -54,7 +82,9 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      # ===== tạo script chạy trên EC2 =====
+      # ======================
+      # 4) Tạo script deploy để chép lên EC2
+      # ======================
       - name: Create remote script
         run: |
           cat > remote-deploy.sh <<'SCRIPT'
@@ -62,141 +92,95 @@ jobs:
 
           REGISTRY="${REGISTRY}"
           OWNER="${OWNER}"
-          TAG="${TAG}"
+          IMAGE_TAG="${IMAGE_TAG}"
           GHCR_TOKEN="${GHCR_TOKEN}"
           MONGO_URI="${MONGO_URI}"
-          API_URL="${API_URL}"
 
-          pull_safe () {
-            local image="$1"
-            local tag="$2"
-
-            if sudo docker pull "${image}:${tag}" >/dev/null 2>&1; then
-              echo "${tag}"
-              return
-            fi
-
-            if sudo docker pull "${image}:latest" >/dev/null 2>&1; then
-              echo "latest"
-              return
-            fi
-
-            echo "none"
-          }
-
-          echo "== Login GHCR =="
+          echo "==> Login GHCR as \$OWNER"
           echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${OWNER}" --password-stdin
 
-          echo "== Create network (if not exists) =="
-          sudo docker network create foodfast-net >/dev/null 2>&1 || true
+          echo "==> Create network"
+          sudo docker network create foodfast-net || true
 
-          echo "=== Deploy foodfast-server ==="
-          SERVER_IMAGE="${REGISTRY}/${OWNER}/foodfast-server"
-          REAL_SERVER_TAG=$(pull_safe "${SERVER_IMAGE}" "${TAG}")
-          if [ "${REAL_SERVER_TAG}" != "none" ]; then
-            sudo docker rm -f server_app >/dev/null 2>&1 || true
-            sudo docker rm -f foodfast-server >/dev/null 2>&1 || true
-            sudo docker run -d --name server_app --restart unless-stopped \
-              --network foodfast-net -p 5000:5000 \
-              -e MONGO_URI="${MONGO_URI}" \
-              "${SERVER_IMAGE}:${REAL_SERVER_TAG}"
-          else
-            echo "⚠️  Không tìm thấy image cho foodfast-server với tag ${TAG} hoặc latest"
-          fi
+          echo "=== Deploy foodfast-server:\${IMAGE_TAG} ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
+          sudo docker rm -f foodfast-server 2>/dev/null || true
+          sudo docker run -d --name foodfast-server --restart unless-stopped \
+            --network foodfast-net --network-alias server_app \
+            -p 5000:5000 \
+            -e MONGO_URI="${MONGO_URI}" \
+            "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-client ==="
-          CLIENT_IMAGE="${REGISTRY}/${OWNER}/foodfast-client"
-          REAL_CLIENT_TAG=$(pull_safe "${CLIENT_IMAGE}" "${TAG}")
-          if [ "${REAL_CLIENT_TAG}" != "none" ]; then
-            sudo docker rm -f foodfast-client >/dev/null 2>&1 || true
-            sudo docker run -d --name foodfast-client --restart unless-stopped \
-              --network foodfast-net -p 3000:80 \
-              -e VITE_API_URL="${API_URL}" \
-              -e REACT_APP_API_URL="${API_URL}" \
-              "${CLIENT_IMAGE}:${REAL_CLIENT_TAG}"
-          else
-            echo "⚠️  Không tìm thấy image cho foodfast-client với tag ${TAG} hoặc latest"
-          fi
+          echo "=== Deploy foodfast-client:\${IMAGE_TAG} ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-client:${IMAGE_TAG}"
+          sudo docker rm -f foodfast-client 2>/dev/null || true
+          sudo docker run -d --name foodfast-client --restart unless-stopped \
+            --network foodfast-net \
+            -p 3000:80 \
+            "${REGISTRY}/${OWNER}/foodfast-client:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-admin ==="
-          ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin}"
-          ADMIN_IMAGE="ghcr.io/${OWNER}/foodfast-admin"
-          REAL_ADMIN_TAG=$(pull_safe "${ADMIN_IMAGE}" "${TAG}")
-          if [ "${REAL_ADMIN_TAG}" != "none" ]; then
-            sudo docker rm -f foodfast-admin >/dev/null 2>&1 || true
-            sudo docker run -d --name foodfast-admin --restart unless-stopped \
-              --network foodfast-net -p 3001:80 \
-              -e VITE_API_URL="${API_URL}" \
-              -e REACT_APP_API_URL="${API_URL}" \
-              "${ADMIN_IMAGE}:${REAL_ADMIN_TAG}"
-          else
-            echo "⚠️  Không tìm thấy image cho foodfast-admin với tag ${TAG} hoặc latest"
-          fi
+          echo "=== Deploy foodfast-admin:\${IMAGE_TAG} ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-admin:${IMAGE_TAG}"
+          sudo docker rm -f foodfast-admin 2>/dev/null || true
+          sudo docker run -d --name foodfast-admin --restart unless-stopped \
+            --network foodfast-net \
+            -p 3001:80 \
+            "${REGISTRY}/${OWNER}/foodfast-admin:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-restaurant ==="
-          REST_IMAGE="${REGISTRY}/${OWNER}/foodfast-restaurant"
-          REAL_REST_TAG=$(pull_safe "${REST_IMAGE}" "${TAG}")
-          if [ "${REAL_REST_TAG}" != "none" ]; then
-            sudo docker rm -f foodfast-restaurant >/dev/null 2>&1 || true
-            sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
-              --network foodfast-net -p 3002:80 \
-              -e VITE_API_URL="${API_URL}" \
-              -e REACT_APP_API_URL="${API_URL}" \
-              "${REST_IMAGE}:${REAL_REST_TAG}"
-          else
-            echo "⚠️  Không tìm thấy image cho foodfast-restaurant với tag ${TAG} hoặc latest"
-          fi
+          echo "=== Deploy foodfast-restaurant:\${IMAGE_TAG} ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-restaurant:${IMAGE_TAG}"
+          sudo docker rm -f foodfast-restaurant 2>/dev/null || true
+          sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
+            --network foodfast-net \
+            -p 3002:80 \
+            "${REGISTRY}/${OWNER}/foodfast-restaurant:${IMAGE_TAG}"
 
-          echo "=== Deploy foodfast-drone ==="
-          DRONE_IMAGE="${REGISTRY}/${OWNER}/foodfast-drone"
-          REAL_DRONE_TAG=$(pull_safe "${DRONE_IMAGE}" "${TAG}")
-          if [ "${REAL_DRONE_TAG}" != "none" ]; then
-            sudo docker rm -f foodfast-drone >/dev/null 2>&1 || true
-            sudo docker run -d --name foodfast-drone --restart unless-stopped \
-              --network foodfast-net \
-              "${DRONE_IMAGE}:${REAL_DRONE_TAG}"
-          else
-            echo "⚠️  Không tìm thấy image cho foodfast-drone với tag ${TAG} hoặc latest"
-          fi
+          echo "=== Deploy foodfast-drone:\${IMAGE_TAG} ==="
+          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}"
+          sudo docker rm -f foodfast-drone 2>/dev/null || true
+          sudo docker run -d --name foodfast-drone --restart unless-stopped \
+            --network foodfast-net \
+            "${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}"
 
-          echo "✅ Done deploy all containers."
+          echo "✅ Deploy done."
           SCRIPT
 
-      # ===== chạy script trên EC2 =====
+      # ======================
+      # 5) Chạy script trên EC2
+      # ======================
       - name: Run remote script on EC2
         env:
           SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
           SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
-
-          # nếu là workflow_run → lấy tên branch từ CI
-          # nếu là push (đang test) → chính là kiet
-          TAG: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
-
+          IMAGE_TAG: ${{ steps.imagetag.outputs.tag }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
-          API_URL: ${{ secrets.PROD_API_URL }}
         run: |
           echo "Connecting to $SERVER_USER@$SERVER_HOST ..."
+          echo "Deploying with image tag: ${IMAGE_TAG}"
+
           scp remote-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/remote-deploy.sh
+
           ssh $SERVER_USER@$SERVER_HOST "chmod +x /tmp/remote-deploy.sh && \
             REGISTRY='${REGISTRY}' \
             OWNER='${OWNER}' \
-            TAG='${TAG}' \
+            IMAGE_TAG='${IMAGE_TAG}' \
             GHCR_TOKEN='${GHCR_TOKEN}' \
             MONGO_URI='${MONGO_URI}' \
-            API_URL='${API_URL}' \
             /tmp/remote-deploy.sh"
 
-      # ===== healthcheck =====
+      # ======================
+      # 6) Healthcheck
+      # ======================
       - name: Healthcheck backend
         run: |
           echo "Waiting for backend..."
           for i in {1..6}; do
             echo "Attempt $i"
-            if curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/api/health \
-              || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/health \
+            if curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/health \
+              || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/api/health \
               || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/ ; then
               echo "✅ Backend is up"
               exit 0
