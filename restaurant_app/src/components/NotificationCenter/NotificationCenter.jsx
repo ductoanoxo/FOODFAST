@@ -7,7 +7,7 @@
       CloseCircleOutlined,
       ClockCircleOutlined,
     } from '@ant-design/icons';
-    import { getSocket } from '../../utils/socket';
+  import { getSocket, onNewOrder, offNewOrder, onOrderStatusUpdate, offOrderStatusUpdate, onOrderCompleted, offOrderCompleted } from '../../utils/socket';
     import axios from '../../api/axios';
     import dayjs from 'dayjs';
     import relativeTime from 'dayjs/plugin/relativeTime';
@@ -66,10 +66,7 @@
         }
 
         // Listen for real-time notifications
-        const socket = getSocket();
-
-        
-
+  const socket = getSocket();
         // Store a per-tab copy of the current restaurant id so that incoming events
         // are filtered against the tab's active restaurant. This avoids races where
         // other tabs update shared localStorage and change the global value.
@@ -96,7 +93,7 @@
           return payloadRid ? String(payloadRid) === String(currentId) : false;
         };
 
-        socket.on('new-order', (data) => {
+        onNewOrder((data) => {
           console.log('📦 Nhận sự kiện new-order:', data);
           if (belongsToCurrentRestaurant(data)) {
             addNotification({
@@ -110,9 +107,8 @@
             console.log('Notification filtered out (not for this restaurant):', data);
           }
         });
-
-        socket.on('order-status-updated', (data) => {
-          console.log('🔁 Nhận sự kiện order-status-updated:', data);
+        onOrderStatusUpdate((data) => {
+          console.log('🔁 Nhận sự kiện order-status-updated (or legacy):', data);
           if (belongsToCurrentRestaurant(data)) {
             addNotification({
               type: 'status-update',
@@ -126,7 +122,7 @@
           }
         });
 
-        socket.on('restaurant:order:completed', (data) => {
+        onOrderCompleted((data) => {
           console.log('✅ Nhận sự kiện restaurant:order:completed:', data);
           if (belongsToCurrentRestaurant(data)) {
             addNotification({
@@ -191,9 +187,9 @@
         window.addEventListener('storage', handleStorage);
 
         return () => {
-          socket.off('new-order');
-          socket.off('order-status-updated');
-          socket.off('restaurant:order:completed');
+          offNewOrder();
+          offOrderStatusUpdate();
+          offOrderCompleted();
           window.removeEventListener('storage', handleStorage);
         };
       }, []);

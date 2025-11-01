@@ -407,11 +407,15 @@ class SocketService {
 
         // Notify customer
         if (orderId) {
-            this.io.to(`order-${orderId}`).emit('order:status-update', {
+            const payload = {
+                orderId,
                 status,
                 eta,
                 timestamp: new Date(),
-            });
+            };
+            // Emit both modern and legacy event names
+            this.io.to(`order-${orderId}`).emit('order:status-updated', payload);
+            this.io.to(`order-${orderId}`).emit('order-status-updated', payload);
         }
     }
 

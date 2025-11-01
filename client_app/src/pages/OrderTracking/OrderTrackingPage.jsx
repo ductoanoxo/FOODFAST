@@ -9,6 +9,7 @@ import {
   CheckOutlined
 } from '@ant-design/icons'
 import { orderAPI } from '../../api/orderAPI'
+import socketService from '../../services/socketService'
 import DroneMap from './DroneMap'
 import './OrderTrackingPage.css'
 
@@ -24,14 +25,64 @@ const OrderTrackingPage = () => {
 
   useEffect(() => {
     fetchOrderTracking()
-    // Set up polling for real-time updates
-    const interval = setInterval(fetchOrderTracking, 10000) // Update every 10 seconds
-    return () => clearInterval(interval)
+    
+    // Join order tracking room - ✅ Fixed event name from 'join-order-room' to 'join-order'
+    if (orderId) {
+      socketService.emit('join-order', orderId)
+      console.log('📡 Joined order tracking room:', orderId)
+    }
+
+    // Socket listeners for real-time updates
+    socketService.on('order:status-updated', (data) => {
+      console.log('🔄 Order status updated:', data)
+      if (data.orderId === orderId || data._id === orderId) {
+        fetchOrderTracking() // Refresh order data
+      }
+    })
+
+    socketService.on('order:drone-assigned', (data) => {
+      console.log('🚁 Drone assigned:', data)
+      if (data.orderId === orderId) {
+        fetchOrderTracking() // Refresh to show drone info
+      }
+    })
+
+    socketService.on('drone:location:update', (data) => {
+      console.log('📍 Drone location update:', data)
+      // DroneMap component will handle this
+    })
+
+    socketService.on('delivery:complete', (data) => {
+      console.log('✅ Delivery complete:', data)
+      if (data.orderId === orderId) {
+        message.success('🎉 Đơn hàng đã được giao đến!')
+        fetchOrderTracking()
+      }
+    })
+
+    // Polling as fallback (every 30 seconds)
+    const interval = setInterval(fetchOrderTracking, 30000)
+    
+    return () => {
+      clearInterval(interval)
+      // Clean up socket listeners
+      socketService.off('order:status-updated')
+      socketService.off('order:drone-assigned')
+      socketService.off('drone:location:update')
+      socketService.off('delivery:complete')
+    }
   }, [orderId])
 
   const fetchOrderTracking = async () => {
     try {
       const response = await orderAPI.trackOrder(orderId)
+      console.log('🔍 Order data received:', response.data)
+      console.log('📊 Order status:', response.data.status)
+      console.log('⏰ Timestamps:', {
+        confirmedAt: response.data.confirmedAt,
+        preparingAt: response.data.preparingAt,
+        deliveringAt: response.data.deliveringAt
+      })
       setOrder(response.data)
     } catch (error) {
       console.error('Error fetching order:', error)
@@ -63,11 +114,37 @@ const OrderTrackingPage = () => {
       'confirmed': 1,
       'preparing': 1,
       'ready': 2,
-      'delivering': 2,
+      'delivering': 2, // Restaurant confirm = đang giao
       'delivered': 3,
       'cancelled': -1,
     }
     return statusMap[status] || 0
+  }
+
+  const getStatusText = (status) => {
+    const texts = {
+      'pending': 'Chờ xác nhận',
+      'confirmed': 'Đã xác nhận',
+      'preparing': 'Đang chuẩn bị',
+      'ready': 'Sẵn sàng giao',
+      'delivering': 'Đang giao',
+      'delivered': 'Đã giao',
+      'cancelled': 'Đã hủy',
+    }
+    return texts[status] || status
+  }
+
+  const getStatusColor = (status) => {
+    const colors = {
+      'pending': 'orange',
+      'confirmed': 'blue',
+      'preparing': 'cyan',
+      'ready': 'purple',
+      'delivering': 'volcano',
+      'delivered': 'green',
+      'cancelled': 'red',
+    }
+    return colors[status] || 'default'
   }
 
   const formatPrice = (price) => {
@@ -150,7 +227,9 @@ const OrderTrackingPage = () => {
                       <>
                         <Text strong>Drone đang giao hàng 🚁</Text>
                         <br />
-                        <Text type="secondary">{new Date(order.deliveringAt).toLocaleString('vi-VN')}</Text>
+                        <Text type="secondary">
+                          {new Date(order.deliveringAt).toLocaleString('vi-VN')}
+                        </Text>
                       </>
                     )
                   }] : []),
@@ -193,11 +272,11 @@ const OrderTrackingPage = () => {
               )}
             </Card>
 
-            {/* Drone Tracking Map */}
-            {order.drone && (order.status === 'delivering' || order.status === 'delivered') && (
+            {/* Drone Tracking Map - Show if coordinates are available */}
+            {(order.restaurant?.location?.coordinates && order.deliveryInfo?.location?.coordinates) && (
               <Card className="tracking-card" title={
                 <span>
-                  <RocketOutlined /> Theo dõi Drone real-time
+                  <RocketOutlined /> {order.drone ? 'Theo dõi Drone real-time' : 'Bản đồ giao hàng'}
                 </span>
               }>
                 <DroneMap order={order} />
@@ -215,8 +294,8 @@ const OrderTrackingPage = () => {
                 </div>
                 <div className="info-row">
                   <Text type="secondary">Trạng thái:</Text>
-                  <Tag color={order.status === 'delivered' ? 'green' : 'orange'}>
-                    {order.status}
+                  <Tag color={getStatusColor(order.status)}>
+                    {getStatusText(order.status)}
                   </Tag>
                 </div>
                 <div className="info-row">
