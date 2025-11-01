@@ -1,11 +1,17 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # TỰ ĐỘNG chạy khi workflow CI build xong
+  # 1) CHẾ ĐỘ CHUẨN (sau khi merge lên main):
+  #    Khi workflow CI build xong thì chạy
   workflow_run:
-    workflows: ["CI - Test, Lint and Docker Build"]  # 👈 tên phải đúng với workflow CI của bạn
-    types:
-      - completed
+    workflows: ["CI - Test, Lint and Docker Build"]
+    types: [completed]
+
+  # 2) CHẾ ĐỘ TEST (đang dùng bây giờ):
+  #    Hễ push vào kiet là deploy luôn để bạn thấy nó chạy
+  push:
+    branches:
+      - kiet
 
 env:
   REGISTRY: ghcr.io
@@ -13,12 +19,23 @@ env:
 
 jobs:
   deploy:
-    # chỉ deploy khi CI thành công
-    # và CI đó chạy từ branch kiet HOẶC main
+    # Giải thích cái if này:
+    # - nếu là workflow_run (tức là CI gọi) thì:
+    #     + CI phải success
+    #     + và CI đó phải chạy từ branch main HOẶC kiet
+    # - nếu là push thì chỉ cho phép push từ kiet (giai đoạn test)
     if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      (github.event.workflow_run.head_branch == 'kiet' ||
-       github.event.workflow_run.head_branch == 'main')
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        (github.event.workflow_run.head_branch == 'main' ||
+         github.event.workflow_run.head_branch == 'kiet')
+      )
+      ||
+      (
+        github.event_name == 'push' &&
+        github.ref_name == 'kiet'
+      )
 
     runs-on: ubuntu-latest
 
@@ -26,7 +43,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ===== SSH setup =====
+      # ===== SSH =====
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -50,7 +67,6 @@ jobs:
           MONGO_URI="${MONGO_URI}"
           API_URL="${API_URL}"
 
-          # pull image: thử theo TAG trước, fail thì thử latest
           pull_safe () {
             local image="$1"
             local tag="$2"
@@ -74,16 +90,12 @@ jobs:
           echo "== Create network (if not exists) =="
           sudo docker network create foodfast-net >/dev/null 2>&1 || true
 
-          ##############################
-          # 1) SERVER
-          ##############################
           echo "=== Deploy foodfast-server ==="
           SERVER_IMAGE="${REGISTRY}/${OWNER}/foodfast-server"
           REAL_SERVER_TAG=$(pull_safe "${SERVER_IMAGE}" "${TAG}")
           if [ "${REAL_SERVER_TAG}" != "none" ]; then
             sudo docker rm -f server_app >/dev/null 2>&1 || true
             sudo docker rm -f foodfast-server >/dev/null 2>&1 || true
-
             sudo docker run -d --name server_app --restart unless-stopped \
               --network foodfast-net -p 5000:5000 \
               -e MONGO_URI="${MONGO_URI}" \
@@ -92,15 +104,11 @@ jobs:
             echo "⚠️  Không tìm thấy image cho foodfast-server với tag ${TAG} hoặc latest"
           fi
 
-          ##############################
-          # 2) CLIENT (3000)
-          ##############################
           echo "=== Deploy foodfast-client ==="
           CLIENT_IMAGE="${REGISTRY}/${OWNER}/foodfast-client"
           REAL_CLIENT_TAG=$(pull_safe "${CLIENT_IMAGE}" "${TAG}")
           if [ "${REAL_CLIENT_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-client >/dev/null 2>&1 || true
-
             sudo docker run -d --name foodfast-client --restart unless-stopped \
               --network foodfast-net -p 3000:80 \
               -e VITE_API_URL="${API_URL}" \
@@ -110,15 +118,12 @@ jobs:
             echo "⚠️  Không tìm thấy image cho foodfast-client với tag ${TAG} hoặc latest"
           fi
 
-          ##############################
-          # 3) ADMIN (3001)
-          ##############################
           echo "=== Deploy foodfast-admin ==="
-          ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin"
+          ADMIN_IMAGE="${REGISTRY}/${OWNER}/foodfast-admin}"
+          ADMIN_IMAGE="ghcr.io/${OWNER}/foodfast-admin"
           REAL_ADMIN_TAG=$(pull_safe "${ADMIN_IMAGE}" "${TAG}")
           if [ "${REAL_ADMIN_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-admin >/dev/null 2>&1 || true
-
             sudo docker run -d --name foodfast-admin --restart unless-stopped \
               --network foodfast-net -p 3001:80 \
               -e VITE_API_URL="${API_URL}" \
@@ -128,15 +133,11 @@ jobs:
             echo "⚠️  Không tìm thấy image cho foodfast-admin với tag ${TAG} hoặc latest"
           fi
 
-          ##############################
-          # 4) RESTAURANT (3002)
-          ##############################
           echo "=== Deploy foodfast-restaurant ==="
           REST_IMAGE="${REGISTRY}/${OWNER}/foodfast-restaurant"
           REAL_REST_TAG=$(pull_safe "${REST_IMAGE}" "${TAG}")
           if [ "${REAL_REST_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-restaurant >/dev/null 2>&1 || true
-
             sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
               --network foodfast-net -p 3002:80 \
               -e VITE_API_URL="${API_URL}" \
@@ -146,15 +147,11 @@ jobs:
             echo "⚠️  Không tìm thấy image cho foodfast-restaurant với tag ${TAG} hoặc latest"
           fi
 
-          ##############################
-          # 5) DRONE
-          ##############################
           echo "=== Deploy foodfast-drone ==="
           DRONE_IMAGE="${REGISTRY}/${OWNER}/foodfast-drone"
           REAL_DRONE_TAG=$(pull_safe "${DRONE_IMAGE}" "${TAG}")
           if [ "${REAL_DRONE_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-drone >/dev/null 2>&1 || true
-
             sudo docker run -d --name foodfast-drone --restart unless-stopped \
               --network foodfast-net \
               "${DRONE_IMAGE}:${REAL_DRONE_TAG}"
@@ -165,7 +162,7 @@ jobs:
           echo "✅ Done deploy all containers."
           SCRIPT
 
-      # ===== copy + chạy script trên EC2 =====
+      # ===== chạy script trên EC2 =====
       - name: Run remote script on EC2
         env:
           SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
@@ -173,10 +170,11 @@ jobs:
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
 
-          # 👇 lấy đúng branch mà CI vừa chạy (kiet hoặc main) làm TAG để pull
-          TAG: ${{ github.event.workflow_run.head_branch }}
+          # nếu là workflow_run → lấy tên branch từ CI
+          # nếu là push (đang test) → chính là kiet
+          TAG: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
 
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }} # PAT để pull GHCR
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
           API_URL: ${{ secrets.PROD_API_URL }}
         run: |
@@ -191,7 +189,7 @@ jobs:
             API_URL='${API_URL}' \
             /tmp/remote-deploy.sh"
 
-      # ===== healthcheck backend =====
+      # ===== healthcheck =====
       - name: Healthcheck backend
         run: |
           echo "Waiting for backend..."
