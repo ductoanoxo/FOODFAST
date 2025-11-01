@@ -36,9 +36,7 @@ services:
       - VNPAY_TMN_CODE=1C1PQ01T
       - VNPAY_HASH_SECRET=VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L
       - VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-      # Build VNPAY return URL from CLIENT_URL so it works in both local and deployed environments.
-      # Ensure CLIENT_URL is set to the public client address when deploying (e.g. http://54.221.100.253:3000)
-      - VNPAY_RETURN_URL=${CLIENT_URL}/payment/vnpay/return
+      - VNPAY_RETURN_URL=http://localhost:3000/payment/vnpay/return
       - VNPAY_API=https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
       # Cloudinary
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
@@ -49,10 +47,7 @@ services:
 
   # Client App
   client_app:
-    build:
-      context: ./client_app
-      args:
-        VITE_API_URL: /api
+    build: ./client_app
     container_name: foodfast_client
     restart: always
     ports:
