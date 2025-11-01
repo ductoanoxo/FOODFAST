@@ -1,37 +1,43 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  push:
-    branches:
-      - kiet          # ✅ chỉ deploy khi push nhánh kiet
-  workflow_dispatch:  # ✅ vẫn cho phép bấm tay trên GitHub
+  # TỰ ĐỘNG chạy khi workflow CI build xong
+  workflow_run:
+    workflows: ["CI - Test, Lint and Docker Build"]  # 👈 tên phải đúng với workflow CI của bạn
+    types:
+      - completed
 
 env:
   REGISTRY: ghcr.io
   OWNER: ductoanoxo
-  IMAGE_TAG: ${{ github.ref_name }}   # = kiet
 
 jobs:
   deploy:
+    # chỉ deploy khi CI thành công
+    # và CI đó chạy từ branch kiet HOẶC main
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.head_branch == 'kiet' ||
+       github.event.workflow_run.head_branch == 'main')
+
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ✅ load private key để SSH vào EC2
+      # ===== SSH setup =====
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.PROD_SSH_KEY }}
 
-      # ✅ tránh lỗi host key
       - name: Add EC2 to known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      # ✅ tạo file shell sẽ chạy ở EC2
+      # ===== tạo script chạy trên EC2 =====
       - name: Create remote script
         run: |
           cat > remote-deploy.sh <<'SCRIPT'
@@ -44,7 +50,7 @@ jobs:
           MONGO_URI="${MONGO_URI}"
           API_URL="${API_URL}"
 
-          # hàm pull an toàn: thử :TAG, không có thì thử :latest
+          # pull image: thử theo TAG trước, fail thì thử latest
           pull_safe () {
             local image="$1"
             local tag="$2"
@@ -75,7 +81,6 @@ jobs:
           SERVER_IMAGE="${REGISTRY}/${OWNER}/foodfast-server"
           REAL_SERVER_TAG=$(pull_safe "${SERVER_IMAGE}" "${TAG}")
           if [ "${REAL_SERVER_TAG}" != "none" ]; then
-            # xoá container cũ nếu có
             sudo docker rm -f server_app >/dev/null 2>&1 || true
             sudo docker rm -f foodfast-server >/dev/null 2>&1 || true
 
@@ -95,6 +100,7 @@ jobs:
           REAL_CLIENT_TAG=$(pull_safe "${CLIENT_IMAGE}" "${TAG}")
           if [ "${REAL_CLIENT_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-client >/dev/null 2>&1 || true
+
             sudo docker run -d --name foodfast-client --restart unless-stopped \
               --network foodfast-net -p 3000:80 \
               -e VITE_API_URL="${API_URL}" \
@@ -112,6 +118,7 @@ jobs:
           REAL_ADMIN_TAG=$(pull_safe "${ADMIN_IMAGE}" "${TAG}")
           if [ "${REAL_ADMIN_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-admin >/dev/null 2>&1 || true
+
             sudo docker run -d --name foodfast-admin --restart unless-stopped \
               --network foodfast-net -p 3001:80 \
               -e VITE_API_URL="${API_URL}" \
@@ -129,6 +136,7 @@ jobs:
           REAL_REST_TAG=$(pull_safe "${REST_IMAGE}" "${TAG}")
           if [ "${REAL_REST_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-restaurant >/dev/null 2>&1 || true
+
             sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
               --network foodfast-net -p 3002:80 \
               -e VITE_API_URL="${API_URL}" \
@@ -146,6 +154,7 @@ jobs:
           REAL_DRONE_TAG=$(pull_safe "${DRONE_IMAGE}" "${TAG}")
           if [ "${REAL_DRONE_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-drone >/dev/null 2>&1 || true
+
             sudo docker run -d --name foodfast-drone --restart unless-stopped \
               --network foodfast-net \
               "${DRONE_IMAGE}:${REAL_DRONE_TAG}"
@@ -156,15 +165,18 @@ jobs:
           echo "✅ Done deploy all containers."
           SCRIPT
 
-      # ✅ chép script lên EC2 và chạy, truyền biến từ secret vào
+      # ===== copy + chạy script trên EC2 =====
       - name: Run remote script on EC2
         env:
           SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
           SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
-          TAG: ${{ env.IMAGE_TAG }}            # = kiet
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }} # PAT để pull GHCR ở EC2
+
+          # 👇 lấy đúng branch mà CI vừa chạy (kiet hoặc main) làm TAG để pull
+          TAG: ${{ github.event.workflow_run.head_branch }}
+
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }} # PAT để pull GHCR
           MONGO_URI: ${{ secrets.MONGO_URI }}
           API_URL: ${{ secrets.PROD_API_URL }}
         run: |
@@ -179,7 +191,7 @@ jobs:
             API_URL='${API_URL}' \
             /tmp/remote-deploy.sh"
 
-      # ✅ check backend sau deploy
+      # ===== healthcheck backend =====
       - name: Healthcheck backend
         run: |
           echo "Waiting for backend..."
