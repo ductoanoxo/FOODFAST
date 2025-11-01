@@ -95,9 +95,10 @@ jobs:
           REAL_CLIENT_TAG=$(pull_safe "${CLIENT_IMAGE}" "${TAG}")
           if [ "${REAL_CLIENT_TAG}" != "none" ]; then
             sudo docker rm -f foodfast-client >/dev/null 2>&1 || true
-            # Không cần pass env vì client đã hardcode dùng /api (nginx proxy)
             sudo docker run -d --name foodfast-client --restart unless-stopped \
               --network foodfast-net -p 3000:80 \
+              -e VITE_API_URL="${API_URL}" \
+              -e REACT_APP_API_URL="${API_URL}" \
               "${CLIENT_IMAGE}:${REAL_CLIENT_TAG}"
           else
             echo "⚠️  Không tìm thấy image cho foodfast-client với tag ${TAG} hoặc latest"
@@ -113,6 +114,8 @@ jobs:
             sudo docker rm -f foodfast-admin >/dev/null 2>&1 || true
             sudo docker run -d --name foodfast-admin --restart unless-stopped \
               --network foodfast-net -p 3001:80 \
+              -e VITE_API_URL="${API_URL}" \
+              -e REACT_APP_API_URL="${API_URL}" \
               "${ADMIN_IMAGE}:${REAL_ADMIN_TAG}"
           else
             echo "⚠️  Không tìm thấy image cho foodfast-admin với tag ${TAG} hoặc latest"
@@ -128,6 +131,8 @@ jobs:
             sudo docker rm -f foodfast-restaurant >/dev/null 2>&1 || true
             sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
               --network foodfast-net -p 3002:80 \
+              -e VITE_API_URL="${API_URL}" \
+              -e REACT_APP_API_URL="${API_URL}" \
               "${REST_IMAGE}:${REAL_REST_TAG}"
           else
             echo "⚠️  Không tìm thấy image cho foodfast-restaurant với tag ${TAG} hoặc latest"
