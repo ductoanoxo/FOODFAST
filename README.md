@@ -620,8 +620,105 @@ Tất cả các **tài liệu liên quan đến dự án** (bao gồm thiết k�
   </tr>
 </table>
 
+
+<div align="center">
+
+---
+# 🚀 **FoodFast Delivery — Full Project Documentation**
+
+🍔💨 *Hệ thống đặt đồ ăn nhanh toàn diện — từ giao diện người dùng đến hạ tầng CI/CD!*
+
 ---
 
+### 🔗 **Truy cập toàn bộ tài liệu, sơ đồ & source code tại đây:**
+
+<a href="https://drive.google.com/drive/folders/1KmEJCDPMThQXyVds2Eht9d1j-Xj3OZ1T" target="_blank">
+  <img src="https://img.shields.io/badge/🔗_Open_Google_Drive-Full_Documentation-blue?style=for-the-badge&logo=google-drive&logoColor=white" alt="Google Drive Link"/>
+</a>
+
+---
+
+📦 **Bao gồm đầy đủ:**
+| Thành phần | Mô tả ngắn |
+|-------------|-------------|
+| 🖥️ **Frontend (ReactJS + React Native)** | Giao diện đặt hàng chuyên nghiệp cho Web & Mobile |
+| 🧩 **Backend (3-Layer Architecture)** | Tách biệt Controller - Service - Repository rõ ràng |
+| ⚙️ **Microservices** | Gồm 4 service: User, Product, Order, Payment |
+| 🚀 **CI/CD & Monitoring** | Triển khai và giám sát toàn hệ thống 3 lớp |
+| 🧠 **CI/CD từng service** | Pipeline riêng cho từng service, dễ mở rộng và rollback |
+
+---
+
+✨ *Click vào nút trên để khám phá toàn bộ diagram, tài liệu chi tiết và code mẫu!*
+
+</div>
+
+
+## 🧭 Giới thiệu
+Repository này liên kết đến thư mục Google Drive chứa **toàn bộ tài liệu và tài nguyên** của dự án **FoodFast Delivery** – một hệ thống đặt đồ ăn nhanh toàn diện, bao gồm **Frontend**, **Backend**, **Microservices**, và **CI/CD Monitoring System**.
+
+---
+
+## ⚙️ Nội dung chính
+
+### 1. 🖥️ Frontend Development (FE DEV)
+- **Công nghệ:** ReactJS (Web) & React Native (Mobile)  
+- **Mục tiêu:**  
+  - Xây dựng giao diện người dùng chuyên nghiệp, tối ưu UX/UI cho quy trình đặt hàng.  
+  - Tích hợp luồng đăng nhập, chọn món, giỏ hàng, thanh toán.  
+  - Responsive trên đa nền tảng (Mobile/Web).
+
+---
+
+### 2. 🧩 Backend Development (BE DEV — 3-Layer Architecture)
+- **Mô hình 3 lớp:**
+  - `Controller` — nhận và xử lý request từ client.
+  - `Service` — xử lý logic nghiệp vụ.
+  - `Repository` — giao tiếp với cơ sở dữ liệu.  
+- **Mục tiêu:** Tối ưu khả năng mở rộng và bảo trì.
+
+---
+
+### 3. 🔗 Microservices Architecture
+Triển khai hệ thống **4 service** chính, giao tiếp qua API Gateway hoặc Message Queue:
+- **User Service:** quản lý thông tin người dùng, xác thực, phân quyền.  
+- **Product Service:** quản lý danh mục món ăn, giá, trạng thái tồn kho.  
+- **Order Service:** xử lý đặt hàng, trạng thái giao hàng.  
+- **Payment Service:** xử lý thanh toán, xác thực giao dịch.  
+
+---
+
+### 4. 🚀 CI/CD & System Monitoring (3-Layer System)
+- Thiết lập **CI/CD pipeline** để tự động hóa build, test, deploy.  
+- Giám sát toàn hệ thống 3 lớp qua Prometheus + Grafana hoặc tương đương.  
+- Tích hợp cảnh báo khi có sự cố hoặc downtime.
+
+---
+
+### 5. 🧠 CI/CD & Monitoring cho từng Service
+- Mỗi service có pipeline riêng:  
+  - Build → Test → Deploy → Monitor  
+- Theo dõi log và hiệu năng qua các công cụ như ELK Stack / Loki / Prometheus.  
+- Dễ dàng mở rộng hoặc rollback từng service độc lập.
+
+---
+
+## 📚 Tài liệu đính kèm
+- **Diagram tổng quan hệ thống**  
+- **Flow chart xử lý yêu cầu đặt hàng**  
+- **Kiến trúc microservices & giao tiếp giữa các module**  
+- **Hướng dẫn cài đặt và chạy project (local & production)**  
+
+---
+
+## 🏁 Tổng kết
+Thư mục Drive trên là **nguồn tài nguyên đầy đủ nhất** cho dự án **FoodFast Delivery**, bao gồm từ kiến trúc hệ thống đến triển khai thực tế.  
+Hãy truy cập link để tham khảo chi tiết từng phần!
+
+---
+
+> ✉️ **Liên hệ:** Vui lòng mở issue hoặc contact trực tiếp qua repo này nếu bạn muốn đóng góp hoặc thảo luận thêm về dự án.
+---
 <p align="center">
   💬 Mọi thắc mắc hoặc góp ý vui lòng liên hệ qua GitHub để được hỗ trợ nhanh nhất.
 </p>
