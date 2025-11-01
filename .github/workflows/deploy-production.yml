@@ -1,13 +1,16 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # 1) Tự chạy khi workflow build xong
+  # 1) TỰ ĐỘNG: chỉ chạy khi workflow build xong
   workflow_run:
     workflows:
-      - Docker Build and Push   # đúng tên workflow build của bạn
+      - Docker Build and Push      # phải đúng tên workflow build của bạn
     types:
       - completed
-  # 2) (tuỳ chọn) cho phép bấm tay
+    branches:
+      - main                       # CHỈ build của main mới gọi deploy
+
+  # 2) (TUỲ CHỌN) cho phép bấm tay để redeploy
   workflow_dispatch:
 
 env:
@@ -16,14 +19,10 @@ env:
 
 jobs:
   deploy:
-    # chỉ deploy khi:
-    # - là workflow_run
-    # - build SUCCESS
-    # - build đó là từ branch main
-    # HOẶC: là workflow_dispatch (bấm tay) -> nhưng chỉ nên chạy nếu file này đang ở main
+    # Cửa chặn thứ 2: cho dù ai cấu hình sai ở trên thì ở đây cũng chỉ cho main
     if: ${{ 
-      (github.event_name == 'workflow_run' 
-        && github.event.workflow_run.conclusion == 'success' 
+      (github.event_name == 'workflow_run'
+        && github.event.workflow_run.conclusion == 'success'
         && github.event.workflow_run.head_branch == 'main')
       || github.event_name == 'workflow_dispatch'
     }}
@@ -31,21 +30,21 @@ jobs:
 
     steps:
       # ======================
-      # 1) Checkout đúng commit vừa build
+      # 1) Checkout đúng commit
       # ======================
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # nếu là workflow_run thì checkout về commit vừa build
+          # workflow_run thì có head_sha, còn dispatch thì lấy ref hiện tại
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
       # ======================
-      # 2) Quyết định tag
-      #    vì chỉ deploy main nên dùng luôn 'latest'
+      # 2) Quyết định tag image
       # ======================
       - name: Decide image tag
         id: imagetag
         run: |
+          # Vì chỉ deploy cho main nên luôn dùng latest
           TAG="latest"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Will deploy image tag: $TAG"
@@ -64,19 +63,20 @@ jobs:
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
       # ======================
-      # 4) Tạo script deploy
+      # 4) Tạo script deploy để chép lên EC2
       # ======================
       - name: Create remote script
         run: |
           cat > remote-deploy.sh <<'SCRIPT'
           set -e
+
           REGISTRY="${REGISTRY}"
           OWNER="${OWNER}"
           IMAGE_TAG="${IMAGE_TAG}"
           GHCR_TOKEN="${GHCR_TOKEN}"
           MONGO_URI="${MONGO_URI}"
 
-          echo "==> Login GHCR"
+          echo "==> Login GHCR as \$OWNER"
           echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${OWNER}" --password-stdin
 
           echo "==> Create network"
@@ -139,7 +139,10 @@ jobs:
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
           echo "Connecting to $SERVER_USER@$SERVER_HOST ..."
+          echo "Deploying with image tag: ${IMAGE_TAG}"
+
           scp remote-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/remote-deploy.sh
+
           ssh $SERVER_USER@$SERVER_HOST "chmod +x /tmp/remote-deploy.sh && \
             REGISTRY='${REGISTRY}' \
             OWNER='${OWNER}' \
@@ -155,6 +158,7 @@ jobs:
         run: |
           echo "Waiting for backend..."
           for i in {1..6}; do
+            echo "Attempt $i"
             if curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/health \
               || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/api/health \
               || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/ ; then
