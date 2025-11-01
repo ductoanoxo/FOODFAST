@@ -65,8 +65,9 @@ jobs:
           echo "=== Deploy foodfast-server với tag ${IMAGE_TAG} ==="
           sudo docker pull "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
           sudo docker rm -f foodfast-server 2>/dev/null || true
+          # Provide a network alias 'server_app' so nginx upstreams inside other containers can resolve this host
           sudo docker run -d --name foodfast-server --restart unless-stopped \
-            --network foodfast-net -p 5000:5000 \
+            --network foodfast-net --network-alias server_app -p 5000:5000 \
             -e MONGO_URI="${MONGO_URI}" \
             "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
 
