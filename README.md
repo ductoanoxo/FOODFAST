@@ -1,42 +1,71 @@
-# 🍔🚁 FOODFAST DRONE DELIVERY - DEPLOY BRANCH VERSION
+# 🍔🚁 **FOODFAST DRONE DELIVERY — Deploy Branch Version**
 
-> Hệ thống đặt đồ ăn với giao hàng bằng drone - Food delivery system with drone management
-> 
-> **Version:** Deploy Branch - Testing Conflict Resolution
-**CI/CD Status:** GitHub Actions + Vercel + Railway
-
----
-
-## Công cụ & Hạ tầng
-Hình ảnh các công cụ và nền tảng đã sử dụng (từ `asset/readme/`):
-
-<p align="center">
-  <i>Những công nghệ và nền tảng được FOODFAST Team sử dụng để xây dựng hệ thống</i>
-</p>
+> 🛰️ *Hệ thống đặt đồ ăn với giao hàng bằng drone*  
+> 🍱 *Food delivery system with drone management*  
+>  
+> **🔖 Version:** *Deploy Branch — Testing Conflict Resolution*  
+> **⚙️ CI/CD:** *GitHub Actions • Vercel • Railway*
 
 ---
 
-### 🧠 Frontend
+<h2 align="center">🎬 Video Demo</h2>
+
 <p align="center">
-  <a href="#"><img src="asset/readme/reactjs.png" alt="ReactJS" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
+  <a href="https://www.youtube.com/watch?v=vwBItmEOFMM" target="_blank">
+    <img src="https://img.youtube.com/vi/vwBItmEOFMM/maxresdefault.jpg"
+         alt="FoodFast Demo Video" width="720" style="border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.25);">
+  </a>
 </p>
 
-### 💾 Backend & DevOps
 <p align="center">
-  <a href="#"><img src="asset/readme/nodejs.png" alt="NodeJS" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
-  <a href="#"><img src="asset/readme/mongodb.png" alt="MongoDB" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
-  <a href="#"><img src="asset/readme/docker.png" alt="Docker" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
-  <a href="#"><img src="asset/readme/cloudinary.png" alt="Cloudinary" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
-</p>
-
-### ☁️ Deployment & Cloud
-<p align="center">
-  <a href="#"><img src="asset/readme/vercel.jpg" alt="Vercel" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
-  <a href="#"><img src="asset/readme/awsec2.jpg" alt="AWS EC2" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
-  <a href="#"><img src="asset/readme/mern.jpg" alt="MERN Stack" width="120" height="120" style="margin:20px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'"/></a>
+  🎥 <i>Click vào ảnh để xem video demo trên YouTube</i>
 </p>
 
 ---
+
+## ☁️ **Công cụ & Hạ tầng**
+
+> Hình ảnh minh họa các công cụ và nền tảng đã sử dụng (lưu trong `asset/readme/`)
+
+<p align="center">
+  <i>🛠️ Các công nghệ và nền tảng được <b>FOODFAST Team</b> sử dụng để xây dựng hệ thống</i>
+</p>
+
+---
+
+### 🧠 **Frontend**
+<p align="center">
+  <img src="asset/readme/reactjs.png" alt="ReactJS" width="110" style="margin:15px;">
+  <img src="asset/readme/mern.jpg" alt="MERN Stack" width="110" style="margin:15px;">
+</p>
+
+---
+
+### 💾 **Backend & DevOps**
+<p align="center">
+  <img src="asset/readme/nodejs.png" alt="NodeJS" width="110" style="margin:15px;">
+  <img src="asset/readme/mongodb.png" alt="MongoDB" width="110" style="margin:15px;">
+  <img src="asset/readme/docker.png" alt="Docker" width="110" style="margin:15px;">
+  <img src="asset/readme/cloudinary.png" alt="Cloudinary" width="110" style="margin:15px;">
+</p>
+
+---
+
+### 🚀 **Deployment & Cloud**
+<p align="center">
+  <img src="asset/readme/vercel.jpg" alt="Vercel" width="110" style="margin:15px;">
+  <img src="asset/readme/awsec2.jpg" alt="AWS EC2" width="110" style="margin:15px;">
+  <img src="asset/readme/github-actions.png" alt="GitHub Actions" width="110" style="margin:15px;">
+  <img src="asset/readme/railway.png" alt="Railway" width="110" style="margin:15px;">
+</p>
+
+---
+
+<p align="center">
+  <b>🚁 FOODFAST — Smart Delivery, Smarter Technology</b><br>
+  <i>© 2025 FoodFast Team | All rights reserved.</i>
+</p>
+
 ### 🖼️ Hình ảnh minh họa (AWS EC2)
 
 <p align="center">
@@ -503,7 +532,7 @@ MIT License - Copyright (c) 2025
 
 Mọi đóng góp đều được chào đón! Vui lòng tạo Pull Request hoặc Issue.
 
-## 📞 Liên hệ & Đường dẫn
+## DEPLOY BẰNG VERCEL ( CHO FRONTEND ) + RAILWAY ( CHO BACKEND ) 
 
 Đây là các đường dẫn chính đến các thành phần của ứng dụng **FoodFast**:
 
@@ -517,7 +546,161 @@ Mọi đóng góp đều được chào đón! Vui lòng tạo Pull Request ho�
     * Truy cập tại: [https://foodfast-restaurant.vercel.app](https://foodfast-restaurant.vercel.app/dashboard)
 
 ---
- 
+# 🚀 Triển khai Vercel — FOODFAST
+**(Hướng dẫn triển khai toàn bộ repository FoodFast lên Vercel)**
+
+Tài liệu này hướng dẫn chi tiết quá trình triển khai **toàn bộ hệ thống FoodFast** lên **Vercel**, bao gồm nhiều mô-đun frontend như:
+
+- **Client App**
+- **Admin App**
+- **Restaurant App**
+- *(và các module mở rộng như Drone Manage, Dashboard, v.v.)*
+
+> 📂 Ảnh minh họa và tài liệu triển khai được lưu trong thư mục `asset/Vercel/`.
+
+---
+
+## 🧭 1. Tổng quan cách triển khai
+
+Bạn có thể triển khai repository này theo **2 cách chính** tùy vào nhu cầu quản lý và release:
+
+### 1️⃣ Mỗi ứng dụng = 1 Project trên Vercel (khuyến nghị)
+- Tạo **một project riêng** cho từng thư mục: `client_app`, `admin_app`, `restaurant_app`, ...
+- Vào **Project → Settings → Git → Root Directory** và trỏ tới thư mục con tương ứng.
+- Mỗi project có thể gắn **domain riêng**:  
+  - `foodfast.vercel.app`  
+  - `foodfast-restaurant.vercel.app`  
+  - `foodfast-admin.vercel.app`  
+- Dễ quản lý log, rollback và phân quyền.
+
+### 2️⃣ Monorepo — 1 Project duy nhất
+- Dùng file `vercel.json` để cấu hình nhiều build và routes.
+- Phù hợp nếu bạn muốn **1 project Vercel duy nhất** cho toàn bộ hệ thống.
+- Cần cấu hình routes để trỏ tới đúng thư mục build.
+
+---
+
+## ⚙️ 2. Cấu hình Build & Framework (Vite + React)
+
+Dưới đây là cấu hình gợi ý cho từng app:
+
+| Ứng dụng | Root Directory | Build Command | Output Directory | Ghi chú |
+|----------|----------------|---------------|------------------|---------|
+| **Client App** | `client_app/` | `npm run build` | `dist` | Giao diện người dùng |
+| **Admin App** | `admin_app/` | `npm run build` | `dist` | Trang quản trị |
+| **Restaurant App** | `restaurant_app/` | `npm run build` | `dist` | Cổng dành cho nhà hàng |
+| **Drone Manage** *(nếu là frontend)* | `drone_manage/` | `npm run build` | `dist` | Áp dụng nếu là Vite/React |
+
+> 💡 Với Vite: cần có trong `package.json`:
+> ```json
+> {
+>   "scripts": {
+>     "build": "vite build"
+>   }
+> }
+> ```
+> và trong Vercel để:
+> - **Build Command**: `npm run build`
+> - **Output Directory**: `dist`
+
+---
+
+## 🔐 3. Biến môi trường (Environment Variables)
+
+Thêm trong: **Vercel → Project → Settings → Environment Variables**.
+
+Các biến thường dùng:
+
+| Biến | Mô tả | Ví dụ |
+|------|-------|--------|
+| `VITE_API_URL` / `REACT_APP_API_URL` | URL backend | `https://api.foodfast.dev` |
+| `CLOUDINARY_CLOUD_NAME` | Dùng cho upload ảnh |  |
+| `CLOUDINARY_API_KEY` |  |  |
+| `CLOUDINARY_API_SECRET` | **(Secret)** |  |
+
+
+> ⚠️ **Không commit** các secret này vào repo.  
+> ⚠️ Nếu dùng Vite thì biến phải bắt đầu bằng `VITE_...`.
+
+---
+
+## 🔁 4. Redeploy & Rollback
+
+### 🔄 Redeploy
+1. Vào **Project → Deployments**
+2. Chọn deployment cần chạy lại
+3. Bấm **Redeploy**
+
+Hoặc **push lên nhánh đang kết nối** (thường là `main`) → Vercel sẽ tự build.
+
+### ⏪ Rollback
+- Vào **Deployments**
+- Chọn bản cũ
+- Bấm **Instant Rollback** (nếu plan hỗ trợ)
+
+---
+
+## 🖼️ 5. Hình ảnh minh họa
+
+> 📂 Toàn bộ ảnh nằm trong thư mục: `asset/Vercel/`
+
+---
+
+### 🧩 Tổng quan giao diện triển khai
+
+<table>
+  <tr>
+    <td align="center"><b>Hình 1 — foodfast-client</b><br><img src="asset/Vercel/1.png" width="400"/></td>
+    <td align="center"><b>Hình 2 — foodfast-admin</b><br><img src="asset/Vercel/2.png" width="400"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Hình 3 — foodfast-restaurant</b><br><img src="asset/Vercel/3.png" width="400"/></td>
+    <td align="center"><b>Hình 4 — Framework Settings (Restaurant)</b><br><img src="asset/Vercel/4.png" width="400"/></td>
+  </tr>
+</table>
+
+---
+
+### ⚙️ Cấu hình chi tiết từng ứng dụng
+
+<table>
+  <tr>
+    <td align="center"><b>Hình 5 — Framework Settings (Admin)</b><br><img src="asset/Vercel/5.png" width="400"/></td>
+    <td align="center"><b>Hình 6 — Framework Settings (Client)</b><br><img src="asset/Vercel/6.png" width="400"/></td>
+  </tr>
+</table>
+
+---
+
+### 🌿 Thông tin nhánh & triển khai
+
+<table>
+  <tr>
+    <td align="center"><b>Hình 7 — Các nhánh đang hoạt động</b><br><img src="asset/Vercel/7.png" width="400"/></td>
+    <td align="center"><b>Hình 8 — Lịch sử Deployments</b><br><img src="asset/Vercel/8.png" width="400"/></td>
+  </tr>
+</table>
+
+---
+## 📁 6. Quy ước thêm ảnh mới
+
+1. Lưu ảnh mới vào: `asset/Vercel/`
+2. Đặt tên tiếp theo: `9.png`, `10.png`, `11.png`, ...
+3. Thêm vào phần **Hình ảnh minh họa** giống mẫu trên.
+
+---
+
+## ✅ 7. Ghi chú nhanh
+
+- Mỗi app đang dùng **Vite** → Output luôn là **`dist`**.
+- Vercel sẽ **tự động build** nếu root trỏ đúng thư mục.
+- Có thể **bật Skip deployments** cho các nhánh không quan trọng.
+- Nên tách **Production** và **Preview** bằng các nhánh khác nhau.
+
+---
+
+
+
 ## 📚 Tài liệu dự án
 
 Các tài liệu liên quan tới dự án (thiết kế, hướng dẫn, báo cáo) được lưu trên Google Drive:
