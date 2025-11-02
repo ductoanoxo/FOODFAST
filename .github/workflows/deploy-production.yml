@@ -1,16 +1,15 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # ✅ CHỈ deploy khi workflow "Docker Build and Push" chạy XONG trên nhánh MAIN
+  # Tự chạy sau khi workflow build image xong - CHỈ NHÁNH MAIN
   workflow_run:
     workflows:
-      - Docker Build and Push
+      - Docker Build and Push     # tên workflow build của bạn
     types:
       - completed
     branches:
-      - main  # 🔒 CHỈ lắng nghe nhánh main
-  
-  # Cho phép deploy thủ công (emergency)
+      - main                      # CHỈ deploy nhánh main
+  # Cho phép bấm tay để deploy lại (chỉ dành cho main)
   workflow_dispatch:
 
 env:
@@ -19,10 +18,14 @@ env:
 
 jobs:
   deploy:
-    # Điều kiện: workflow trước phải SUCCESS + nhánh phải là MAIN
+    # CHỈ chạy nếu:
+    # 1. Build của nhánh MAIN thành công, HOẶC
+    # 2. Chạy tay (workflow_dispatch) - nhưng vẫn phải kiểm tra nhánh
     if: |
-      github.event.workflow_run.conclusion == 'success' && 
-      github.event.workflow_run.head_branch == 'main'
+      (github.event_name == 'workflow_run' && 
+       github.event.workflow_run.conclusion == 'success' && 
+       github.event.workflow_run.head_branch == 'main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
 
     steps:
@@ -52,7 +55,6 @@ jobs:
           
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "✅ Will deploy image tag: $TAG (main branch only)"
-
       # ======================
       # 3) SSH Setup
       # ======================
@@ -65,7 +67,6 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
-
       # ======================
       # 4) Tạo script deploy để chép lên EC2
       # ======================
@@ -73,21 +74,15 @@ jobs:
         run: |
           cat > remote-deploy.sh <<'SCRIPT'
           set -e
-
           REGISTRY="${REGISTRY}"
           OWNER="${OWNER}"
           IMAGE_TAG="${IMAGE_TAG}"
           GHCR_TOKEN="${GHCR_TOKEN}"
           MONGO_URI="${MONGO_URI}"
-          JWT_SECRET="${JWT_SECRET}"
-          JWT_EXPIRE="${JWT_EXPIRE}"
-
           echo "==> Login GHCR as \$OWNER"
           echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${OWNER}" --password-stdin
-
           echo "==> Create network"
           sudo docker network create foodfast-net || true
-
           echo "=== Deploy foodfast-server:\${IMAGE_TAG} ==="
           sudo docker pull "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
           sudo docker rm -f foodfast-server 2>/dev/null || true
@@ -95,12 +90,7 @@ jobs:
             --network foodfast-net --network-alias server_app \
             -p 5000:5000 \
             -e MONGO_URI="${MONGO_URI}" \
-            -e JWT_SECRET="${JWT_SECRET}" \
-            -e JWT_EXPIRE="${JWT_EXPIRE}" \
-            -e NODE_ENV="production" \
-            -e PORT="5000" \
             "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
-
           echo "=== Deploy foodfast-client:\${IMAGE_TAG} ==="
           sudo docker pull "${REGISTRY}/${OWNER}/foodfast-client:${IMAGE_TAG}"
           sudo docker rm -f foodfast-client 2>/dev/null || true
@@ -108,7 +98,6 @@ jobs:
             --network foodfast-net \
             -p 3000:80 \
             "${REGISTRY}/${OWNER}/foodfast-client:${IMAGE_TAG}"
-
           echo "=== Deploy foodfast-admin:\${IMAGE_TAG} ==="
           sudo docker pull "${REGISTRY}/${OWNER}/foodfast-admin:${IMAGE_TAG}"
           sudo docker rm -f foodfast-admin 2>/dev/null || true
@@ -116,7 +105,6 @@ jobs:
             --network foodfast-net \
             -p 3001:80 \
             "${REGISTRY}/${OWNER}/foodfast-admin:${IMAGE_TAG}"
-
           echo "=== Deploy foodfast-restaurant:\${IMAGE_TAG} ==="
           sudo docker pull "${REGISTRY}/${OWNER}/foodfast-restaurant:${IMAGE_TAG}"
           sudo docker rm -f foodfast-restaurant 2>/dev/null || true
@@ -124,17 +112,14 @@ jobs:
             --network foodfast-net \
             -p 3002:80 \
             "${REGISTRY}/${OWNER}/foodfast-restaurant:${IMAGE_TAG}"
-
           echo "=== Deploy foodfast-drone:\${IMAGE_TAG} ==="
           sudo docker pull "${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}"
           sudo docker rm -f foodfast-drone 2>/dev/null || true
           sudo docker run -d --name foodfast-drone --restart unless-stopped \
             --network foodfast-net \
             "${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}"
-
           echo "✅ Deploy done."
           SCRIPT
-
       # ======================
       # 5) Chạy script trên EC2
       # ======================
@@ -147,24 +132,17 @@ jobs:
           IMAGE_TAG: ${{ steps.imagetag.outputs.tag }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          JWT_EXPIRE: ${{ secrets.JWT_EXPIRE }}
         run: |
           echo "Connecting to $SERVER_USER@$SERVER_HOST ..."
           echo "Deploying with image tag: ${IMAGE_TAG}"
-
           scp remote-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/remote-deploy.sh
-
           ssh $SERVER_USER@$SERVER_HOST "chmod +x /tmp/remote-deploy.sh && \
             REGISTRY='${REGISTRY}' \
             OWNER='${OWNER}' \
             IMAGE_TAG='${IMAGE_TAG}' \
             GHCR_TOKEN='${GHCR_TOKEN}' \
             MONGO_URI='${MONGO_URI}' \
-            JWT_SECRET='${JWT_SECRET}' \
-            JWT_EXPIRE='${JWT_EXPIRE}' \
             /tmp/remote-deploy.sh"
-
       # ======================
       # 6) Healthcheck
       # ======================
