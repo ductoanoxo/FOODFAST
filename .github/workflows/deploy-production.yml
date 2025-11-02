@@ -22,10 +22,15 @@ jobs:
     # 1. Build của nhánh MAIN thành công, HOẶC
     # 2. Chạy tay (workflow_dispatch) - nhưng vẫn phải kiểm tra nhánh
     if: |
-      (github.event_name == 'workflow_run' && 
-       github.event.workflow_run.conclusion == 'success' && 
-       github.event.workflow_run.head_branch == 'main') ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.event == 'push'     # <== ✅ DÒNG MỚI NÀY
+      ) || (
+        github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main'
+      )
     runs-on: ubuntu-latest
 
     steps:
