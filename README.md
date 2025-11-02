@@ -4,7 +4,7 @@
 > 
 > **Version:** Deploy Branch - Testing Conflict Resolution
 **CI/CD Status:** GitHub Actions + Vercel + Railway
-
+<iframe width="560" height="315" src="https://www.youtube.com/embed/vwBItmEOFMM?si=U_bCKqDezWplH2rW" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 ---
 
 ## Công cụ & Hạ tầng
