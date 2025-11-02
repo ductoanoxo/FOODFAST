@@ -86,8 +86,8 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}:buildcache,mode=max
           platforms: linux/amd64,linux/arm64
           build-args: |
-            VITE_API_URL=${{ secrets.VITE_API_URL || 'http://54.221.100.253:5000/api' }}
-            VITE_SOCKET_URL=${{ secrets.VITE_SOCKET_URL || 'http://54.221.100.253:5000' }}
+            VITE_API_URL=${{ secrets.VITE_API_URL || 'http://54.221.100.67:5000/api' }}
+            VITE_SOCKET_URL=${{ secrets.VITE_SOCKET_URL || 'http://54.221.100.67:5000' }}
 
       - name: Image digest
         run: echo ${{ steps.meta.outputs.digest }}
