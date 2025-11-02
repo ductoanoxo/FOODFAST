@@ -1,10 +1,10 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # Khi có push trực tiếp vào main (ví dụ: merge PR) cũng bật deploy tự động
-  push:
-    branches:
-      - main
+  # Build (nhánh main) sẽ gọi sang bằng repository_dispatch
+  repository_dispatch:
+    types: [deploy-foodfast]
+
   # Cho phép bấm tay để deploy lại (chỉ dành cho main)
   workflow_dispatch:
 
@@ -14,53 +14,19 @@ env:
 
 jobs:
   deploy:
-    # CHỈ chạy nếu:
-    # 1. Build của nhánh MAIN thành công, HOẶC
-    # 2. Chạy tay (workflow_dispatch) - nhưng vẫn phải kiểm tra nhánh
+    # Chỉ chạy nếu:
+    # 1. Được gọi bằng repository_dispatch (từ build main)
+    # 2. HOẶC bấm tay nhưng phải là main
     if: |
-      (github.event_name == 'workflow_run' && 
-       github.event.workflow_run.conclusion == 'success' && 
-       github.event.workflow_run.head_branch == 'main') ||
+      github.event_name == 'repository_dispatch' ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
 
     steps:
-      # Guard: only proceed when the source branch is main
-      - name: Guard — ensure this deploy runs for main only
-        run: |
-          echo "EVENT_NAME=${{ github.event_name }}"
-          # For workflow_run events, the head branch is in github.event.workflow_run.head_branch
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
-          else
-            # For push/workflow_dispatch use github.ref
-            HEAD_BRANCH="${{ github.ref }}"
-            # Normalize refs/heads/main -> main
-            HEAD_BRANCH=${HEAD_BRANCH#refs/heads/}
-          fi
-
-          echo "Head branch: $HEAD_BRANCH"
-
-          if [ "$HEAD_BRANCH" != "main" ]; then
-            echo "Not main branch. Skipping deploy steps."
-            exit 0
-          fi
-
-          echo "Main branch confirmed — continuing deploy."
-
       # ======================
       # 1) Checkout
       # ======================
-      # Nếu được trigger bởi workflow_run thì checkout đúng commit vừa build
-      - name: Checkout (from workflow_run)
-        if: ${{ github.event_name == 'workflow_run' }}
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-
-      # Nếu bấm tay thì checkout HEAD hiện tại
-      - name: Checkout (manual)
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Checkout
         uses: actions/checkout@v4
 
       # ======================
@@ -71,7 +37,6 @@ jobs:
         run: |
           # Luôn luôn dùng tag "latest" vì chỉ deploy nhánh main
           TAG="latest"
-          
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "✅ Will deploy image tag: $TAG (main branch only)"
 
