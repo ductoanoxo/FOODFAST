@@ -5,6 +5,7 @@ const Restaurant = require('../Models/Restaurant')
 const PromoUsage = require('../Models/PromoUsage')
 const Voucher = require('../Models/Voucher')
 const VoucherUsage = require('../Models/VoucherUsage')
+const { geocodeWithFallback } = require('../../services/geocodingService')
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -40,7 +41,7 @@ const createOrder = asyncHandler(async(req, res) => {
 
     // map of restaurantId -> { items: [{ productId, name, price, quantity }], subtotal }
     const restaurantsMap = new Map()
-    // items to save in the order (snapshot prices after discounts)
+        // items to save in the order (snapshot prices after discounts)
     const savedItems = []
 
     for (let item of items) {
@@ -67,67 +68,67 @@ const createOrder = asyncHandler(async(req, res) => {
             throw new Error('Nhà hàng hiện đang đóng cửa, không thể đặt hàng')
         }
 
-    // Calculate price: Check for active promotion first (same logic as getProducts API)
-    let finalPrice = product.price
-    const originalPrice = product.price
-    let appliedPromotion = null
-    let appliedDiscount = {
-        type: 'none',
-        value: 0,
-        amount: 0,
-    }
-    const now = new Date()
-    
-    if (product.category) {
-        const Promotion = require('../Models/Promotion')
-        const promotion = await Promotion.findOne({
-            restaurant: product.restaurant._id,
-            category: product.category._id,
-            isActive: true,
-            startDate: { $lte: now },
-            endDate: { $gte: now },
-        })
+        // Calculate price: Check for active promotion first (same logic as getProducts API)
+        let finalPrice = product.price
+        const originalPrice = product.price
+        let appliedPromotion = null
+        let appliedDiscount = {
+            type: 'none',
+            value: 0,
+            amount: 0,
+        }
+        const now = new Date()
 
-        if (promotion) {
-            const discountAmount = (product.price * promotion.discountPercent) / 100
-            finalPrice = product.price - discountAmount
-            
-            // Store promotion info
-            appliedPromotion = {
-                id: promotion._id,
-                name: promotion.name,
-                discountPercent: promotion.discountPercent,
-                category: product.category.name || 'N/A',
-            }
-            
-            appliedDiscount = {
-                type: 'promotion',
-                value: promotion.discountPercent,
-                amount: Math.round(discountAmount),
+        if (product.category) {
+            const Promotion = require('../Models/Promotion')
+            const promotion = await Promotion.findOne({
+                restaurant: product.restaurant._id,
+                category: product.category._id,
+                isActive: true,
+                startDate: { $lte: now },
+                endDate: { $gte: now },
+            })
+
+            if (promotion) {
+                const discountAmount = (product.price * promotion.discountPercent) / 100
+                finalPrice = product.price - discountAmount
+
+                // Store promotion info
+                appliedPromotion = {
+                    id: promotion._id,
+                    name: promotion.name,
+                    discountPercent: promotion.discountPercent,
+                    category: product.category.name || 'N/A',
+                }
+
+                appliedDiscount = {
+                    type: 'promotion',
+                    value: promotion.discountPercent,
+                    amount: Math.round(discountAmount),
+                }
             }
         }
-    }
-    
-    // If no promotion, check product discount
-    if (finalPrice === product.price) {
-        const discount = product.discount || 0
-        if (discount > 0) {
-            const discountAmount = product.price * (discount / 100)
-            finalPrice = product.price - discountAmount
-            
-            appliedDiscount = {
-                type: 'product_discount',
-                value: discount,
-                amount: Math.round(discountAmount),
+
+        // If no promotion, check product discount
+        if (finalPrice === product.price) {
+            const discount = product.discount || 0
+            if (discount > 0) {
+                const discountAmount = product.price * (discount / 100)
+                finalPrice = product.price - discountAmount
+
+                appliedDiscount = {
+                    type: 'product_discount',
+                    value: discount,
+                    amount: Math.round(discountAmount),
+                }
             }
         }
-    }
 
-    // Round to integer VND to avoid floating point pennies
-    const roundedFinalPrice = Math.round(finalPrice)
+        // Round to integer VND to avoid floating point pennies
+        const roundedFinalPrice = Math.round(finalPrice)
 
-    const itemSubtotal = roundedFinalPrice * item.quantity
-    subtotal += itemSubtotal
+        const itemSubtotal = roundedFinalPrice * item.quantity
+        subtotal += itemSubtotal
 
         if (!restaurantsMap.has(prodRest)) {
             restaurantsMap.set(prodRest, { items: [], subtotal: 0 })
@@ -140,7 +141,7 @@ const createOrder = asyncHandler(async(req, res) => {
             quantity: item.quantity,
         })
         group.subtotal += itemSubtotal
-        
+
         // Prepare saved item snapshot for the order with detailed discount info
         savedItems.push({
             product: product._id,
@@ -223,14 +224,14 @@ const createOrder = asyncHandler(async(req, res) => {
     // Validate với client calculation (cho phép sai lệch nhỏ do làm tròn)
     if (clientCalculatedTotal && Math.abs(totalAmount - clientCalculatedTotal) > 1) {
         console.warn('Price mismatch!', {
-            serverTotal: totalAmount,
-            clientTotal: clientCalculatedTotal,
-            serverDiscount: discountAmount,
-            clientDiscount: clientDiscount,
-            subtotal,
-            deliveryFee
-        })
-        // Log warning nhưng vẫn sử dụng giá từ server để đảm bảo an toàn
+                serverTotal: totalAmount,
+                clientTotal: clientCalculatedTotal,
+                serverDiscount: discountAmount,
+                clientDiscount: clientDiscount,
+                subtotal,
+                deliveryFee
+            })
+            // Log warning nhưng vẫn sử dụng giá từ server để đảm bảo an toàn
     }
 
     // Build unique list of applied promotions from savedItems
@@ -249,11 +250,32 @@ const createOrder = asyncHandler(async(req, res) => {
         }
     }
 
+    // 🗺️ GEOCODING: Chuyển địa chỉ giao hàng thành tọa độ
+    let deliveryCoordinates = null
+    if (deliveryInfo && deliveryInfo.address) {
+        console.log('🔄 Starting geocoding for address:', deliveryInfo.address);
+        deliveryCoordinates = await geocodeWithFallback(deliveryInfo.address);
+        console.log('✅ Geocoding completed. Coordinates:', deliveryCoordinates);
+    } else {
+        console.warn('⚠️ No delivery address provided, using default coordinates');
+        deliveryCoordinates = [105.8342, 21.0278]; // Hanoi default
+    }
+
+
+    // Prepare deliveryInfo with location coordinates
+    const deliveryInfoWithLocation = {
+        ...deliveryInfo,
+        location: {
+            type: 'Point',
+            coordinates: deliveryCoordinates, // [longitude, latitude]
+        },
+    }
+
     const order = await Order.create({
         user: req.user._id,
         items: savedItems,
         restaurant: restaurantId,
-        deliveryInfo,
+        deliveryInfo: deliveryInfoWithLocation,
         note: note || '',
         subtotal,
         deliveryFee,
@@ -325,14 +347,14 @@ const createOrder = asyncHandler(async(req, res) => {
     // Emit new-order to the restaurant rooms so only restaurants that have items in this order get notified
     try {
         const io = req.app.get('io')
-        // Populate user info for notification
+            // Populate user info for notification
         const populatedOrder = await Order.findById(order._id).populate('user', 'name phone')
 
         // For each restaurant that has items, emit a tailored notification containing only that restaurant's items and subtotal
         for (const [restId, group] of restaurantsMap.entries()) {
             try {
                 const roomName = `restaurant-${restId}`
-                // number of sockets in the room (Socket.IO v4)
+                    // number of sockets in the room (Socket.IO v4)
                 const room = io.sockets.adapter.rooms.get(roomName)
                 const roomSize = room ? room.size : 0
 
@@ -462,6 +484,7 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
     if (status === 'confirmed') order.confirmedAt = now
     if (status === 'preparing') order.preparingAt = now
     if (status === 'ready') order.readyAt = now
+    if (status === 'picked_up') order.pickedUpAt = now
     if (status === 'delivering') order.deliveringAt = now
     if (status === 'delivered') {
         order.deliveredAt = now
@@ -473,21 +496,21 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
 
     // Emit socket event for real-time update
     const io = req.app.get('io')
-    io.to(`order-${order._id}`).emit('order-status-updated', {
+        // ✅ Use consistent event naming: emit both colon and hyphen variants for compatibility
+    const payload = {
         orderId: order._id,
         orderNumber: order.orderNumber,
         status: order.status,
         timestamp: now,
-    })
+    }
 
-    // Also emit to restaurant room for restaurant notifications
-    io.to(`restaurant-${order.restaurant}`).emit('order-status-updated', {
-        orderId: order._id,
-        orderNumber: order.orderNumber,
-        restaurantId: order.restaurant,
-        status: order.status,
-        timestamp: now,
-    })
+    // Emit with colon format
+    io.to(`order-${order._id}`).emit('order:status-updated', payload)
+    io.to(`restaurant-${order.restaurant}`).emit('order:status-updated', {...payload, restaurantId: order.restaurant })
+
+    // Also emit hyphen variant for older clients that still listen to 'order-status-updated'
+    io.to(`order-${order._id}`).emit('order-status-updated', payload)
+    io.to(`restaurant-${order.restaurant}`).emit('order-status-updated', {...payload, restaurantId: order.restaurant })
 
     res.json({
         success: true,
@@ -501,7 +524,7 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
 const trackOrder = asyncHandler(async(req, res) => {
     const order = await Order.findById(req.params.id)
         .populate('items.product', 'name image')
-        .populate('restaurant', 'name')
+        .populate('restaurant', 'name address location') // ✅ Added location for map
         .populate('drone', 'name currentLocation batteryLevel')
 
     if (!order) {
@@ -647,6 +670,123 @@ const confirmDelivery = asyncHandler(async(req, res) => {
     });
 });
 
+// @desc    Restaurant confirms handover to drone
+// @route   POST /api/orders/:id/restaurant-confirm-handover
+// @access  Private (Restaurant only)
+const restaurantConfirmHandover = asyncHandler(async(req, res) => {
+    const { droneId } = req.body;
+
+    // Validate restaurant user
+    if (req.user.role !== 'restaurant') {
+        res.status(403);
+        throw new Error('Chỉ nhà hàng mới có thể xác nhận giao hàng');
+    }
+
+    const order = await Order.findById(req.params.id)
+        .populate('restaurant', 'name address phone')
+        .populate('drone', 'name model')
+        .populate('user', 'name phone');
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Không tìm thấy đơn hàng');
+    }
+
+    // Check if order belongs to this restaurant
+    if (order.restaurant._id.toString() !== req.user.restaurantId.toString()) {
+        res.status(403);
+        throw new Error('Không có quyền xác nhận đơn hàng này');
+    }
+
+    // Validate order status
+    if (order.status !== 'ready') {
+        res.status(400);
+        throw new Error(`Đơn hàng phải ở trạng thái 'ready' mới có thể xác nhận giao cho drone. Trạng thái hiện tại: ${order.status}`);
+    }
+
+    // CRITICAL: Validate drone is actually assigned (not null/undefined)
+    if (!order.drone || !order.drone._id) {
+        res.status(400);
+        throw new Error('❌ Chưa có drone được phân công cho đơn hàng này. Admin cần assign drone trước khi nhà hàng có thể xác nhận giao hàng.');
+    }
+
+    // Validate droneId matches (if provided in request)
+    if (droneId && order.drone._id.toString() !== droneId) {
+        res.status(400);
+        throw new Error('Drone ID không khớp với drone được phân công');
+    }
+
+    // Idempotency check - if already delivering, just return success
+    if (order.status === 'delivering' || order.deliveringAt) {
+        return res.json({
+            success: true,
+            message: 'Đơn hàng đã được xác nhận giao trước đó',
+            data: order,
+        });
+    }
+
+    // Update order status to delivering (restaurant confirm = start delivery)
+    order.status = 'delivering';
+    order.deliveringAt = new Date();
+    order.pickedUpBy = req.user._id; // Record who confirmed
+
+    await order.save();
+
+    // Emit socket events
+    const socketService = req.app.get('socketService');
+    if (socketService) {
+        // ✅ Notify customer order tracking page (emit both colon and hyphen variants)
+        const deliveryPayload = {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            status: 'delivering',
+            deliveringAt: order.deliveringAt,
+            drone: {
+                id: order.drone._id,
+                name: order.drone.name,
+            },
+            timestamp: new Date(),
+        };
+
+        socketService.io.to(`order-${order._id}`).emit('order:status-updated', deliveryPayload);
+        socketService.io.to(`order-${order._id}`).emit('order-status-updated', deliveryPayload);
+
+        // Also emit specific delivering event
+        socketService.io.to(`order-${order._id}`).emit('order:delivering', deliveryPayload);
+
+        // Notify drone app
+        socketService.io.to(`drone-${order.drone._id}`).emit('order:picked-up-confirmed', {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            restaurantName: order.restaurant.name,
+            pickedUpAt: order.pickedUpAt,
+            message: 'Nhà hàng đã xác nhận bạn đã lấy hàng. Có thể bắt đầu giao!',
+            timestamp: new Date(),
+        });
+
+        // Notify admins
+        socketService.notifyAdmins('order:picked-up', {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            restaurantId: order.restaurant._id,
+            restaurantName: order.restaurant.name,
+            droneId: order.drone._id,
+            droneName: order.drone.name,
+            pickedUpBy: req.user._id,
+            timestamp: new Date(),
+        });
+    }
+
+    // Populate order details for response
+    await order.populate('items.product', 'name image price');
+
+    res.json({
+        success: true,
+        message: 'Xác nhận giao hàng cho drone thành công',
+        data: order,
+    });
+});
+
 module.exports = {
     createOrder,
     getOrders,
@@ -656,4 +796,5 @@ module.exports = {
     cancelOrder,
     getOrderHistory,
     confirmDelivery,
+    restaurantConfirmHandover,
 }

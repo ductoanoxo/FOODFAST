@@ -258,16 +258,52 @@ const assignDroneToOrder = asyncHandler(async(req, res) => {
         throw new Error('Order not found')
     }
 
-    // Update order
+    // Update order - ONLY assign drone, do NOT change status
+    // Restaurant needs to confirm handover first (picked_up)
+    // Then admin starts delivery simulation (delivering)
     order.drone = drone._id
-    order.status = 'delivering'
-    order.deliveringAt = new Date()
+        // Do NOT set order.status = 'delivering' here!
+        // Do NOT set order.deliveringAt here!
     await order.save()
 
-    // Update drone
-    drone.status = 'busy'
+    // Update drone - mark as reserved but not busy yet
+    drone.status = 'busy' // Reserved for this order
     drone.currentOrder = order._id
     await drone.save()
+
+    // Emit socket event to notify restaurant about drone assignment
+    const socketService = req.app.get('socketService')
+    if (socketService) {
+        // Populate order with drone details for the event
+        const populatedOrder = await Order.findById(order._id)
+            .populate('drone', 'name model status batteryLevel')
+            .populate('restaurant', 'name')
+
+        // Notify restaurant about drone assignment
+        socketService.io.to(`restaurant-${order.restaurant._id}`).emit('order:drone-assigned', {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            drone: {
+                _id: drone._id,
+                name: drone.name,
+                model: drone.model,
+                status: drone.status,
+                batteryLevel: drone.batteryLevel,
+            },
+        })
+
+        // Also emit general order status update (use consistent event names)
+        const statusPayload = {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            drone: populatedOrder.drone,
+            timestamp: new Date(),
+        }
+
+        socketService.io.to(`order-${order._id}`).emit('order:status-updated', statusPayload)
+        socketService.io.to(`order-${order._id}`).emit('order-status-updated', statusPayload)
+    }
 
     res.json({
         success: true,

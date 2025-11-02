@@ -1,93 +1,158 @@
 .drone-map-container {
-  position: relative;
-  width: 100%;
-  margin-top: 16px;
+    position: relative;
+    width: 100%;
+    margin-top: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
 }
 
 .drone-map-container .leaflet-container {
-  height: 500px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    height: 450px;
+    z-index: 1;
 }
 
-/* Custom drone icon animation */
-@keyframes pulse {
-  0% {
-    box-shadow: 0 2px 12px rgba(24, 144, 255, 0.4);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 2px 20px rgba(24, 144, 255, 0.8);
-    transform: scale(1.05);
-  }
-  100% {
-    box-shadow: 0 2px 12px rgba(24, 144, 255, 0.4);
-    transform: scale(1);
-  }
+
+/* Drone marker container with pulse effect */
+
+.drone-marker-container {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drone-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(24, 144, 255, 0.3);
+    animation: pulse-animation 2s ease-out infinite;
+}
+
+.drone-icon {
+    position: relative;
+    z-index: 2;
+    background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 4px solid white;
+    box-shadow: 0 4px 16px rgba(24, 144, 255, 0.5);
+    font-size: 28px;
+    animation: rotate-drone 10s linear infinite, bounce 2s ease-in-out infinite;
+}
+
+
+/* Pulse animation */
+
+@keyframes pulse-animation {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+
+/* Rotate drone icon */
+
+@keyframes rotate-drone {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* Bounce effect for drone */
+
+@keyframes bounce {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
 }
 
 .custom-drone-icon div,
 .custom-icon div {
-  cursor: pointer;
+    cursor: pointer;
 }
 
+
 /* Map legend */
+
 .map-legend {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background: white;
-  padding: 12px 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
 }
 
 .legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
 }
 
 .legend-item:last-child {
-  margin-bottom: 0;
+    margin-bottom: 0;
 }
 
 .legend-icon {
-  font-size: 20px;
+    font-size: 20px;
 }
 
+
 /* Popup styling */
+
 .leaflet-popup-content-wrapper {
-  border-radius: 8px;
-  padding: 4px;
+    border-radius: 8px;
+    padding: 4px;
 }
 
 .leaflet-popup-content {
-  margin: 8px 12px;
-  font-size: 14px;
+    margin: 8px 12px;
+    font-size: 14px;
 }
 
+
 /* Responsive */
+
 @media (max-width: 768px) {
-  .drone-map-container .leaflet-container {
-    height: 400px;
-  }
-
-  .map-legend {
-    bottom: 10px;
-    right: 10px;
-    padding: 8px 12px;
-  }
-
-  .legend-item {
-    font-size: 12px;
-    margin-bottom: 6px;
-  }
-
-  .legend-icon {
-    font-size: 18px;
-  }
+    .drone-map-container .leaflet-container {
+        height: 400px;
+    }
+    .map-legend {
+        bottom: 10px;
+        right: 10px;
+        padding: 8px 12px;
+    }
+    .legend-item {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+    .legend-icon {
+        font-size: 18px;
+    }
 }
