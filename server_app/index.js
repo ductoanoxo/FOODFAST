@@ -29,15 +29,25 @@ app.use(helmet({
 app.use(
     cors({
         origin: [
-            'http://localhost:5173', // Client App
-            'http://localhost:5174', // Restaurant App
-            'http://localhost:5175', // Admin App
-            'http://localhost:5176', // Drone App
-            process.env.CLIENT_URL || 'http://localhost:3000',
-            process.env.RESTAURANT_URL || 'http://localhost:3001',
-            process.env.ADMIN_URL || 'http://localhost:3002',
-            process.env.DRONE_URL || 'http://localhost:3003',
-        ],
+            'http://localhost:5173', // Client App (Vite dev)
+            'http://localhost:5174', // Restaurant App (Vite dev)
+            'http://localhost:5175', // Admin App (Vite dev)
+            'http://localhost:5176', // Drone App (Vite dev)
+            'http://localhost:3000',  // Client App (production)
+            'http://localhost:3001',  // Restaurant App (production)
+            'http://localhost:3002',  // Admin App (production)
+            'http://localhost:3003',  // Drone App (production)
+            // EC2 Production URLs
+            'http://54.221.100.67:3000',  // Client App on EC2
+            'http://54.221.100.67:3001',  // Admin App on EC2
+            'http://54.221.100.67:3002',  // Restaurant App on EC2
+            'http://54.221.100.67:3003',  // Drone App on EC2
+            // Env vars (fallback/override)
+            process.env.CLIENT_URL,
+            process.env.RESTAURANT_URL,
+            process.env.ADMIN_URL,
+            process.env.DRONE_URL,
+        ].filter(Boolean), // Remove undefined values
         credentials: true,
     })
 );

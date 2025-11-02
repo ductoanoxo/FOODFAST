@@ -3,12 +3,29 @@ const crypto = require('crypto')
 const querystring = require('qs')
 const moment = require('moment')
 
+// Auto-detect base URL based on environment
+const getBaseUrl = () => {
+    if (process.env.VNPAY_RETURN_URL) {
+        return process.env.VNPAY_RETURN_URL
+    }
+    // Use CLIENT_URL if available, otherwise detect from NODE_ENV
+    if (process.env.CLIENT_URL) {
+        return process.env.CLIENT_URL + '/payment/vnpay/return'
+    }
+    // Production server
+    if (process.env.NODE_ENV === 'production') {
+        return 'http://54.221.100.67:3000/payment/vnpay/return'
+    }
+    // Local development
+    return 'http://localhost:3000/payment/vnpay/return'
+}
+
 // VNPay Configuration
 const vnpayConfig = {
     vnp_TmnCode: process.env.VNPAY_TMN_CODE || '1C1PQ01T',
     vnp_HashSecret: process.env.VNPAY_HASH_SECRET || 'VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L',
     vnp_Url: process.env.VNPAY_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
-    vnp_ReturnUrl: process.env.VNPAY_RETURN_URL || 'http://localhost:3000/payment/vnpay/return',
+    vnp_ReturnUrl: getBaseUrl(),
     vnp_Api: process.env.VNPAY_API || 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',
 }
 
