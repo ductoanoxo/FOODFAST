@@ -28,6 +28,7 @@ import {
 } from '@ant-design/icons'
 import { getAllRestaurants, createRestaurantWithAccount } from '../../api/restaurantAPI'
 import { checkEmailExists } from '../../api/authAPI'
+import { geocodeAddress } from '../../api/mapAPI'
 import axios from 'axios'
 import './RestaurantsPage.css'
 
