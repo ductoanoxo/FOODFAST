@@ -6,9 +6,9 @@ on:
       branches:
       - main
       - develop
-      # - DUCTOAN
+      - DUCTOAN
       - kiet
-      # - deploy
+      - deploy
     pull_request:
       branches:
         - main

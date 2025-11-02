@@ -1,7 +1,7 @@
 name: Docker Build and Push
 
 on:
-  # Chỉ chạy khi workflow CI kia chạy xong
+  # Chạy khi workflow CI hoàn thành cho BẤT KỲ nhánh nào
   workflow_run:
     workflows:
       - CI - Test and Lint (Deploy Branch - Testing Conflict)
@@ -10,7 +10,8 @@ on:
     branches:
       - main
       - develop
-      # - DUCTOAN
+      - DUCTOAN
+      - deploy
       - kiet
 
 env:
