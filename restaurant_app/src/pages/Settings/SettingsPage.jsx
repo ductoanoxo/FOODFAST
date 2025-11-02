@@ -29,7 +29,6 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const SettingsPage = () => {
-  const [messageApi, contextHolder] = message.useMessage();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
@@ -92,7 +91,7 @@ const SettingsPage = () => {
       }
       
     } catch (error) {
-  messageApi.error('Không thể tải thông tin nhà hàng: ' + (error?.message || error));
+      message.error('Không thể tải thông tin nhà hàng: ' + error);
       console.error('Load error:', error);
     } finally {
       setLoadingData(false);
@@ -127,10 +126,10 @@ const SettingsPage = () => {
 
       await updateRestaurantInfo(formData);
       
-      messageApi.success('Cập nhật thông tin thành công!');
+      message.success('Cập nhật thông tin thành công!');
       loadRestaurantInfo();
     } catch (error) {
-      messageApi.error('Không thể cập nhật: ' + (error?.message || error));
+      message.error('Không thể cập nhật: ' + error);
       console.error('Update error:', error);
     } finally {
       setLoading(false);
@@ -141,12 +140,12 @@ const SettingsPage = () => {
     beforeUpload: (file) => {
       const isImage = file.type.startsWith('image/');
       if (!isImage) {
-        messageApi.error('Chỉ được upload file ảnh!');
+        message.error('Chỉ được upload file ảnh!');
         return false;
       }
       const isLt2M = file.size / 1024 / 1024 < 2;
       if (!isLt2M) {
-        messageApi.error('Ảnh phải nhỏ hơn 2MB!');
+        message.error('Ảnh phải nhỏ hơn 2MB!');
         return false;
       }
       return false; // Prevent auto upload
@@ -156,7 +155,6 @@ const SettingsPage = () => {
 
   return (
     <div className="settings-page">
-      {contextHolder}
       <div className="settings-header">
         <Title level={2}>Cài đặt nhà hàng</Title>
         <Text type="secondary">Quản lý thông tin và cài đặt nhà hàng</Text>

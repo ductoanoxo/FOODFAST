@@ -1042,3 +1042,4 @@
 {"level":"error","message":"Invalid email or password","stack":"Error: Invalid email or password\n    at C:\\Users\\ADMIN\\Desktop\\FOODFAST\\server_app\\API\\Controllers\\authController.js:79:15\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-11-02T15:29:40.009Z"}
 {"level":"error","message":"Invalid email or password","stack":"Error: Invalid email or password\n    at C:\\Users\\ADMIN\\Desktop\\FOODFAST\\server_app\\API\\Controllers\\authController.js:79:15\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-11-02T15:29:49.960Z"}
 {"level":"info","message":"Server running on port 5000","timestamp":"2025-11-02T15:36:18.792Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-11-02T15:38:54.605Z"}

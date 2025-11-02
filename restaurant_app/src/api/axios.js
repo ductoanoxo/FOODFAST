@@ -1,19 +1,7 @@
 import axios from 'axios';
 
-// Resolve a sensible default API base URL so the same build can work locally
-// and when deployed to the same host. Prefer VITE_API_URL when provided.
-const resolvedBaseURL = import.meta.env.VITE_API_URL || (() => {
-    const host = window.location.hostname;
-    // Local development: assume backend runs on port 5000
-    if (host === 'localhost' || host === '127.0.0.1') {
-        return `${window.location.protocol}//${host}:5000/api`;
-    }
-    // Production / same-origin: use origin + /api
-    return `${window.location.origin}/api`;
-})();
-
 const instance = axios.create({
-    baseURL: resolvedBaseURL,
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',

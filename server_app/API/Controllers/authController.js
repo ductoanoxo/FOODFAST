@@ -4,11 +4,6 @@ const User = require('../Models/User')
 
 // Generate JWT Token
 const generateToken = (id) => {
-    if (!process.env.JWT_SECRET) {
-        // Provide a clear error to help identify missing configuration
-        throw new Error('JWT_SECRET is not defined in environment variables');
-    }
-
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRE || '7d',
     })

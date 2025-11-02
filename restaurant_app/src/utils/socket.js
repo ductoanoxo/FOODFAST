@@ -34,16 +34,12 @@ export const initSocket = () => {
     if (socket) return socket;
 
     // Determine SOCKET URL from environment or infer from current origin.
-    // Prefer VITE_SOCKET_URL when provided. Fallback behavior:
-    // - On localhost assume backend socket server at port 5000.
-    // - On deployed same-origin use current origin (same host/port as client).
-    const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (() => {
-        const host = window.location.hostname;
-        if (host === 'localhost' || host === '127.0.0.1') {
-            return `${window.location.protocol}//${host}:5000`;
-        }
-        return window.location.origin;
-    })();
+    // This allows the same build to work locally and when deployed without
+    // changing client code: set VITE_SOCKET_URL at build/runtime for production.
+    const SOCKET_URL =
+        import.meta.env.VITE_SOCKET_URL ||
+        // If not provided, assume backend runs on same host using port 5000.
+        `${window.location.protocol}//${window.location.hostname}:5000`;
 
     socket = io(SOCKET_URL, {
         auth: { token: localStorage.getItem('restaurant_token') || '' },
