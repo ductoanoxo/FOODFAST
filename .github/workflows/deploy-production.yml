@@ -1,11 +1,15 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # Build (nhánh main) sẽ gọi sang bằng repository_dispatch
-  repository_dispatch:
-    types: [deploy-foodfast]
-
-  # Cho phép bấm tay để deploy lại (chỉ dành cho main)
+  # Tự động chạy SAU KHI workflow build & push hoàn thành
+  workflow_run:
+    workflows:
+      - Docker Build and Push     # tên workflow build của bạn
+    types:
+      - completed
+    branches:
+      - main                      # CHỈ deploy khi build NHÁNH MAIN
+  # Cho phép bấm tay để deploy lại
   workflow_dispatch:
 
 env:
@@ -14,17 +18,19 @@ env:
 
 jobs:
   deploy:
-    # Chỉ chạy nếu:
-    # 1. Được gọi bằng repository_dispatch (từ build main)
-    # 2. HOẶC bấm tay nhưng phải là main
+    # CHỈ deploy khi:
+    # 1. Build NHÁNH MAIN thành công, HOẶC
+    # 2. Chạy tay (workflow_dispatch) và đang ở nhánh main
     if: |
-      github.event_name == 'repository_dispatch' ||
+      (github.event_name == 'workflow_run' && 
+       github.event.workflow_run.conclusion == 'success' && 
+       github.event.workflow_run.head_branch == 'main') ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
 
     steps:
       # ======================
-      # 1) Checkout
+      # 1) Checkout code
       # ======================
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,10 +41,11 @@ jobs:
       - name: Decide image tag
         id: imagetag
         run: |
-          # Luôn luôn dùng tag "latest" vì chỉ deploy nhánh main
+          # Luôn dùng tag "latest" vì chỉ deploy nhánh main
           TAG="latest"
+          
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "✅ Will deploy image tag: $TAG (main branch only)"
+          echo "✅ Deploying MAIN branch (after successful build) with tag: $TAG"
 
       # ======================
       # 3) SSH Setup
