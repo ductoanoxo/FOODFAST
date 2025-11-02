@@ -24,7 +24,7 @@ if (-Not (Test-Path "docker-compose.yml")) {
 }
 
 Write-Host "Building and starting all containers..." -ForegroundColor Yellow
-Write-Host "This may take 5-10 minutes on first run..." -ForegroundColor Yellow
+Write-Host "This may take 5-16 minutes on first run..." -ForegroundColor Yellow
 Write-Host ""
 
 # Build and run all services
