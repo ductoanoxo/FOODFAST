@@ -1,15 +1,13 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # Tự động chạy SAU KHI workflow build & push hoàn thành
+  # chạy tự động sau khi workflow build image xong
   workflow_run:
     workflows:
-      - Docker Build and Push     # tên workflow build của bạn
+      - Docker Build and Push     # ⚠️ đúng tên workflow build của bạn
     types:
       - completed
-    branches:
-      - main                      # CHỈ deploy khi build NHÁNH MAIN
-  # Cho phép bấm tay để deploy lại
+  # cho phép bấm tay
   workflow_dispatch:
 
 env:
@@ -17,35 +15,91 @@ env:
   OWNER: ${{ github.repository_owner }}
 
 jobs:
+  # =====================================================
+  # 1) JOB DÒ NHÁNH THẬT CỦA LẦN BUILD VỪA XONG
+  # =====================================================
+  detect-source:
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.pick-branch.outputs.branch }}
+      should_deploy: ${{ steps.decide.outputs.should_deploy }}
+    steps:
+      # Lấy branch từ run gốc (workflow_run) = cách chắc ăn nhất
+      - name: Get branch from original run (only when workflow_run)
+        id: get-from-run
+        if: ${{ github.event_name == 'workflow_run' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RUN_ID=${{ github.event.workflow_run.id }}
+          # Hỏi lại GitHub: cái run này thực sự chạy từ branch nào?
+          BRANCH=$(gh api repos/${{ github.repository }}/actions/runs/$RUN_ID --jq .head_branch)
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "Original run branch: $BRANCH"
+
+      # Nếu là bấm tay thì ta coi như deploy main
+      - name: Get branch for manual dispatch
+        id: get-from-dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "branch=main" >> $GITHUB_OUTPUT
+
+      # Gộp 2 nhánh lấy branch ở trên thành 1 output duy nhất
+      - name: Pick branch
+        id: pick-branch
+        run: |
+          BRANCH="${{ steps.get-from-run.outputs.branch }}"
+          if [ -z "$BRANCH" ]; then
+            BRANCH="${{ steps.get-from-dispatch.outputs.branch }}"
+          fi
+          echo "👉 Final detected branch: $BRANCH"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      # Quyết định có deploy không
+      - name: Decide should deploy
+        id: decide
+        run: |
+          BRANCH="${{ steps.pick-branch.outputs.branch }}"
+          if [ "$BRANCH" = "main" ]; then
+            echo "✅ This is main. Will deploy."
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "⛔ Not main ($BRANCH). Skip deploy."
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+  # =====================================================
+  # 2) JOB DEPLOY - chỉ chạy khi should_deploy == true
+  # =====================================================
   deploy:
-    # CHỈ deploy khi:
-    # 1. Build NHÁNH MAIN thành công, HOẶC
-    # 2. Chạy tay (workflow_dispatch) và đang ở nhánh main
-    if: |
-      (github.event_name == 'workflow_run' && 
-       github.event.workflow_run.conclusion == 'success' && 
-       github.event.workflow_run.head_branch == 'main') ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    needs: detect-source
+    if: ${{ needs.detect-source.outputs.should_deploy == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
       # ======================
-      # 1) Checkout code
+      # 1) Checkout
       # ======================
-      - name: Checkout
+      - name: Checkout (from workflow_run)
+        if: ${{ github.event_name == 'workflow_run' }}
+        uses: actions/checkout@v4
+        with:
+          # checkout đúng commit build ra image
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Checkout (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         uses: actions/checkout@v4
 
       # ======================
-      # 2) Xác định tag image sẽ dùng để deploy
+      # 2) Decide image tag
       # ======================
       - name: Decide image tag
         id: imagetag
         run: |
-          # Luôn dùng tag "latest" vì chỉ deploy nhánh main
-          TAG="latest"
-          
+          TAG="latest"   # chỉ deploy main
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "✅ Deploying MAIN branch (after successful build) with tag: $TAG"
+          echo "✅ Will deploy image tag: $TAG"
 
       # ======================
       # 3) SSH Setup
@@ -61,7 +115,7 @@ jobs:
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
       # ======================
-      # 4) Tạo script deploy để chép lên EC2
+      # 4) Create remote script
       # ======================
       - name: Create remote script
         run: |
@@ -130,7 +184,7 @@ jobs:
           SCRIPT
 
       # ======================
-      # 5) Chạy script trên EC2
+      # 5) Run remote script on EC2
       # ======================
       - name: Run remote script on EC2
         env:
