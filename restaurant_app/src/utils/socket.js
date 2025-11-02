@@ -33,7 +33,15 @@ const joinRestaurantRoom = () => {
 export const initSocket = () => {
     if (socket) return socket;
 
-    socket = io('http://localhost:5000', {
+    // Determine SOCKET URL from environment or infer from current origin.
+    // This allows the same build to work locally and when deployed without
+    // changing client code: set VITE_SOCKET_URL at build/runtime for production.
+    const SOCKET_URL =
+        import.meta.env.VITE_SOCKET_URL ||
+        // If not provided, assume backend runs on same host using port 5000.
+        `${window.location.protocol}//${window.location.hostname}:5000`;
+
+    socket = io(SOCKET_URL, {
         auth: { token: localStorage.getItem('restaurant_token') || '' },
         // Tùy chọn nên có để kết nối ổn định hơn:
         reconnection: true,
