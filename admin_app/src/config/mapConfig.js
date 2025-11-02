@@ -1,7 +1,7 @@
 // Map Configuration for Frontend
 export const MAP_CONFIG = {
     // Current map provider: 'osm', 'goong', 'google'
-    provider: import.meta.env.VITE_MAP_PROVIDER || 'goong',
+    provider: import.meta.env.VITE_MAP_PROVIDER || 'osm', // ✅ Default to OSM
 
     // Default map center (Ho Chi Minh City, Vietnam)
     defaultCenter: {
