@@ -1,14 +1,6 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # Tự chạy sau khi workflow build image xong - CHỈ NHÁNH MAIN
-  workflow_run:
-    workflows:
-      - Docker Build and Push     # tên workflow build của bạn
-    types:
-      - completed
-    branches:
-      - main                      # CHỈ deploy nhánh main
   # Khi có push trực tiếp vào main (ví dụ: merge PR) cũng bật deploy tự động
   push:
     branches:
