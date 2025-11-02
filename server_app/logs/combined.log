@@ -1037,3 +1037,8 @@
 {"level":"info","message":"Server running on port 5000","timestamp":"2025-11-02T11:45:42.889Z"}
 {"level":"info","message":"Server running on port 5000","timestamp":"2025-11-02T11:49:38.094Z"}
 {"level":"info","message":"Server running on port 5000","timestamp":"2025-11-02T11:55:38.155Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-11-02T15:14:59.453Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-11-02T15:27:19.629Z"}
+{"level":"error","message":"Invalid email or password","stack":"Error: Invalid email or password\n    at C:\\Users\\ADMIN\\Desktop\\FOODFAST\\server_app\\API\\Controllers\\authController.js:79:15\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-11-02T15:29:40.009Z"}
+{"level":"error","message":"Invalid email or password","stack":"Error: Invalid email or password\n    at C:\\Users\\ADMIN\\Desktop\\FOODFAST\\server_app\\API\\Controllers\\authController.js:79:15\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2025-11-02T15:29:49.960Z"}
+{"level":"info","message":"Server running on port 5000","timestamp":"2025-11-02T15:36:18.792Z"}

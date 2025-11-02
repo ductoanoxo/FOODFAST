@@ -9,6 +9,7 @@ import { login } from '../../api/authAPI';
 const { Title, Text } = Typography;
 
 const LoginPage = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const LoginPage = () => {
       
       // Check if user is restaurant owner
       if (data.user.role !== 'restaurant') {
-        message.error('Bạn không có quyền truy cập hệ thống nhà hàng!');
+        messageApi.error('Bạn không có quyền truy cập hệ thống nhà hàng!');
         return;
       }
 
@@ -29,11 +30,11 @@ const LoginPage = () => {
         token: data.token,
       }));
 
-      message.success('Đăng nhập thành công!');
+      messageApi.success('Đăng nhập thành công!');
       navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
-      message.error(error.response?.data?.message || 'Đăng nhập thất bại!');
+      messageApi.error(error.response?.data?.message || 'Đăng nhập thất bại!');
     } finally {
       setLoading(false);
     }
@@ -47,6 +48,7 @@ const LoginPage = () => {
       minHeight: '100vh', 
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
     }}>
+      {contextHolder}
       <Card 
         style={{ 
           width: 450, 
