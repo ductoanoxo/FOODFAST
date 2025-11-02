@@ -47,7 +47,11 @@ services:
 
   # Client App
   client_app:
-    build: ./client_app
+    build:
+      context: ./client_app
+      args:
+        VITE_API_URL: http://54.221.100.67:5000/api
+        VITE_SOCKET_URL: http://54.221.100.67:5000
     container_name: foodfast_client
     restart: always
     ports:
@@ -59,7 +63,11 @@ services:
 
   # Restaurant App
   restaurant_app:
-    build: ./restaurant_app
+    build:
+      context: ./restaurant_app
+      args:
+        VITE_API_URL: http://54.221.100.67:5000/api
+        VITE_SOCKET_URL: http://54.221.100.67:5000
     container_name: foodfast_restaurant
     restart: always
     ports:
@@ -71,7 +79,11 @@ services:
 
   # Admin App
   admin_app:
-    build: ./admin_app
+    build:
+      context: ./admin_app
+      args:
+        VITE_API_URL: http://54.221.100.67:5000/api
+        VITE_SOCKET_URL: http://54.221.100.67:5000
     container_name: foodfast_admin
     restart: always
     ports:
@@ -83,7 +95,11 @@ services:
 
   # Drone Management App
   drone_manage:
-    build: ./drone_manage
+    build:
+      context: ./drone_manage
+      args:
+        VITE_API_URL: http://54.221.100.67:5000/api
+        VITE_SOCKET_URL: http://54.221.100.67:5000
     container_name: foodfast_drone
     restart: always
     ports:
