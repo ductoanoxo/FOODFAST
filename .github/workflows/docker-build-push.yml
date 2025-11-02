@@ -1,18 +1,17 @@
 name: Docker Build and Push
 
 on:
-  push:
+  # Chỉ chạy khi workflow CI kia chạy xong
+  workflow_run:
+    workflows:
+      - CI - Test and Lint (Deploy Branch - Testing Conflict)
+    types:
+      - completed
     branches:
       - main
       - develop
-      - DUCTOAN
+      # - DUCTOAN
       - kiet
-    tags:
-      - 'v*'
-  pull_request:
-    branches:
-      - main
-      - develop
 
 env:
   REGISTRY: ghcr.io
@@ -20,11 +19,13 @@ env:
 
 jobs:
   build-and-push:
+    # Chỉ chạy khi workflow trước đó thành công
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-    
+
     strategy:
       matrix:
         service:
@@ -42,6 +43,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Lấy đúng commit mà workflow trước vừa chạy
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -59,26 +63,31 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}
           tags: |
+            # từ branch / PR của workflow trước
             type=ref,event=branch
             type=ref,event=pr
+            # nếu workflow trước được trigger bởi tag
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            # Use plain sha tag (no branch prefix) to avoid producing tags that start with a hyphen
-            # when branch is empty (e.g., certain PR contexts). This prevents invalid tags like
-            # "-5c12ec3" from being produced.
+            # tránh tag bắt đầu bằng dấu -
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./${{ matrix.service.name }}
           file: ./${{ matrix.service.name }}/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          # Vì workflow_run không phải PR nên ta có thể push
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}:buildcache,mode=max
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL || 'http://54.221.100.67:5000/api' }}
+            VITE_SOCKET_URL=${{ secrets.VITE_SOCKET_URL || 'http://54.221.100.67:5000' }}
 
       - name: Image digest
         run: echo ${{ steps.meta.outputs.digest }}
