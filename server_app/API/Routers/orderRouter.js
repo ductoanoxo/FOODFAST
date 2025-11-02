@@ -9,6 +9,7 @@ const {
     cancelOrder,
     getOrderHistory,
     confirmDelivery,
+    restaurantConfirmHandover,
 } = require('../Controllers/orderController')
 const { protect, authorize } = require('../Middleware/authMiddleware')
 
@@ -25,6 +26,7 @@ router.route('/:id')
 router.patch('/:id/status', protect, authorize('restaurant', 'admin'), updateOrderStatus)
 router.patch('/:id/cancel', protect, cancelOrder)
 router.post('/:id/confirm-delivery', protect, confirmDelivery)
+router.post('/:id/restaurant-confirm-handover', protect, authorize('restaurant'), restaurantConfirmHandover)
 router.get('/:id/track', protect, trackOrder)
 
 module.exports = router
