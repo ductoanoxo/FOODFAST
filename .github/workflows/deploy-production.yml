@@ -33,6 +33,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Guard: only proceed when the source branch is main
+      - name: Guard — ensure this deploy runs for main only
+        run: |
+          echo "EVENT_NAME=${{ github.event_name }}"
+          # For workflow_run events, the head branch is in github.event.workflow_run.head_branch
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
+          else
+            # For push/workflow_dispatch use github.ref
+            HEAD_BRANCH="${{ github.ref }}"
+            # Normalize refs/heads/main -> main
+            HEAD_BRANCH=${HEAD_BRANCH#refs/heads/}
+          fi
+
+          echo "Head branch: $HEAD_BRANCH"
+
+          if [ "$HEAD_BRANCH" != "main" ]; then
+            echo "Not main branch. Skipping deploy steps."
+            exit 0
+          fi
+
+          echo "Main branch confirmed — continuing deploy."
+
       # ======================
       # 1) Checkout
       # ======================
