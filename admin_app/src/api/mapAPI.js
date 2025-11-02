@@ -7,7 +7,7 @@ import axios from './axios';
  */
 export const geocodeAddress = async(address) => {
     try {
-        const response = await axios.get('/api/map/geocode', {
+        const response = await axios.get('/map/geocode', {
             params: { address }
         });
         return response.data.data;
@@ -25,7 +25,7 @@ export const geocodeAddress = async(address) => {
  */
 export const reverseGeocode = async(lat, lng) => {
     try {
-        const response = await axios.get('/api/map/reverse-geocode', {
+        const response = await axios.get('/map/reverse-geocode', {
             params: { lat, lng }
         });
         return response.data.data;
@@ -43,7 +43,7 @@ export const reverseGeocode = async(lat, lng) => {
  */
 export const calculateDistance = async(origin, destination) => {
     try {
-        const response = await axios.get('/api/map/distance', {
+        const response = await axios.get('/map/distance', {
             params: {
                 originLat: origin.lat,
                 originLng: origin.lng,
@@ -72,7 +72,7 @@ export const autocompletePlace = async(input, location = null) => {
             params.lng = location.lng;
         }
 
-        const response = await axios.get('/api/map/autocomplete', { params });
+        const response = await axios.get('/map/autocomplete', { params });
         return response.data.data;
     } catch (error) {
         console.error('Autocomplete error:', error);
@@ -87,7 +87,7 @@ export const autocompletePlace = async(input, location = null) => {
  */
 export const getPlaceDetails = async(placeId) => {
     try {
-        const response = await axios.get(`/api/map/place/${placeId}`);
+        const response = await axios.get(`/map/place/${placeId}`);
         return response.data.data;
     } catch (error) {
         console.error('Get place details error:', error);
