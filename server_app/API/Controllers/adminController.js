@@ -141,26 +141,56 @@ exports.assignDrone = async(req, res) => {
             });
         }
 
-        // Update order
+        // ✅ Update order - ONLY assign drone, do NOT change status
+        // Restaurant needs to confirm handover first → picked_up
+        // Then admin starts delivery simulation → delivering
         order.drone = droneId;
-        order.status = 'delivering';
-        order.deliveringAt = new Date();
+        // Do NOT set order.status = 'delivering' here!
+        // Do NOT set order.deliveringAt here!
         await order.save();
 
-        // Update drone
+        // Update drone - mark as busy (reserved for this order)
         drone.status = 'busy';
         drone.currentOrder = orderId;
         await drone.save();
 
-        // Socket notification handled by socketService
-        const socketService = req.app.get('socketService');
-        if (socketService) {
-            socketService.handleManualAssignment(null, { orderId, droneId });
+        // Socket notification to restaurant
+        try {
+            const socketService = req.app.get('socketService');
+            if (socketService) {
+                const populatedOrder = await Order.findById(orderId)
+                    .populate('drone', 'name model status batteryLevel')
+                    .populate('restaurant', '_id name');
+
+                if (populatedOrder && populatedOrder.restaurant) {
+                    const roomName = `restaurant-${populatedOrder.restaurant._id}`;
+                    const eventData = {
+                        orderId: populatedOrder._id,
+                        orderNumber: populatedOrder.orderNumber,
+                        drone: populatedOrder.drone,
+                        message: `Drone ${populatedOrder.drone?.name || 'N/A'} đã được phân công`,
+                    };
+
+                    // Use emitToRoom if available, fallback to direct emit
+                    if (typeof socketService.emitToRoom === 'function') {
+                        socketService.emitToRoom(roomName, 'order:drone-assigned', eventData);
+                    } else if (socketService.io) {
+                        socketService.io.to(roomName).emit('order:drone-assigned', eventData);
+                    }
+
+                    console.log('✅ Socket notification sent to:', roomName);
+                }
+            }
+        } catch (socketError) {
+            console.error('⚠️ Socket notification failed (non-critical):', socketError.message);
+            // Continue execution - socket error shouldn't block assignment
         }
 
-        // Fetch updated data without problematic populates
-        const updatedOrder = await Order.findById(orderId).populate('drone', 'name serialNumber status batteryLevel');
-        const updatedDrone = await Drone.findById(droneId).populate('currentOrder', 'orderNumber deliveryInfo');
+        // Fetch updated data
+        const updatedOrder = await Order.findById(orderId)
+            .populate('drone', 'name serialNumber status batteryLevel');
+        const updatedDrone = await Drone.findById(droneId)
+            .populate('currentOrder', 'orderNumber deliveryInfo');
 
         res.json({
             success: true,
