@@ -126,7 +126,7 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'confirmed', 'preparing', 'ready', 'delivering', 'delivered', 'cancelled'],
+        enum: ['pending', 'confirmed', 'preparing', 'ready', 'picked_up', 'delivering', 'delivered', 'cancelled'],
         default: 'pending',
     },
     drone: {
@@ -136,6 +136,11 @@ const orderSchema = new mongoose.Schema({
     confirmedAt: Date,
     preparingAt: Date,
     readyAt: Date,
+    pickedUpAt: Date, // Thời điểm nhà hàng xác nhận đã giao cho drone
+    pickedUpBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', // Restaurant user who confirmed the handover
+    },
     deliveringAt: Date,
     deliveredAt: Date,
     cancelledAt: Date,

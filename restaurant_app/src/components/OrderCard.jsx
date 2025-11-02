@@ -15,7 +15,7 @@ const statusConfig = {
   cancelled: { color: 'red', text: 'Đã hủy' },
 };
 
-const OrderCard = ({ order, onUpdateStatus, onViewDetails }) => {
+const OrderCard = ({ order, onUpdateStatus, onConfirmHandover, onViewDetails }) => {
   const status = statusConfig[order.status] || statusConfig.pending;
 
   const getNextStatus = () => {
@@ -65,6 +65,16 @@ const OrderCard = ({ order, onUpdateStatus, onViewDetails }) => {
                 {dayjs(order.createdAt).format('DD/MM/YYYY HH:mm')}
               </Text>
             </Space>
+
+            {/* Show drone info if assigned */}
+            {order.drone && (
+              <Space>
+                <span>🚁</span>
+                <Text type="secondary" style={{ color: '#1890ff' }}>
+                  Drone: {order.drone.name || order.drone.model || 'Đã phân công'}
+                </Text>
+              </Space>
+            )}
 
             <Divider style={{ margin: '12px 0' }} />
 
@@ -121,13 +131,36 @@ const OrderCard = ({ order, onUpdateStatus, onViewDetails }) => {
                   Chi tiết
                 </Button>
                 {nextStatus && (
-                  <Button 
-                    type="primary" 
-                    size="small"
-                    onClick={() => onUpdateStatus(order._id, nextStatus)}
-                  >
-                    {getNextStatusText()}
-                  </Button>
+                  <>
+                    {/* Special case: ready status requires drone assignment */}
+                    {order.status === 'ready' ? (
+                      order.drone ? (
+                        <Button 
+                          type="primary" 
+                          size="small"
+                          onClick={() => onConfirmHandover(order._id, order.drone._id || order.drone)}
+                        >
+                          {getNextStatusText()}
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="small"
+                          disabled
+                          title="Chưa có drone được phân công"
+                        >
+                          ⚠️ Chưa có drone
+                        </Button>
+                      )
+                    ) : (
+                      <Button 
+                        type="primary" 
+                        size="small"
+                        onClick={() => onUpdateStatus(order._id, nextStatus)}
+                      >
+                        {getNextStatusText()}
+                      </Button>
+                    )}
+                  </>
                 )}
               </Space>
             </div>

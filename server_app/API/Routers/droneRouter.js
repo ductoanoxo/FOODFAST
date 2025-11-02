@@ -13,8 +13,14 @@ const {
     getNearbyDrones,
     getDroneStats,
 } = require('../Controllers/droneController')
+const {
+    startDeliverySimulation,
+    stopDeliverySimulation,
+    getActiveSimulations,
+} = require('../Controllers/droneSimulationController')
 const { protect, authorize } = require('../Middleware/authMiddleware')
 
+router.get('/simulations', protect, authorize('admin'), getActiveSimulations)
 router.get('/nearby', protect, authorize('admin'), getNearbyDrones)
 router.get('/', getDrones)
 router.post('/', protect, authorize('admin'), createDrone)
@@ -25,6 +31,8 @@ router.patch('/:id/location', protect, authorize('drone', 'admin'), updateDroneL
 router.patch('/:id/status', protect, authorize('drone', 'admin'), updateDroneStatus)
 router.patch('/:id/battery', protect, authorize('drone', 'admin'), updateDroneBattery)
 router.post('/:id/assign', protect, authorize('admin'), assignDroneToOrder)
+router.post('/:id/start-delivery', protect, authorize('admin', 'drone'), startDeliverySimulation)
+router.post('/:id/stop-delivery', protect, authorize('admin'), stopDeliverySimulation)
 router.get('/:id/stats', protect, authorize('admin'), getDroneStats)
 
 module.exports = router
