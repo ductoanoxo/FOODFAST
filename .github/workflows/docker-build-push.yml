@@ -48,6 +48,13 @@ jobs:
           # Lấy đúng commit mà workflow trước vừa chạy
           ref: ${{ github.event.workflow_run.head_sha }}
 
+      - name: Determine branch name
+        id: branch
+        run: |
+          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
+          echo "name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "📦 Building Docker images for branch: $BRANCH_NAME"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -64,15 +71,12 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}
           tags: |
-            # từ branch / PR của workflow trước
-            type=ref,event=branch
-            type=ref,event=pr
-            # nếu workflow trước được trigger bởi tag
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            # tránh tag bắt đầu bằng dấu -
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
+            # Tag theo tên nhánh (mọi nhánh đều có tag riêng)
+            type=raw,value=${{ steps.branch.outputs.name }}
+            # Tag latest CHỈ cho nhánh main (để deploy production)
+            type=raw,value=latest,enable=${{ steps.branch.outputs.name == 'main' }}
+            # Tag SHA để trace commit
+            type=sha,prefix=${{ steps.branch.outputs.name }}-
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
