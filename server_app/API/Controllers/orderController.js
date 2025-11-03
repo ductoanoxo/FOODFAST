@@ -6,6 +6,10 @@ const PromoUsage = require('../Models/PromoUsage')
 const Voucher = require('../Models/Voucher')
 const VoucherUsage = require('../Models/VoucherUsage')
 const { geocodeWithFallback } = require('../../services/geocodingService')
+const OrderAudit = require('../Models/OrderAudit')
+const axios = require('axios')
+const crypto = require('crypto')
+const moment = require('moment')
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -468,13 +472,33 @@ const getOrderById = asyncHandler(async(req, res) => {
 // @route   PATCH /api/orders/:id/status
 // @access  Private (Restaurant/Admin)
 const updateOrderStatus = asyncHandler(async(req, res) => {
-    const { status } = req.body
+    const { status, reason } = req.body
 
     const order = await Order.findById(req.params.id)
 
     if (!order) {
         res.status(404)
         throw new Error('Order not found')
+    }
+
+    // If restaurant user tries to change status, ensure they belong to the restaurant
+    if (req.user.role === 'restaurant') {
+        if (!req.user.restaurantId || order.restaurant.toString() !== req.user.restaurantId.toString()) {
+            res.status(403)
+            throw new Error('Not authorized to update this order')
+        }
+    }
+
+    // Prevent cancelling completed orders
+    if (status === 'cancelled' && ['delivered', 'cancelled'].includes(order.status)) {
+        res.status(400)
+        throw new Error('Cannot cancel this order')
+    }
+
+    // If restaurant is cancelling, require a reason
+    if (status === 'cancelled' && req.user.role === 'restaurant' && (!reason || String(reason).trim().length === 0)) {
+        res.status(400)
+        throw new Error('Cancel reason is required when restaurant cancels an order')
     }
 
     order.status = status
@@ -490,7 +514,163 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
         order.deliveredAt = now
         order.paymentStatus = 'paid'
     }
-    if (status === 'cancelled') order.cancelledAt = now
+
+    // Special handling for cancellation initiated by restaurant/admin
+    if (status === 'cancelled') {
+        order.cancelledAt = now
+        order.cancelReason = reason || req.body.cancelReason || order.cancelReason || 'Cancelled'
+
+        // Side effects: rollback voucher usage and decrement product soldCount
+        try {
+            // Rollback voucher usage if any
+            if (order.appliedVoucher && order.appliedVoucher.id) {
+                try {
+                    const usage = await VoucherUsage.findOne({ order: order._id })
+                    if (usage) {
+                        // Decrement voucher usageCount
+                        try {
+                            await Voucher.findByIdAndUpdate(usage.voucher, { $inc: { usageCount: -1 } })
+                        } catch (e) {
+                            console.error('Failed to decrement voucher usageCount', e)
+                        }
+                        await VoucherUsage.deleteOne({ _id: usage._id })
+                    }
+                } catch (e) {
+                    console.error('Failed to rollback VoucherUsage for order', order._id, e)
+                }
+            }
+
+            // Decrement soldCount for each product in the order
+            if (order.items && order.items.length > 0) {
+                for (const it of order.items) {
+                    try {
+                        await Product.findByIdAndUpdate(it.product, { $inc: { soldCount: -Math.abs(it.quantity) } })
+                    } catch (e) {
+                        console.error('Failed to decrement soldCount for product', it.product, e)
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Error handling cancellation side-effects', e)
+        }
+
+        // Create an audit entry
+        try {
+            await OrderAudit.create({
+                order: order._id,
+                user: req.user._id,
+                action: 'cancelled',
+                reason: order.cancelReason,
+                meta: { initiatedByRole: req.user.role }
+            })
+        } catch (e) {
+            console.error('Failed to create OrderAudit entry', e)
+        }
+
+        // If order was already paid, attempt a best-effort VNPay refund (if configured).
+        if (order.paymentStatus === 'paid') {
+            try {
+                // mark refund as requested
+                order.paymentStatus = 'refund_pending'
+                await order.save()
+
+                await OrderAudit.create({
+                    order: order._id,
+                    user: req.user._id,
+                    action: 'refund_requested',
+                    reason: 'Auto refund requested after restaurant cancellation',
+                    meta: { initiatedByRole: req.user.role, paymentInfo: order.paymentInfo }
+                })
+
+                // Try to call VNPay refund API if available
+                const vnpApi = process.env.VNPAY_API || null
+                const vnpTmn = process.env.VNPAY_TMN_CODE || null
+                const vnpHash = process.env.VNPAY_HASH_SECRET || null
+
+                if (order.paymentInfo && order.paymentInfo.method === 'vnpay' && vnpApi && vnpTmn && vnpHash) {
+                    try {
+                        const date = new Date()
+                        const vnp_RequestId = moment(date).format('HHmmss')
+                        const vnp_Version = '2.1.0'
+                        const vnp_Command = 'refund'
+                        const vnp_TxnRef = order.paymentInfo.transactionId
+                        const vnp_TransactionDate = order.paidAt ? moment(order.paidAt).format('YYYYMMDDHHmmss') : moment().format('YYYYMMDDHHmmss')
+                        const vnp_Amount = Math.round((order.totalAmount || 0) * 100)
+                        const vnp_TransactionType = '02'
+                        const vnp_CreateBy = req.user.email || String(req.user._id)
+                        const vnp_OrderInfo = 'Hoan tien GD ma:' + vnp_TxnRef
+                        const vnp_IpAddr = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || ''
+                        const vnp_CreateDate = moment(date).format('YYYYMMDDHHmmss')
+                        const vnp_TransactionNo = '0'
+
+                        const data = vnp_RequestId + '|' + vnp_Version + '|' + vnp_Command + '|' + vnpTmn + '|' + vnp_TransactionType + '|' + vnp_TxnRef + '|' + vnp_Amount + '|' + vnp_TransactionNo + '|' + vnp_TransactionDate + '|' + vnp_CreateBy + '|' + vnp_CreateDate + '|' + vnp_IpAddr + '|' + vnp_OrderInfo
+                        const hmac = crypto.createHmac('sha512', vnpHash)
+                        const vnp_SecureHash = hmac.update(Buffer.from(data, 'utf-8')).digest('hex')
+
+                        const payload = {
+                            vnp_RequestId,
+                            vnp_Version,
+                            vnp_Command,
+                            vnp_TmnCode: vnpTmn,
+                            vnp_TransactionType: vnp_TransactionType,
+                            vnp_TxnRef,
+                            vnp_Amount,
+                            vnp_TransactionNo,
+                            vnp_CreateBy,
+                            vnp_OrderInfo,
+                            vnp_TransactionDate,
+                            vnp_CreateDate,
+                            vnp_IpAddr,
+                            vnp_SecureHash,
+                        }
+
+                        const resp = await axios.post(vnpApi, payload)
+
+                        // Basic success heuristic: VNPay returns a RspCode or success flag
+                        if (resp && resp.data && (resp.data.RspCode === '00' || resp.data.success)) {
+                            order.paymentStatus = 'refunded'
+                            await order.save()
+                            await OrderAudit.create({
+                                order: order._id,
+                                user: req.user._id,
+                                action: 'refund_completed',
+                                reason: 'Refund processed via VNPay API',
+                                meta: { response: resp.data }
+                            })
+                        } else {
+                            // Mark as failed and keep refund_pending for manual handling
+                            order.paymentStatus = 'refund_failed'
+                            await order.save()
+                            await OrderAudit.create({
+                                order: order._id,
+                                user: req.user._id,
+                                action: 'refund_failed',
+                                reason: 'VNPay refund API returned failure or unexpected response',
+                                meta: { response: resp?.data }
+                            })
+                        }
+                    } catch (refundErr) {
+                        console.error('VNPay refund attempt failed', refundErr)
+                        order.paymentStatus = 'refund_failed'
+                        await order.save()
+                        try {
+                            await OrderAudit.create({
+                                order: order._id,
+                                user: req.user._id,
+                                action: 'refund_failed',
+                                reason: 'VNPay refund attempt threw error',
+                                meta: { error: String(refundErr) }
+                            })
+                        } catch (e) {
+                            console.error('Failed to create refund failed audit', e)
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error while attempting refund for cancelled order', e)
+            }
+        }
+    }
 
     await order.save()
 

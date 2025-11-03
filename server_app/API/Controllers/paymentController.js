@@ -130,6 +130,41 @@ const vnpayReturn = asyncHandler(async (req, res) => {
         })
 
         if (order) {
+            // Nếu là payment return (user redirected), cập nhật trạng thái đơn tương ứng
+            try {
+                if (vnp_Params['vnp_ResponseCode'] === '00') {
+                    // Thanh toán thành công: chỉ cập nhật trạng thái thanh toán, KHÔNG tự động đổi trạng thái đơn.
+                    // Lý do: trạng thái xử lý đơn (confirmed/preparing/ready...) nên do nhà hàng hoặc luồng nghiệp vụ quyết định.
+                    order.paymentStatus = 'paid'
+                    order.paidAt = new Date()
+
+                    await order.save()
+
+                    // Emit socket cập nhật trạng thái (bao gồm paymentStatus) để frontend/restaurant cập nhật view
+                    try {
+                        const io = req.app.get('io')
+                        const now = new Date()
+                        const payload = {
+                            orderId: order._id,
+                            orderNumber: order.orderNumber,
+                            status: order.status,
+                            paymentStatus: order.paymentStatus,
+                            timestamp: now,
+                        }
+                        if (io) {
+                            io.to(`order-${order._id}`).emit('order:status-updated', payload)
+                            io.to(`order-${order._id}`).emit('order-status-updated', payload)
+                            io.to(`restaurant-${order.restaurant}`).emit('order:status-updated', {...payload, restaurantId: order.restaurant })
+                            io.to(`restaurant-${order.restaurant}`).emit('order-status-updated', {...payload, restaurantId: order.restaurant })
+                        }
+                    } catch (emitErr) {
+                        console.error('Failed to emit order status update after return:', emitErr)
+                    }
+                }
+            } catch (err) {
+                console.error('Error updating order on vnpayReturn:', err)
+            }
+
             res.json({
                 success: true,
                 code: vnp_Params['vnp_ResponseCode'],
@@ -197,15 +232,36 @@ const vnpayIPN = asyncHandler(async (req, res) => {
                 if (order.paymentStatus === 'pending') {
                     // Kiểm tra tình trạng giao dịch trước khi cập nhật
                     if (rspCode === '00') {
-                        // Thanh toán thành công
-                        // paymentStatus = '1'
+                        // Thanh toán thành công: chỉ cập nhật paymentStatus
                         order.paymentStatus = 'paid'
                         order.paidAt = new Date()
+
                         await order.save()
+
+                        // Emit socket cập nhật trạng thái (bao gồm paymentStatus)
+                        try {
+                            const io = req.app.get('io')
+                            const now = new Date()
+                            const payload = {
+                                orderId: order._id,
+                                orderNumber: order.orderNumber,
+                                status: order.status,
+                                paymentStatus: order.paymentStatus,
+                                timestamp: now,
+                            }
+                            if (io) {
+                                io.to(`order-${order._id}`).emit('order:status-updated', payload)
+                                io.to(`order-${order._id}`).emit('order-status-updated', payload)
+                                io.to(`restaurant-${order.restaurant}`).emit('order:status-updated', {...payload, restaurantId: order.restaurant })
+                                io.to(`restaurant-${order.restaurant}`).emit('order-status-updated', {...payload, restaurantId: order.restaurant })
+                            }
+                        } catch (emitErr) {
+                            console.error('Failed to emit order status update after IPN:', emitErr)
+                        }
+
                         res.status(200).json({ RspCode: '00', Message: 'Success' })
                     } else {
                         // Thanh toán thất bại
-                        // paymentStatus = '2'
                         order.paymentStatus = 'failed'
                         await order.save()
                         res.status(200).json({ RspCode: '00', Message: 'Success' })

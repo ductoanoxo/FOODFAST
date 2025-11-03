@@ -162,9 +162,25 @@ const ReportsPage = () => {
   };
 
   const handleDateChange = (dates) => {
-    if (dates) {
-      setDateRange(dates);
+    // Normalize incoming values to dayjs objects so the rest of the
+    // component (which uses dayjs) always receives a consistent type.
+    if (dates && dates[0] && dates[1]) {
+      setDateRange([dayjs(dates[0]), dayjs(dates[1])]);
+    } else {
+      // If cleared, reset to default last 30 days
+      setDateRange([dayjs().subtract(30, 'days'), dayjs()]);
     }
+  };
+
+  const formatRange = () => {
+    try {
+      if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
+        return `${dateRange[0].format('DD/MM/YYYY')} - ${dateRange[1].format('DD/MM/YYYY')}`;
+      }
+    } catch (e) {
+      // fallback
+    }
+    return '';
   };
 
   return (
@@ -178,9 +194,13 @@ const ReportsPage = () => {
         </div>
         <Space>
           <RangePicker
-            value={dateRange}
+            // Ensure RangePicker always receives dayjs objects (antd may
+            // sometimes provide other libs depending on config). We map
+            // defensively in case dateRange items are not dayjs already.
+            value={dateRange && dateRange.length === 2 ? dateRange.map(d => dayjs(d)) : undefined}
             onChange={handleDateChange}
             format="DD/MM/YYYY"
+            allowClear
           />
           <Select
             value={period}
@@ -266,7 +286,16 @@ const ReportsPage = () => {
           {/* Revenue Chart */}
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
             <Col xs={24} lg={16}>
-              <Card title="Biểu đồ doanh thu & Đơn hàng">
+              <Card
+                title={
+                  <div>
+                    <div>Biểu đồ doanh thu & Đơn hàng</div>
+                    <div style={{ fontSize: 12 }}>
+                      <Text type="secondary">Khoảng: {formatRange()}</Text>
+                    </div>
+                  </div>
+                }
+              >
                 {revenueData.length > 0 ? (
                   <>
                     <ResponsiveContainer width="100%" height={350}>
@@ -366,12 +395,30 @@ const ReportsPage = () => {
                     </Row>
                   </>
                 ) : (
-                  <Empty description="Chưa có dữ liệu doanh thu" />
+                  <Empty
+                    description={
+                      <div>
+                        <div>Chưa có dữ liệu doanh thu</div>
+                        <div style={{ marginTop: 8 }}>
+                          <Text type="secondary">Khoảng: {formatRange()}</Text>
+                        </div>
+                      </div>
+                    }
+                  />
                 )}
               </Card>
             </Col>
             <Col xs={24} lg={8}>
-              <Card title="Trạng thái đơn hàng">
+              <Card
+                title={
+                  <div>
+                    <div>Trạng thái đơn hàng</div>
+                    <div style={{ fontSize: 12 }}>
+                      <Text type="secondary">Khoảng: {formatRange()}</Text>
+                    </div>
+                  </div>
+                }
+              >
                 {ordersByStatus.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
@@ -398,14 +445,32 @@ const ReportsPage = () => {
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <Empty description="Chưa có đơn hàng" />
+                  <Empty
+                    description={
+                      <div>
+                        <div>Chưa có đơn hàng</div>
+                        <div style={{ marginTop: 8 }}>
+                          <Text type="secondary">Khoảng: {formatRange()}</Text>
+                        </div>
+                      </div>
+                    }
+                  />
                 )}
               </Card>
             </Col>
           </Row>
 
           {/* Top Products */}
-          <Card title="Top 5 Món ăn bán chạy nhất">
+          <Card
+            title={
+              <div>
+                <div>Top 5 Món ăn bán chạy nhất</div>
+                <div style={{ fontSize: 12 }}>
+                  <Text type="secondary">Khoảng: {formatRange()}</Text>
+                </div>
+              </div>
+            }
+          >
             {topProducts.length > 0 ? (
               <>
                 <ResponsiveContainer width="100%" height={350}>
@@ -487,7 +552,16 @@ const ReportsPage = () => {
                 </Row>
               </>
             ) : (
-              <Empty description="Chưa có món bán chạy" />
+              <Empty
+                description={
+                  <div>
+                    <div>Chưa có món bán chạy</div>
+                    <div style={{ marginTop: 8 }}>
+                      <Text type="secondary">Khoảng: {formatRange()}</Text>
+                    </div>
+                  </div>
+                }
+              />
             )}
           </Card>
         </>
