@@ -16,9 +16,9 @@ export const fetchOrders = createAsyncThunk(
 
 export const updateOrderStatus = createAsyncThunk(
   'orders/updateStatus',
-  async ({ orderId, status }, { rejectWithValue }) => {
+  async ({ orderId, status, reason }, { rejectWithValue }) => {
     try {
-      const data = await orderAPI.updateOrderStatus(orderId, status);
+      const data = await orderAPI.updateOrderStatus(orderId, status, reason);
       return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update order');

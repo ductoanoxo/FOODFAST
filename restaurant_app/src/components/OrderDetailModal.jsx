@@ -193,6 +193,13 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
             padding: 16, 
             borderRadius: 8 
           }}>
+            {/* Payment status */}
+            <div style={{ marginBottom: 8 }}>
+              <Text strong>Trạng thái thanh toán:&nbsp;</Text>
+              <Tag color={order.paymentStatus === 'paid' ? 'green' : 'orange'}>
+                {order.paymentStatus === 'paid' ? 'Đã thanh toán' : (order.paymentStatus === 'refund_pending' ? 'Đang hoàn tiền' : 'Chưa thanh toán')}
+              </Tag>
+            </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <Text>Tổng tiền hàng:</Text>
               <Text>{(order.subtotal ?? 0).toLocaleString('vi-VN')}₫</Text>
@@ -229,6 +236,19 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
                     <Tag key={p.id} color="blue">{p.name} ({p.discountPercent}%)</Tag>
                   ))}
                 </div>
+              </div>
+            )}
+            {/* If order cancelled, show cancel reason */}
+            {order.status === 'cancelled' && order.cancelReason && (
+              <div style={{ marginTop: 12, background: '#fff1f0', padding: 12, borderRadius: 6 }}>
+                <Text strong type="danger">Lý do hủy:</Text>
+                <br />
+                <Text>{order.cancelReason}</Text>
+                {order.cancelledAt && (
+                  <div style={{ marginTop: 6 }}>
+                    <Text type="secondary">Thời gian hủy: {dayjs(order.cancelledAt).format('DD/MM/YYYY HH:mm')}</Text>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -15,7 +15,7 @@ const statusConfig = {
   cancelled: { color: 'red', text: 'Đã hủy' },
 };
 
-const OrderCard = ({ order, onUpdateStatus, onConfirmHandover, onViewDetails }) => {
+const OrderCard = ({ order, onUpdateStatus, onConfirmHandover, onViewDetails, onCancel }) => {
   const status = statusConfig[order.status] || statusConfig.pending;
 
   const getNextStatus = () => {
@@ -48,9 +48,17 @@ const OrderCard = ({ order, onUpdateStatus, onConfirmHandover, onViewDetails }) 
         <div style={{ flex: 1 }}>
           <Space direction="vertical" size="small" style={{ width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Title level={5} style={{ margin: 0 }}>
-                Đơn #{order._id?.slice(-6).toUpperCase()}
-              </Title>
+              <div>
+                <Title level={5} style={{ margin: 0 }}>
+                  Đơn #{order._id?.slice(-6).toUpperCase()}
+                </Title>
+                {/* Show small payment status under id */}
+                <div style={{ marginTop: 4 }}>
+                  <Tag color={order.paymentStatus === 'paid' ? 'green' : 'orange'} style={{ marginRight: 8, fontSize: 12 }}>
+                    {order.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                  </Tag>
+                </div>
+              </div>
               <Tag color={status.color}>{status.text}</Tag>
             </div>
 
@@ -124,12 +132,26 @@ const OrderCard = ({ order, onUpdateStatus, onConfirmHandover, onViewDetails }) 
                 <Text strong style={{ fontSize: 16, color: '#667eea' }}>
                   {order.totalAmount?.toLocaleString('vi-VN')}₫
                 </Text>
+                {/* Show quick cancel reason snippet when cancelled */}
+                {order.status === 'cancelled' && order.cancelReason && (
+                  <div style={{ marginLeft: 8 }}>
+                    <Text type="danger" style={{ fontSize: 12 }}>
+                      Lý do: {String(order.cancelReason).slice(0, 60)}{String(order.cancelReason).length > 60 ? '...' : ''}
+                    </Text>
+                  </div>
+                )}
               </Space>
               
-              <Space>
+                <Space>
                 <Button size="small" onClick={() => onViewDetails(order)}>
                   Chi tiết
                 </Button>
+                {/* Cancel button for restaurant (allow when pending or preparing) */}
+                {['pending', 'preparing'].includes(order.status) && onCancel && (
+                  <Button size="small" danger onClick={() => onCancel(order)}>
+                    Hủy đơn
+                  </Button>
+                )}
                 {nextStatus && (
                   <>
                     {/* Special case: ready status requires drone assignment */}

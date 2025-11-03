@@ -357,11 +357,25 @@ const getRestaurantOrders = asyncHandler(async(req, res) => {
         throw new Error('Not authorized')
     }
 
-    const { status } = req.query
+    const { status, startDate, endDate } = req.query
+
+    // Build base query for this restaurant
     let query = { restaurant: req.params.id }
 
+    // Status filter if provided
     if (status) {
         query.status = status
+    }
+
+    // Date range filter (createdAt)
+    if (startDate || endDate) {
+        query.createdAt = {}
+        if (startDate) query.createdAt.$gte = new Date(startDate)
+        if (endDate) {
+            const end = new Date(endDate)
+            end.setHours(23, 59, 59, 999)
+            query.createdAt.$lte = end
+        }
     }
 
     const orders = await Order.find(query)

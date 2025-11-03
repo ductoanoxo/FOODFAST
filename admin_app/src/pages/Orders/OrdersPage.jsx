@@ -9,12 +9,16 @@ import {
     Descriptions,
     message,
     Select,
+    Input,
+    Form,
+    Popconfirm,
 } from 'antd'
-import { EyeOutlined } from '@ant-design/icons'
-import { getAllOrders } from '../../api/orderAPI'
+import { EyeOutlined, CloseCircleOutlined } from '@ant-design/icons'
+import { getAllOrders, cancelOrder } from '../../api/orderAPI'
 import './OrdersPage.css'
 
 const { Option } = Select
+const { TextArea } = Input
 
 const OrdersPage = () => {
     const [orders, setOrders] = useState([])
@@ -22,6 +26,10 @@ const OrdersPage = () => {
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [modalVisible, setModalVisible] = useState(false)
     const [statusFilter, setStatusFilter] = useState('all')
+    const [cancelModalVisible, setCancelModalVisible] = useState(false)
+    const [cancelReason, setCancelReason] = useState('')
+    const [cancelingOrderId, setCancelingOrderId] = useState(null)
+    const [canceling, setCanceling] = useState(false)
 
     useEffect(() => {
         fetchOrders()
@@ -44,6 +52,39 @@ const OrdersPage = () => {
     const showDetails = (order) => {
         setSelectedOrder(order)
         setModalVisible(true)
+    }
+
+    const showCancelModal = (orderId) => {
+        setCancelingOrderId(orderId)
+        setCancelReason('')
+        setCancelModalVisible(true)
+    }
+
+    const handleCancelOrder = async () => {
+        if (!cancelReason.trim()) {
+            message.error('Vui lòng nhập lý do hủy đơn')
+            return
+        }
+
+        try {
+            setCanceling(true)
+            await cancelOrder(cancelingOrderId, cancelReason)
+            message.success('Đã hủy đơn hàng thành công')
+            setCancelModalVisible(false)
+            setCancelReason('')
+            setCancelingOrderId(null)
+            fetchOrders() // Refresh list
+        } catch (error) {
+            console.error('Error canceling order:', error)
+            message.error(error.response?.data?.message || 'Không thể hủy đơn hàng')
+        } finally {
+            setCanceling(false)
+        }
+    }
+
+    const canCancelOrder = (order) => {
+        // Can only cancel orders that are not delivered or already cancelled
+        return !['delivered', 'cancelled'].includes(order.status)
     }
 
     const getStatusColor = (status) => {
@@ -99,12 +140,14 @@ const OrdersPage = () => {
             dataIndex: 'paymentMethod',
             key: 'paymentMethod',
             render: (method) => {
+                const methodKey = (method || '').toString().toLowerCase()
                 const methodMap = {
                     cod: 'Tiền mặt',
                     vnpay: 'VNPay',
                     momo: 'Momo',
+                    card: 'Thẻ',
                 }
-                return methodMap[method] || method
+                return methodMap[methodKey] || method
             },
         },
         {
@@ -133,6 +176,15 @@ const OrdersPage = () => {
                     >
                         Chi tiết
                     </Button>
+                    {canCancelOrder(record) && (
+                        <Button
+                            danger
+                            icon={<CloseCircleOutlined />}
+                            onClick={() => showCancelModal(record._id)}
+                        >
+                            Hủy đơn
+                        </Button>
+                    )}
                 </Space>
             ),
         },
@@ -202,11 +254,14 @@ const OrdersPage = () => {
                                 {selectedOrder.note || 'Không có'}
                             </Descriptions.Item>
                             <Descriptions.Item label="Phương thức thanh toán">
-                                {selectedOrder.paymentMethod === 'cod'
-                                    ? 'Tiền mặt'
-                                    : selectedOrder.paymentMethod === 'vnpay'
-                                    ? 'VNPay'
-                                    : 'Momo'}
+                                {(() => {
+                                    const pm = (selectedOrder.paymentMethod || '').toString().toLowerCase()
+                                    if (pm === 'cod') return 'Tiền mặt'
+                                    if (pm === 'vnpay') return 'VNPay'
+                                    if (pm === 'momo') return 'Momo'
+                                    if (pm === 'card') return 'Thẻ'
+                                    return selectedOrder.paymentMethod || '-'
+                                })()}
                             </Descriptions.Item>
                             <Descriptions.Item label="Trạng thái thanh toán">
                                 <Tag color={selectedOrder.paymentStatus === 'paid' ? 'green' : 'orange'}>
@@ -221,6 +276,16 @@ const OrdersPage = () => {
                             <Descriptions.Item label="Ngày đặt">
                                 {new Date(selectedOrder.createdAt).toLocaleString('vi-VN')}
                             </Descriptions.Item>
+                            {selectedOrder.status === 'cancelled' && selectedOrder.cancelReason && (
+                                <Descriptions.Item label="Lý do hủy" span={2}>
+                                    <span style={{ color: '#ff4d4f' }}>{selectedOrder.cancelReason}</span>
+                                </Descriptions.Item>
+                            )}
+                            {selectedOrder.status === 'cancelled' && selectedOrder.cancelledAt && (
+                                <Descriptions.Item label="Thời gian hủy" span={2}>
+                                    {new Date(selectedOrder.cancelledAt).toLocaleString('vi-VN')}
+                                </Descriptions.Item>
+                            )}
                         </Descriptions>
 
                         <div style={{ marginTop: 24 }}>
@@ -272,8 +337,65 @@ const OrdersPage = () => {
                                 </Space>
                             </div>
                         </div>
+
+                        {/* Cancel Button in Detail Modal */}
+                        {selectedOrder && canCancelOrder(selectedOrder) && (
+                            <div style={{ marginTop: 24, textAlign: 'center' }}>
+                                <Button
+                                    danger
+                                    size="large"
+                                    icon={<CloseCircleOutlined />}
+                                    onClick={() => {
+                                        setModalVisible(false)
+                                        showCancelModal(selectedOrder._id)
+                                    }}
+                                >
+                                    Hủy đơn hàng này
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 )}
+            </Modal>
+
+            {/* Cancel Order Modal */}
+            <Modal
+                title="Hủy đơn hàng"
+                open={cancelModalVisible}
+                onOk={handleCancelOrder}
+                onCancel={() => {
+                    setCancelModalVisible(false)
+                    setCancelReason('')
+                    setCancelingOrderId(null)
+                }}
+                okText="Xác nhận hủy"
+                cancelText="Đóng"
+                okButtonProps={{ danger: true, loading: canceling }}
+                cancelButtonProps={{ disabled: canceling }}
+            >
+                <Form layout="vertical">
+                    <Form.Item 
+                        label="Lý do hủy đơn" 
+                        required
+                        help="Vui lòng nhập lý do hủy đơn hàng"
+                    >
+                        <TextArea
+                            rows={4}
+                            value={cancelReason}
+                            onChange={(e) => setCancelReason(e.target.value)}
+                            placeholder="Ví dụ: Hết nguyên liệu, Khách yêu cầu hủy, v.v..."
+                            disabled={canceling}
+                        />
+                    </Form.Item>
+                    <div style={{ color: '#ff4d4f', fontSize: '12px' }}>
+                        <strong>Lưu ý:</strong> Sau khi hủy đơn:
+                        <ul>
+                            <li>Voucher (nếu có) sẽ được hoàn lại cho khách hàng</li>
+                            <li>Số lượng bán của sản phẩm sẽ được điều chỉnh</li>
+                            <li>Nếu đã thanh toán, hệ thống sẽ tự động hoàn tiền</li>
+                        </ul>
+                    </div>
+                </Form>
             </Modal>
         </div>
     )

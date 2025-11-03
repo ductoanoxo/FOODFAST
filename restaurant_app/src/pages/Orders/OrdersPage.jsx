@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Typography, Tabs, Spin, Empty, Row, Col, message, notification } from 'antd';
+import { Typography, Tabs, Spin, Empty, Row, Col, message, notification, Modal, Input } from 'antd';
 import { fetchOrders, updateOrderStatus } from '../../redux/slices/orderSlice';
 import { restaurantConfirmHandover } from '../../api/orderAPI';
 import OrderCard from '../../components/OrderCard';
@@ -23,6 +23,9 @@ const OrdersPage = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [orderToCancel, setOrderToCancel] = useState(null);
 
   useEffect(() => {
     dispatch(fetchOrders());
@@ -81,6 +84,28 @@ const OrdersPage = () => {
     }
   };
 
+  const handleRequestCancel = (order) => {
+    setOrderToCancel(order);
+    setCancelReason('');
+    setCancelModalVisible(true);
+  };
+
+  const handleSubmitCancel = async () => {
+    if (!cancelReason || cancelReason.trim().length === 0) {
+      message.error('Vui lòng nhập lý do hủy');
+      return;
+    }
+    try {
+      await dispatch(updateOrderStatus({ orderId: orderToCancel._id, status: 'cancelled', reason: cancelReason })).unwrap();
+      message.success('Đã hủy đơn hàng');
+      setCancelModalVisible(false);
+      setOrderToCancel(null);
+      dispatch(fetchOrders());
+    } catch (error) {
+      message.error('Không thể hủy đơn: ' + (error || 'Vui lòng thử lại'));
+    }
+  };
+
   const handleConfirmHandover = async (orderId, droneId) => {
     try {
       await restaurantConfirmHandover(orderId, droneId);
@@ -102,6 +127,7 @@ const OrdersPage = () => {
     if (status === 'completed') return orders.filter((order) => order.status === 'completed' || order.status === 'delivered');
     // ✅ Tab "Đang giao" hiển thị cả picked_up (đã giao cho drone) và delivering (đang bay)
     if (status === 'delivering') return orders.filter((order) => order.status === 'picked_up' || order.status === 'delivering');
+    if (status === 'cancelled') return orders.filter((order) => order.status === 'cancelled');
     return orders.filter((order) => order.status === status);
   };
 
@@ -131,6 +157,10 @@ const OrdersPage = () => {
       key: 'completed',
       // Count both 'completed' and 'delivered' orders as completed
       label: `Hoàn thành (${orders.filter((o) => o.status === 'completed' || o.status === 'delivered').length})`,
+    },
+    {
+      key: 'cancelled',
+      label: `Đã hủy (${orders.filter((o) => o.status === 'cancelled').length})`,
     },
   ];
 
@@ -172,6 +202,7 @@ const OrdersPage = () => {
                   onUpdateStatus={handleUpdateStatus}
                   onConfirmHandover={handleConfirmHandover}
                   onViewDetails={handleViewDetails}
+                  onCancel={handleRequestCancel}
                 />
               </Col>
             ))}
@@ -184,6 +215,23 @@ const OrdersPage = () => {
         order={selectedOrder}
         onClose={() => setModalVisible(false)}
       />
+
+      {/* Cancel modal for restaurant to provide reason */}
+      <Modal
+        title={`Hủy đơn ${orderToCancel?._id?.slice(-6).toUpperCase() || ''}`}
+        open={cancelModalVisible}
+        onCancel={() => setCancelModalVisible(false)}
+        onOk={handleSubmitCancel}
+        okText="Hủy đơn"
+        cancelText="Đóng"
+      >
+        <Input.TextArea
+          rows={4}
+          placeholder="Nhập lý do hủy (bắt buộc)"
+          value={cancelReason}
+          onChange={(e) => setCancelReason(e.target.value)}
+        />
+      </Modal>
     </div>
   );
 };

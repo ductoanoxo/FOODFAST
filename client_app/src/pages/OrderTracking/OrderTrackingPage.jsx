@@ -22,6 +22,8 @@ const OrderTrackingPage = () => {
   const [loading, setLoading] = useState(true)
   const [confirmModalVisible, setConfirmModalVisible] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [cancelModalVisible, setCancelModalVisible] = useState(false)
+  const [canceling, setCanceling] = useState(false)
 
   useEffect(() => {
     fetchOrderTracking()
@@ -270,6 +272,21 @@ const OrderTrackingPage = () => {
                   </Button>
                 </div>
               )}
+
+              {/* Cancel Order Button (show when still pending) */}
+              {order.status === 'pending' && (
+                <div style={{ marginTop: 12, textAlign: 'center' }}>
+                  <Button
+                    type="default"
+                    danger
+                    size="large"
+                    onClick={() => setCancelModalVisible(true)}
+                    style={{ width: '100%', height: '44px', fontSize: '15px' }}
+                  >
+                    Hủy đơn hàng
+                  </Button>
+                </div>
+              )}
             </Card>
 
             {/* Drone Tracking Map - Show if coordinates are available */}
@@ -417,6 +434,37 @@ const OrderTrackingPage = () => {
             <p style={{ textAlign: 'center', color: '#888' }}>
               Sau khi xác nhận, đơn hàng sẽ được đánh dấu là đã hoàn thành và drone sẽ sẵn sàng cho chuyến giao tiếp theo.
             </p>
+          </div>
+        </Modal>
+
+        {/* Cancel Order Modal */}
+        <Modal
+          title="Xác nhận hủy đơn hàng"
+          open={cancelModalVisible}
+          onOk={async () => {
+            try {
+              setCanceling(true)
+              const res = await orderAPI.cancelOrder(orderId)
+              message.success('Đã hủy đơn hàng')
+              // Update order state from response or refetch
+              if (res?.data?.data) setOrder(res.data.data)
+              else fetchOrderTracking()
+              setCancelModalVisible(false)
+            } catch (error) {
+              console.error('Error cancelling order:', error)
+              message.error(error.response?.data?.message || 'Không thể hủy đơn hàng')
+            } finally {
+              setCanceling(false)
+            }
+          }}
+          onCancel={() => setCancelModalVisible(false)}
+          okText="Xác nhận hủy"
+          cancelText="Đóng"
+          confirmLoading={canceling}
+          okButtonProps={{ danger: true, size: 'large' }}
+        >
+          <div style={{ padding: '20px 0' }}>
+            <Text>Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này sẽ lưu lại lịch sử đơn nhưng trạng thái sẽ là "Đã hủy".</Text>
           </div>
         </Modal>
       </div>
