@@ -18,6 +18,28 @@ const statusConfig = {
 const OrderCard = ({ order, onUpdateStatus, onConfirmHandover, onViewDetails, onCancel }) => {
   const status = statusConfig[order.status] || statusConfig.pending;
 
+  const getPaymentStatusText = (paymentStatus) => {
+    const texts = {
+      pending: 'Chưa thanh toán',
+      paid: 'Đã thanh toán',
+      refund_pending: 'Đang hoàn tiền',
+      refund_failed: 'Hoàn tiền thất bại',
+      refunded: 'Đã hoàn tiền',
+    }
+    return texts[paymentStatus] || paymentStatus
+  }
+
+  const getPaymentStatusColor = (paymentStatus) => {
+    const colors = {
+      pending: 'orange',
+      paid: 'green',
+      refund_pending: 'gold',
+      refund_failed: 'red',
+      refunded: 'cyan',
+    }
+    return colors[paymentStatus] || 'default'
+  }
+
   const getNextStatus = () => {
     const statusFlow = {
       pending: 'preparing',
@@ -54,8 +76,8 @@ const OrderCard = ({ order, onUpdateStatus, onConfirmHandover, onViewDetails, on
                 </Title>
                 {/* Show small payment status under id */}
                 <div style={{ marginTop: 4 }}>
-                  <Tag color={order.paymentStatus === 'paid' ? 'green' : 'orange'} style={{ marginRight: 8, fontSize: 12 }}>
-                    {order.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                  <Tag color={getPaymentStatusColor(order.paymentStatus)} style={{ marginRight: 8, fontSize: 12 }}>
+                    {getPaymentStatusText(order.paymentStatus)}
                   </Tag>
                 </div>
               </div>

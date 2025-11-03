@@ -14,6 +14,7 @@ import {
   Col,
   List,
   message,
+  Modal,
 } from 'antd'
 import {
   EnvironmentOutlined,
@@ -21,12 +22,14 @@ import {
   UserOutlined,
   CreditCardOutlined,
   WalletOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons'
 import { orderAPI } from '../../api/orderAPI'
 import { paymentAPI } from '../../api/paymentAPI'
 import { restaurantAPI } from '../../api/restaurantAPI'
 import { clearCart } from '../../redux/slices/cartSlice'
 import VoucherSelector from '../../components/VoucherSelector/VoucherSelector'
+import DroneMap from '../OrderTracking/DroneMap'
 import './CheckoutPage.css'
 
 const { Title, Text } = Typography
@@ -38,7 +41,14 @@ const CheckoutPage = () => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('COD')
-  
+
+  const [deliveryFee, setDeliveryFee] = useState(0)
+  const [isCalculatingFee, setIsCalculatingFee] = useState(false)
+  const [distance, setDistance] = useState(null)
+  const [feeCalculated, setFeeCalculated] = useState(false)
+  const [mapModalVisible, setMapModalVisible] = useState(false)
+  const [mapData, setMapData] = useState(null)
+
   const { items, totalPrice } = useSelector((state) => state.cart)
   const { user } = useSelector((state) => state.auth)
   const [restaurantClosed, setRestaurantClosed] = useState(false)
@@ -53,12 +63,59 @@ const CheckoutPage = () => {
     }).format(price)
   }
 
-  const deliveryFee = 15000
   const discountAmount = appliedVoucherData?.discountAmount || 0
   const totalAmount = totalPrice + deliveryFee - discountAmount
 
+  const handleCalculateFee = async () => {
+    const address = form.getFieldValue('address')
+    if (!address) {
+      message.error('Vui lòng nhập địa chỉ giao hàng trước.')
+      return
+    }
+    if (!restaurantId) {
+      message.error('Không tìm thấy nhà hàng từ giỏ hàng.')
+      return
+    }
+
+    setIsCalculatingFee(true)
+    try {
+      const response = await orderAPI.calculateDeliveryFee({
+        restaurantId: restaurantId,
+        userAddress: address,
+      })
+
+      const responseData = response.data || response
+
+      if (responseData && responseData.deliveryFee !== undefined) {
+        setDeliveryFee(responseData.deliveryFee)
+        setDistance(responseData.distance)
+        setFeeCalculated(true)
+        message.success(`Đã tính phí giao hàng cho khoảng cách ${responseData.distance} km.`)
+
+        setMapData({
+          restaurant: {
+            name: items[0]?.restaurant?.name || 'Nhà hàng',
+            location: responseData.restaurantLocation,
+          },
+          deliveryInfo: {
+            address: form.getFieldValue('address'),
+            location: responseData.userLocation,
+          },
+        })
+      } else {
+        console.error('Unexpected API response structure:', response)
+        throw new Error('Không nhận được dữ liệu phí giao hàng từ server.')
+      }
+    } catch (error) {
+      console.error('Error calculating delivery fee:', error)
+      message.error(error.response?.data?.message || 'Không thể tính phí giao hàng.')
+      setFeeCalculated(false)
+    } finally {
+      setIsCalculatingFee(false)
+    }
+  }
+
   const handleApplyVoucher = (voucherData) => {
-    console.log('Apply voucher data (client):', voucherData)
     setAppliedVoucherData(voucherData)
   }
 
@@ -67,19 +124,22 @@ const CheckoutPage = () => {
       message.error('Nhà hàng hiện đang đóng cửa, không thể đặt hàng.')
       return
     }
+    if (!feeCalculated) {
+      message.warn('Vui lòng bấm nút "Tính phí giao hàng" trước khi đặt hàng.')
+      return
+    }
     try {
       setLoading(true)
-      
-      // Check if user is logged in
+
       const token = localStorage.getItem('token')
       if (!token || !user) {
         message.error('Bạn cần đăng nhập để đặt hàng!')
         navigate('/login', { state: { from: '/checkout' } })
         return
       }
-      
+
       const orderData = {
-        items: items.map(item => ({
+        items: items.map((item) => ({
           product: item._id,
           quantity: item.quantity,
           price: item.price,
@@ -91,48 +151,30 @@ const CheckoutPage = () => {
         },
         note: values.note || '',
         paymentMethod,
-        deliveryFee,
         voucherCode: appliedVoucherData?.voucher?.code || undefined,
-        // Gửi thông tin để validation
         clientCalculatedTotal: totalAmount,
         clientDiscount: discountAmount,
       }
 
-  console.log('Creating order, payload:', orderData)
-  const response = await orderAPI.createOrder(orderData)
-  console.log('Create order response (raw):', response)
-  // Support different possible response shapes: axiosResponse.data.data or axiosResponse.data
-  const orderId = response?.data?.data?._id || response?.data?._id || response?.data
+      const response = await orderAPI.createOrder(orderData)
+      const orderId = response?.data?.data?._id || response?.data?._id || response?.data
 
-      // Xử lý thanh toán theo phương thức
       if (paymentMethod === 'VNPAY') {
-        // Thanh toán VNPay
         try {
           const paymentResponse = await paymentAPI.createVNPayPayment({
             orderId: orderId,
             amount: totalAmount,
             orderInfo: `Thanh toan don hang #${orderId}`,
           })
-          
-          // Lưu orderId vào localStorage để xử lý sau khi return
           localStorage.setItem('pendingOrderId', orderId)
-          
-          // Chuyển hướng đến VNPay
           window.location.href = paymentResponse.data.paymentUrl
         } catch (paymentError) {
           console.error('VNPay payment error:', paymentError)
           message.error('Không thể tạo thanh toán VNPay!')
-          // Vẫn cho phép xem đơn hàng
           dispatch(clearCart())
           navigate(`/order-tracking/${orderId}`)
         }
-      } else if (paymentMethod === 'MOMO') {
-        // Thanh toán Momo - Tương tự VNPay
-        message.info('Tính năng Momo đang được phát triển!')
-        dispatch(clearCart())
-        navigate(`/order-tracking/${orderId}`)
       } else {
-        // Thanh toán COD
         dispatch(clearCart())
         message.success('Đặt hàng thành công!')
         navigate(`/order-tracking/${orderId}`)
@@ -145,20 +187,17 @@ const CheckoutPage = () => {
     }
   }
 
-  // If cart is empty, redirect to cart page. Use useEffect to avoid calling navigate during render
   useEffect(() => {
     if (!items || items.length === 0) {
       navigate('/cart')
     }
   }, [items, navigate])
 
-  // Load restaurant status from first cart item
   useEffect(() => {
     const loadStatus = async () => {
       try {
         setRestaurantLoading(true)
         if (!items || items.length === 0) {
-          // No items — nothing to load
           setRestaurantId(null)
           setRestaurantClosed(false)
           setRestaurantLoading(false)
@@ -188,10 +227,11 @@ const CheckoutPage = () => {
   return (
     <div className="checkout-page">
       <div className="container">
-        <Title level={2}>Thanh toán</Title>
-
-        <Row gutter={[24, 24]}>
-          <Col xs={24} lg={16}>
+        <Row gutter={[32, 32]}>
+          <Col xs={24} lg={15}>
+            <Title level={2} style={{ marginBottom: 24 }}>
+              Thanh toán
+            </Title>
             <Form
               form={form}
               layout="vertical"
@@ -202,98 +242,116 @@ const CheckoutPage = () => {
                 address: user?.address || '',
               }}
             >
-              {/* Thông tin giao hàng */}
-              <Card title="Thông tin giao hàng" className="checkout-card">
-                <Form.Item
-                  name="name"
-                  label="Họ và tên"
-                  rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}
-                >
-                  <Input prefix={<UserOutlined />} placeholder="Nhập họ và tên" size="large" />
-                </Form.Item>
-
-                <Form.Item
-                  name="phone"
-                  label="Số điện thoại"
-                  rules={[
-                    { required: true, message: 'Vui lòng nhập số điện thoại!' },
-                    { pattern: /^[0-9]{10}$/, message: 'Số điện thoại không hợp lệ!' }
-                  ]}
-                >
-                  <Input prefix={<PhoneOutlined />} placeholder="Nhập số điện thoại" size="large" />
-                </Form.Item>
+              <Card title="1. Thông tin giao hàng" className="checkout-card">
+                <Row gutter={16}>
+                  <Col xs={24} sm={12}>
+                    <Form.Item
+                      name="name"
+                      label="Họ và tên"
+                      rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}
+                    >
+                      <Input prefix={<UserOutlined />} placeholder="Nhập họ và tên" size="large" />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12}>
+                    <Form.Item
+                      name="phone"
+                      label="Số điện thoại"
+                      rules={[
+                        { required: true, message: 'Vui lòng nhập số điện thoại!' },
+                        { pattern: /^[0-9]{10}$/, message: 'Số điện thoại không hợp lệ!' },
+                      ]}
+                    >
+                      <Input prefix={<PhoneOutlined />} placeholder="Nhập số điện thoại" size="large" />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
                 <Form.Item
                   name="address"
                   label="Địa chỉ giao hàng"
                   rules={[{ required: true, message: 'Vui lòng nhập địa chỉ!' }]}
                 >
-                  <TextArea
-                    prefix={<EnvironmentOutlined />}
-                    placeholder="Nhập địa chỉ chi tiết"
-                    rows={3}
-                    size="large"
-                  />
+                  <TextArea placeholder="Nhập địa chỉ chi tiết" rows={3} size="large" />
                 </Form.Item>
 
-                <Form.Item name="note" label="Ghi chú (không bắt buộc)">
+                <div className="fee-calculator-panel">
+                  <div className="fee-actions">
+                    <Button
+                      className="calc-fee-btn"
+                      onClick={handleCalculateFee}
+                      loading={isCalculatingFee}
+                      disabled={restaurantLoading}
+                      icon={<EnvironmentOutlined />}
+                    >
+                      <span>Tính phí giao hàng</span>
+                    </Button>
+                    {feeCalculated && (
+                      <Button
+                        className="view-map-btn"
+                        onClick={() => setMapModalVisible(true)}
+                        icon={<GlobalOutlined />}
+                      >
+                        Xem bản đồ
+                      </Button>
+                    )}
+                  </div>
+
+                  {feeCalculated && distance && (
+                    <div className="distance-highlight">
+                      <EnvironmentOutlined />
+                      <Text>Khoảng cách giao hàng: </Text>
+                      <Text strong>~{distance} km</Text>
+                    </div>
+                  )}
+                </div>
+
+                <Form.Item name="note" label="Ghi chú (không bắt buộc)" style={{ marginTop: 24 }}>
                   <TextArea placeholder="Ghi chú cho người giao hàng..." rows={2} />
                 </Form.Item>
               </Card>
 
-              {/* Phương thức thanh toán */}
-              <Card title="Phương thức thanh toán" className="checkout-card">
+              <Card title="2. Phương thức thanh toán" className="checkout-card">
                 <Radio.Group
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
                   style={{ width: '100%' }}
+                  className="payment-radio-group"
                 >
                   <Space direction="vertical" style={{ width: '100%' }}>
-                    <Radio value="COD" className="payment-radio">
-                      <div className="payment-option">
-                        <WalletOutlined style={{ fontSize: 24, color: '#52c41a' }} />
-                        <div>
-                          <Text strong>Thanh toán khi nhận hàng (COD)</Text>
-                          <br />
-                          <Text type="secondary" style={{ fontSize: 13 }}>
-                            Thanh toán bằng tiền mặt khi nhận hàng
-                          </Text>
-                        </div>
+                    <div
+                      className={`payment-option-card ${paymentMethod === 'COD' ? 'selected' : ''}`}
+                      onClick={() => setPaymentMethod('COD')}
+                    >
+                      <WalletOutlined style={{ fontSize: 28, color: '#52c41a' }} />
+                      <div>
+                        <Text strong>Thanh toán khi nhận hàng (COD)</Text>
+                        <br />
+                        <Text type="secondary" style={{ fontSize: 13 }}>
+                          Thanh toán bằng tiền mặt khi nhận hàng
+                        </Text>
                       </div>
-                    </Radio>
+                    </div>
 
-                    <Radio value="VNPAY" className="payment-radio">
-                      <div className="payment-option">
-                        <CreditCardOutlined style={{ fontSize: 24, color: '#1890ff' }} />
-                        <div>
-                          <Text strong>VNPay</Text>
-                          <br />
-                          <Text type="secondary" style={{ fontSize: 13 }}>
-                            Thanh toán qua VNPay
-                          </Text>
-                        </div>
+                    <div
+                      className={`payment-option-card ${paymentMethod === 'VNPAY' ? 'selected' : ''}`}
+                      onClick={() => setPaymentMethod('VNPAY')}
+                    >
+                      <CreditCardOutlined style={{ fontSize: 28, color: '#1890ff' }} />
+                      <div>
+                        <Text strong>VNPay</Text>
+                        <br />
+                        <Text type="secondary" style={{ fontSize: 13 }}>
+                          Thanh toán qua cổng VNPay (Thẻ ATM, Visa, QR Pay)
+                        </Text>
                       </div>
-                    </Radio>
-
-                    <Radio value="MOMO" className="payment-radio">
-                      <div className="payment-option">
-                        <CreditCardOutlined style={{ fontSize: 24, color: '#d71f85' }} />
-                        <div>
-                          <Text strong>Momo</Text>
-                          <br />
-                          <Text type="secondary" style={{ fontSize: 13 }}>
-                            Thanh toán qua ví Momo
-                          </Text>
-                        </div>
-                      </div>
-                    </Radio>
+                    </div>
                   </Space>
                 </Radio.Group>
               </Card>
 
-              {/* Voucher */}
               {restaurantId && (
-                <Card title="Mã khuyến mãi" className="checkout-card">
+                <Card title="3. Mã khuyến mãi" className="checkout-card">
                   <VoucherSelector
                     restaurantId={restaurantId}
                     orderTotal={totalPrice}
@@ -302,33 +360,17 @@ const CheckoutPage = () => {
                   />
                 </Card>
               )}
-
-              {restaurantClosed && (
-                <div style={{ marginBottom: 12 }}>
-                  <Text type="danger">Nhà hàng hiện đang đóng cửa. Bạn không thể đặt hàng tại thời điểm này.</Text>
-                </div>
-              )}
-              <Button
-                type="primary"
-                htmlType="submit"
-                size="large"
-                block
-                loading={loading}
-                disabled={restaurantClosed || restaurantLoading}
-              >
-                Đặt hàng
-              </Button>
             </Form>
           </Col>
 
-          <Col xs={24} lg={8}>
-            <Card title="Đơn hàng" className="order-summary">
+          <Col xs={24} lg={9}>
+            <Card title="Tóm tắt đơn hàng" className="order-summary-card">
               <List
                 dataSource={items}
                 renderItem={(item) => (
                   <List.Item>
                     <List.Item.Meta
-                      title={item.name}
+                      title={<Text strong>{item.name}</Text>}
                       description={`${item.quantity} x ${formatPrice(item.price)}`}
                     />
                     <Text strong>{formatPrice(item.price * item.quantity)}</Text>
@@ -336,7 +378,7 @@ const CheckoutPage = () => {
                 )}
               />
 
-              <Divider />
+              <Divider style={{ margin: '16px 0' }} />
 
               <div className="summary-row">
                 <Text>Tạm tính:</Text>
@@ -344,24 +386,56 @@ const CheckoutPage = () => {
               </div>
               <div className="summary-row">
                 <Text>Phí giao hàng:</Text>
-                <Text strong>{formatPrice(deliveryFee)}</Text>
+                <Text strong>
+                  {feeCalculated ? formatPrice(deliveryFee) : <span style={{ color: '#888' }}>Tính sau</span>}
+                </Text>
               </div>
               {discountAmount > 0 && (
                 <div className="summary-row">
-                  <Text>Giảm giá:</Text>
-                  <Text strong type="success">-{formatPrice(discountAmount)}</Text>
+                  <Text>Giảm giá voucher:</Text>
+                  <Text strong type="success">
+                    -{formatPrice(discountAmount)}
+                  </Text>
                 </div>
               )}
-              <Divider />
-              <div className="summary-row summary-total">
-                <Title level={4}>Tổng cộng:</Title>
-                <Title level={4} type="danger">
-                  {formatPrice(totalAmount)}
-                </Title>
+
+              <div className="total-section">
+                <div className="summary-row">
+                  <Title level={4}>Tổng cộng:</Title>
+                  <Title level={4} type="danger">
+                    {formatPrice(totalAmount)}
+                  </Title>
+                </div>
+                {restaurantClosed && (
+                  <div style={{ marginBottom: 12, textAlign: 'center' }}>
+                    <Text type="danger">Nhà hàng hiện đang đóng cửa.</Text>
+                  </div>
+                )}
+                <Button
+                  className="place-order-btn"
+                  type="primary"
+                  size="large"
+                  block
+                  loading={loading}
+                  disabled={restaurantClosed || restaurantLoading}
+                  onClick={() => form.submit()}
+                >
+                  ĐẶT HÀNG
+                </Button>
               </div>
             </Card>
           </Col>
         </Row>
+
+        <Modal
+          title="Xem trước lộ trình giao hàng"
+          open={mapModalVisible}
+          onCancel={() => setMapModalVisible(false)}
+          footer={null}
+          width={800}
+        >
+          {mapData && <DroneMap order={mapData} />}
+        </Modal>
       </div>
     </div>
   )

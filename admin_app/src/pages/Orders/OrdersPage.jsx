@@ -113,6 +113,28 @@ const OrdersPage = () => {
         return texts[status] || status
     }
 
+    const getPaymentStatusText = (paymentStatus) => {
+        const texts = {
+            pending: 'Chưa thanh toán',
+            paid: 'Đã thanh toán',
+            refund_pending: 'Đang hoàn tiền',
+            refund_failed: 'Hoàn tiền thất bại',
+            refunded: 'Đã hoàn tiền',
+        }
+        return texts[paymentStatus] || paymentStatus
+    }
+
+    const getPaymentStatusColor = (paymentStatus) => {
+        const colors = {
+            pending: 'orange',
+            paid: 'green',
+            refund_pending: 'gold',
+            refund_failed: 'red',
+            refunded: 'cyan',
+        }
+        return colors[paymentStatus] || 'default'
+    }
+
     const columns = [
         {
             title: 'Mã đơn',
@@ -136,7 +158,7 @@ const OrdersPage = () => {
             render: (price) => `${price?.toLocaleString()}đ`,
         },
         {
-            title: 'Thanh toán',
+            title: 'Phương thức',
             dataIndex: 'paymentMethod',
             key: 'paymentMethod',
             render: (method) => {
@@ -151,7 +173,17 @@ const OrdersPage = () => {
             },
         },
         {
-            title: 'Trạng thái',
+            title: 'TT Thanh toán',
+            dataIndex: 'paymentStatus',
+            key: 'paymentStatus',
+            render: (paymentStatus) => (
+                <Tag color={getPaymentStatusColor(paymentStatus)}>
+                    {getPaymentStatusText(paymentStatus)}
+                </Tag>
+            ),
+        },
+        {
+            title: 'TT Đơn hàng',
             dataIndex: 'status',
             key: 'status',
             render: (status) => (
@@ -264,8 +296,8 @@ const OrdersPage = () => {
                                 })()}
                             </Descriptions.Item>
                             <Descriptions.Item label="Trạng thái thanh toán">
-                                <Tag color={selectedOrder.paymentStatus === 'paid' ? 'green' : 'orange'}>
-                                    {selectedOrder.paymentStatus === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                                <Tag color={getPaymentStatusColor(selectedOrder.paymentStatus)}>
+                                    {getPaymentStatusText(selectedOrder.paymentStatus)}
                                 </Tag>
                             </Descriptions.Item>
                             <Descriptions.Item label="Trạng thái đơn hàng">
@@ -391,7 +423,7 @@ const OrdersPage = () => {
                         <strong>Lưu ý:</strong> Sau khi hủy đơn:
                         <ul>
                             <li>Voucher (nếu có) sẽ được hoàn lại cho khách hàng</li>
-                            <li>Số lượng bán của sản phẩm sẽ được điều chỉnh</li>
+                            
                             <li>Nếu đã thanh toán, hệ thống sẽ tự động hoàn tiền</li>
                         </ul>
                     </div>

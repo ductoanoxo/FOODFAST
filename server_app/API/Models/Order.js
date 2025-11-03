@@ -116,13 +116,29 @@ const orderSchema = new mongoose.Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ['pending', 'paid', 'failed', 'refunded'],
+        enum: ['pending', 'paid', 'failed', 'refunded', 'refund_pending', 'refund_failed'],
         default: 'pending',
     },
     paymentInfo: {
         method: String,
         transactionId: String,
         paidAt: Date,
+    },
+    refundInfo: {
+        status: {
+            type: String,
+            enum: ['not_applicable', 'pending', 'processing', 'success', 'failed'],
+        },
+        method: {
+            type: String,
+            enum: ['vnpay', 'momo', 'manual', 'not_applicable'],
+        },
+        amount: Number,
+        requestedAt: Date,
+        processedAt: Date,
+        estimatedTime: String,
+        message: String,
+        transactionId: String,
     },
     status: {
         type: String,

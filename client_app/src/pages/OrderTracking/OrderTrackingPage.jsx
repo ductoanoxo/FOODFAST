@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Card, Steps, Timeline, Typography, Tag, Spin, Row, Col, Divider, Button, Modal, message } from 'antd'
+import { Card, Steps, Timeline, Typography, Tag, Spin, Row, Col, Divider, Button, Modal, message, Alert } from 'antd'
 import { 
   ShoppingCartOutlined, 
   CheckCircleOutlined, 
   RocketOutlined,
   HomeOutlined,
-  CheckOutlined
+  CheckOutlined,
+  DollarOutlined,
+  ClockCircleOutlined,
+  InfoCircleOutlined
 } from '@ant-design/icons'
 import { orderAPI } from '../../api/orderAPI'
 import socketService from '../../services/socketService'
@@ -24,6 +27,7 @@ const OrderTrackingPage = () => {
   const [confirming, setConfirming] = useState(false)
   const [cancelModalVisible, setCancelModalVisible] = useState(false)
   const [canceling, setCanceling] = useState(false)
+  const [refundInfo, setRefundInfo] = useState(null)
 
   useEffect(() => {
     fetchOrderTracking()
@@ -252,6 +256,12 @@ const OrderTrackingPage = () => {
                         <Text strong>Đơn hàng đã bị hủy</Text>
                         <br />
                         <Text type="secondary">{order.cancelReason}</Text>
+                        {order.cancelledAt && (
+                          <>
+                            <br />
+                            <Text type="secondary">{new Date(order.cancelledAt).toLocaleString('vi-VN')}</Text>
+                          </>
+                        )}
                       </>
                     )
                   }] : []),
@@ -288,6 +298,63 @@ const OrderTrackingPage = () => {
                 </div>
               )}
             </Card>
+
+            {/* Refund Information Card - Show if order is cancelled and has refund info */}
+            {order.status === 'cancelled' && (order.refundInfo || refundInfo) && (
+              <Card 
+                className="tracking-card" 
+                title={
+                  <span>
+                    <DollarOutlined /> Thông tin hoàn tiền
+                  </span>
+                }
+              >
+                {(order.refundInfo || refundInfo)?.status === 'success' && (
+                  <Alert
+                    message="Hoàn tiền thành công"
+                    description={
+                      <div>
+                        <p><strong>Số tiền:</strong> {formatPrice((order.refundInfo || refundInfo).amount || 0)}</p>
+                        <p><strong>Phương thức:</strong> {(order.refundInfo || refundInfo).method === 'vnpay' ? 'VNPay' : 'Thủ công'}</p>
+                        <p><strong>Thời gian hoàn:</strong> {(order.refundInfo || refundInfo).estimatedTime || 'Đang xử lý'}</p>
+                        <p style={{ marginTop: 12 }}>{(order.refundInfo || refundInfo).message}</p>
+                      </div>
+                    }
+                    type="success"
+                    showIcon
+                    icon={<CheckCircleOutlined />}
+                  />
+                )}
+
+                {(order.refundInfo || refundInfo)?.status === 'pending' && (
+                  <Alert
+                    message="Yêu cầu hoàn tiền đang được xử lý"
+                    description={
+                      <div>
+                        <p><strong>Số tiền:</strong> {formatPrice((order.refundInfo || refundInfo).amount || 0)}</p>
+                        <p><strong>Phương thức:</strong> {(order.refundInfo || refundInfo).method === 'manual' ? 'Xử lý thủ công' : 'Tự động'}</p>
+                        <p style={{ marginTop: 12 }}>{(order.refundInfo || refundInfo).message}</p>
+                        <p style={{ marginTop: 12 }}>
+                          <InfoCircleOutlined /> <em>Bộ phận chăm sóc khách hàng sẽ liên hệ với bạn trong thời gian sớm nhất.</em>
+                        </p>
+                      </div>
+                    }
+                    type="info"
+                    showIcon
+                    icon={<ClockCircleOutlined />}
+                  />
+                )}
+
+                {(order.refundInfo || refundInfo)?.status === 'not_applicable' && (
+                  <Alert
+                    message="Không có giao dịch cần hoàn"
+                    description={(order.refundInfo || refundInfo).message}
+                    type="warning"
+                    showIcon
+                  />
+                )}
+              </Card>
+            )}
 
             {/* Drone Tracking Map - Show if coordinates are available */}
             {(order.restaurant?.location?.coordinates && order.deliveryInfo?.location?.coordinates) && (
@@ -445,7 +512,21 @@ const OrderTrackingPage = () => {
             try {
               setCanceling(true)
               const res = await orderAPI.cancelOrder(orderId)
-              message.success('Đã hủy đơn hàng')
+              
+              // Show refund info message if available
+              if (res?.data?.refundInfo) {
+                setRefundInfo(res.data.refundInfo)
+                if (res.data.refundInfo.status === 'success') {
+                  message.success('Đã hủy đơn hàng và yêu cầu hoàn tiền thành công!')
+                } else if (res.data.refundInfo.status === 'pending') {
+                  message.warning('Đã hủy đơn hàng. Yêu cầu hoàn tiền đang được xử lý.')
+                } else {
+                  message.success(res.data.message || 'Đã hủy đơn hàng')
+                }
+              } else {
+                message.success('Đã hủy đơn hàng')
+              }
+              
               // Update order state from response or refetch
               if (res?.data?.data) setOrder(res.data.data)
               else fetchOrderTracking()
@@ -464,7 +545,33 @@ const OrderTrackingPage = () => {
           okButtonProps={{ danger: true, size: 'large' }}
         >
           <div style={{ padding: '20px 0' }}>
-            <Text>Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này sẽ lưu lại lịch sử đơn nhưng trạng thái sẽ là "Đã hủy".</Text>
+            <Text>Bạn có chắc chắn muốn hủy đơn hàng này không?</Text>
+            <br /><br />
+            {order?.paymentStatus === 'paid' && (
+              <Alert
+                message="Thông tin hoàn tiền"
+                description={
+                  <div>
+                    <p>✅ Đơn hàng đã thanh toán sẽ được hoàn tiền tự động</p>
+                    <p>💳 <strong>Phương thức:</strong> {order.paymentInfo?.method === 'vnpay' ? 'Hoàn về tài khoản VNPay/Ngân hàng' : 'Xử lý thủ công'}</p>
+                    <p>⏱️ <strong>Thời gian:</strong> {order.paymentInfo?.method === 'vnpay' ? '3-7 ngày làm việc' : 'Trong vòng 24h'}</p>
+                    <p>📱 Chúng tôi sẽ liên hệ với bạn qua số điện thoại đã đăng ký để xác nhận.</p>
+                  </div>
+                }
+                type="info"
+                showIcon
+                icon={<DollarOutlined />}
+                style={{ marginTop: 12 }}
+              />
+            )}
+            {order?.paymentMethod === 'COD' && (
+              <Alert
+                message="Đơn hàng thanh toán COD - Không có giao dịch cần hoàn"
+                type="warning"
+                showIcon
+                style={{ marginTop: 12 }}
+              />
+            )}
           </div>
         </Modal>
       </div>
