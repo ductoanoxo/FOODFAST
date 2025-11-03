@@ -1,13 +1,14 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # Chạy sau khi workflow "Docker Build and Push" hoàn thành.
-  # Job 'deploy' bên dưới sẽ tự kiểm tra để chỉ deploy cho nhánh `main`.
+  # Tự chạy sau khi workflow build image xong - CHỈ NHÁNH MAIN
   workflow_run:
     workflows:
-      - Docker Build and Push
+      - Docker Build and Push     # tên workflow build của bạn
     types:
       - completed
+    branches:
+      - main                      # CHỈ deploy nhánh main
   # Cho phép bấm tay để deploy lại (chỉ dành cho main)
   workflow_dispatch:
 
@@ -17,10 +18,9 @@ env:
 
 jobs:
   deploy:
-    # Điều kiện để chạy job:
-    # 1. Trigger bởi một workflow (`workflow_run`) khác đã chạy thành công VÀ workflow đó được chạy cho nhánh `main`.
-    # 2. HOẶC được trigger thủ công (`workflow_dispatch`) trên nhánh `main`.
-    # Điều này đảm bảo deploy chỉ xảy ra với code trên nhánh `main`.
+    # CHỈ chạy nếu:
+    # 1. Build của nhánh MAIN thành công, HOẶC
+    # 2. Chạy tay (workflow_dispatch) - nhưng vẫn phải kiểm tra nhánh
     if: |
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'success' &&
