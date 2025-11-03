@@ -13,6 +13,11 @@ on:
       - DUCTOAN
       - deploy
       - kiet
+  # Cho phép chạy khi có Pull Request
+  pull_request:
+    branches:
+      - main
+      - develop
 
 env:
   REGISTRY: ghcr.io
@@ -20,8 +25,8 @@ env:
 
 jobs:
   build-and-push:
-    # Chỉ chạy khi workflow trước đó thành công
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Chạy khi: workflow trước đó thành công HOẶC là Pull Request
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -42,11 +47,16 @@ jobs:
             image: foodfast-server
 
     steps:
-      - name: Checkout code
+      - name: Checkout code (from workflow_run)
+        if: ${{ github.event_name == 'workflow_run' }}
         uses: actions/checkout@v4
         with:
           # Lấy đúng commit mà workflow trước vừa chạy
           ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Checkout code (from pull_request)
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -79,8 +89,8 @@ jobs:
         with:
           context: ./${{ matrix.service.name }}
           file: ./${{ matrix.service.name }}/Dockerfile
-          # Vì workflow_run không phải PR nên ta có thể push
-          push: true
+          # Push chỉ khi KHÔNG phải PR (workflow_run event)
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}:buildcache

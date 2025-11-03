@@ -1,11 +1,15 @@
 name: Auto Deploy Foodfast to EC2
 
 on:
-  # Run only when code is pushed/merged into main. This prevents any deploys
-  # from other branches. Merges into main are represented as a push to main.
-  push:
-    branches:
-      - main
+  # Chạy sau khi workflow "Docker Build and Push" hoàn thành.
+  # Job 'deploy' bên dưới sẽ tự kiểm tra để chỉ deploy cho nhánh `main`.
+  workflow_run:
+    workflows:
+      - Docker Build and Push
+    types:
+      - completed
+  # Cho phép bấm tay để deploy lại (chỉ dành cho main)
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -13,10 +17,15 @@ env:
 
 jobs:
   deploy:
-    # Run only when this workflow is triggered by a push to main.
-    # This ensures deploy only happens for the main branch and never for other branches.
+    # Điều kiện để chạy job:
+    # 1. Trigger bởi một workflow (`workflow_run`) khác đã chạy thành công VÀ workflow đó được chạy cho nhánh `main`.
+    # 2. HOẶC được trigger thủ công (`workflow_dispatch`) trên nhánh `main`.
+    # Điều này đảm bảo deploy chỉ xảy ra với code trên nhánh `main`.
     if: |
-      github.event_name == 'push' && github.ref == 'refs/heads/main'
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
 
     steps:
