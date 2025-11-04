@@ -12,6 +12,13 @@ export default defineConfig({
         // Chỉ chạy unit tests (không bao gồm integration tests)
         include: ['src/__tests__/unit/**/*.test.{js,jsx}'],
         exclude: ['node_modules', 'dist', 'src/__tests__/integration/**'],
+        // Workaround cho webidl-conversions error trong CI
+        pool: 'forks',
+        poolOptions: {
+            forks: {
+                singleFork: true,
+            },
+        },
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'html'],

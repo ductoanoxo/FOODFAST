@@ -6,7 +6,7 @@ import orderReducer, {
     setError,
     setTrackingData,
     updateOrderStatus,
-} from './orderSlice';
+} from '@/redux/slices/orderSlice';
 
 /**
  * UNIT TEST: Order Slice

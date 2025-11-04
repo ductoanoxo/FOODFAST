@@ -8,7 +8,7 @@ import {
     calculatePercentage,
     formatFileSize,
     isValidImageType,
-} from './helpers';
+} from '@/utils/helpers';
 
 describe('Restaurant helpers', () => {
     describe('formatCurrency', () => {
