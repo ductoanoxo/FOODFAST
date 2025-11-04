@@ -2,12 +2,71 @@ import { useEffect, useState, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { message, Spin, Progress, Typography, Space } from 'antd'
-import { EnvironmentOutlined, RocketOutlined } from '@ant-design/icons'
+import { message, Spin, Progress, Typography, Space, Button } from 'antd'
+import { EnvironmentOutlined, RocketOutlined, UserOutlined, ShopOutlined } from '@ant-design/icons'
 import socketService from '../../services/socketService'
 import './DroneMap.css'
 
 const { Text } = Typography
+
+// Component for map controls
+const MapControls = ({ mapRef, restaurantPos, deliveryPos, dronePos }) => {
+  const handleZoomTo = (target) => {
+    const map = mapRef.current
+    if (!map) return
+
+    let position
+    let zoomLevel = 17 // A close-up zoom level
+
+    switch (target) {
+      case 'restaurant':
+        position = restaurantPos
+        break
+      case 'delivery':
+        position = deliveryPos
+        break
+      case 'drone':
+        position = dronePos
+        break
+      default:
+        return
+    }
+
+    if (position && position.length === 2) {
+      map.flyTo(position, zoomLevel, {
+        animate: true,
+        duration: 1.5,
+      })
+    } else {
+      message.warn(`⚠️ Không có vị trí cho mục tiêu này.`)
+    }
+  }
+
+  return (
+    <div className="map-controls">
+      <Button
+        shape="circle"
+        icon={<UserOutlined />}
+        onClick={() => handleZoomTo('delivery')}
+        title="Zoom tới vị trí của bạn"
+      />
+      <Button
+        shape="circle"
+        icon={<ShopOutlined />}
+        onClick={() => handleZoomTo('restaurant')}
+        title="Zoom tới nhà hàng"
+      />
+      {dronePos && (
+        <Button
+          shape="circle"
+          icon={<RocketOutlined />}
+          onClick={() => handleZoomTo('drone')}
+          title="Zoom tới drone"
+        />
+      )}
+    </div>
+  )
+}
 
 // Fix Leaflet default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl
@@ -316,6 +375,14 @@ const DroneMap = ({ order }) => {
 
   return (
     <div className="drone-map-container">
+      {/* Map Controls */}
+      <MapControls 
+        mapRef={mapRef}
+        restaurantPos={restaurantPos}
+        deliveryPos={deliveryPos}
+        dronePos={currentDronePos}
+      />
+      
       {/* No Drone Warning */}
       {noDroneAssigned && (
         <div style={{
@@ -396,14 +463,21 @@ const DroneMap = ({ order }) => {
           dronePos={currentDronePos}
         />
 
-        {/* Route line (dashed line from restaurant to delivery) */}
+        {/* Route line - Layered for emphasis */}
         <Polyline
           positions={routePath}
           pathOptions={{
-            color: '#95de64',
-            weight: 3,
-            opacity: 0.6,
-            dashArray: '10, 10',
+            color: '#0050b3', // Shadow/outline layer
+            weight: 8,
+            opacity: 0.3,
+          }}
+        />
+        <Polyline
+          positions={routePath}
+          pathOptions={{
+            color: '#1890ff', // Main vibrant line
+            weight: 5,
+            opacity: 1,
           }}
         />
 

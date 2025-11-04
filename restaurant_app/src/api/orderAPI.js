@@ -8,8 +8,11 @@ export const getRestaurantOrders = async(status) => {
 };
 
 // Update order status
-export const updateOrderStatus = async(orderId, status) => {
-    const response = await axios.patch(`/orders/${orderId}/status`, { status });
+// Update order status - allow optional reason for cancellations
+export const updateOrderStatus = async(orderId, status, reason) => {
+    const body = { status };
+    if (reason) body.reason = reason;
+    const response = await axios.patch(`/orders/${orderId}/status`, body);
     return response.data;
 };
 

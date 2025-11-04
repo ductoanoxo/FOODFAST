@@ -14,6 +14,7 @@ import {
   Modal,
   message,
   Divider,
+  Image,
 } from 'antd';
 import {
   UserOutlined,
@@ -61,6 +62,7 @@ const ReviewsPage = () => {
         ...review,
         user: review.user || { name: 'Khách hàng', avatar: null },
         product: review.product || { name: 'Sản phẩm', image: null },
+        images: review.images || [], // Ensure images is an array
       }));
       
       setReviews(transformedReviews);
@@ -175,6 +177,22 @@ const ReviewsPage = () => {
           >
             {record.comment}
           </Paragraph>
+          {record.images && record.images.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+              <Image.PreviewGroup>
+                {record.images.map((img, index) => (
+                  <Image
+                    key={index}
+                    width={50}
+                    height={50}
+                    src={img}
+                    alt={`Review image ${index + 1}`}
+                    style={{ objectFit: 'cover', borderRadius: 4 }}
+                  />
+                ))}
+              </Image.PreviewGroup>
+            </div>
+          )}
           {record.restaurantReply && (
             <div
               style={{
@@ -235,9 +253,7 @@ const ReviewsPage = () => {
       <div className="reviews-header">
         <div>
           <Title level={2}>Quản lý đánh giá</Title>
-          <Text type="secondary">
-            Xem và phản hồi đánh giá từ khách hàng
-          </Text>
+          <Text type="secondary">Xem và phản hồi đánh giá từ khách hàng</Text>
         </div>
       </div>
 

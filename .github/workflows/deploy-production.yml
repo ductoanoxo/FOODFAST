@@ -42,6 +42,16 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         uses: actions/checkout@v4
 
+      - name: Verify branch is main
+        if: github.event_name == 'workflow_run'
+        run: |
+          BRANCH_NAME=${{ github.event.workflow_run.head_branch }}
+          echo "Triggering branch is: $BRANCH_NAME"
+          if [ "$BRANCH_NAME" != "main" ]; then
+            echo "Deployment is only allowed from the 'main' branch. Aborting."
+            exit 1
+          fi
+
       # ======================
       # 2) Xác định tag image sẽ dùng để deploy
       # ======================

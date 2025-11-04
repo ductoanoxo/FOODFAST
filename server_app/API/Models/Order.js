@@ -64,6 +64,16 @@ const orderSchema = new mongoose.Schema({
             coordinates: [Number],
         },
     },
+    // Distance between restaurant and delivery address (in km)
+    distanceKm: {
+        type: Number,
+        default: null,
+    },
+    // Human-readable explanation of how distance/fee was calculated
+    distanceExplanation: {
+        type: String,
+        default: null,
+    },
     note: {
         type: String,
         default: '',
@@ -116,13 +126,29 @@ const orderSchema = new mongoose.Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ['pending', 'paid', 'failed', 'refunded'],
+        enum: ['pending', 'paid', 'failed', 'refunded', 'refund_pending', 'refund_failed'],
         default: 'pending',
     },
     paymentInfo: {
         method: String,
         transactionId: String,
         paidAt: Date,
+    },
+    refundInfo: {
+        status: {
+            type: String,
+            enum: ['not_applicable', 'pending', 'processing', 'success', 'failed'],
+        },
+        method: {
+            type: String,
+            enum: ['vnpay', 'momo', 'manual', 'not_applicable'],
+        },
+        amount: Number,
+        requestedAt: Date,
+        processedAt: Date,
+        estimatedTime: String,
+        message: String,
+        transactionId: String,
     },
     status: {
         type: String,

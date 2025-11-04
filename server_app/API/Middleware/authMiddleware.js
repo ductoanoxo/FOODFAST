@@ -45,4 +45,14 @@ const authorize = (...roles) => {
     }
 }
 
-module.exports = { protect, authorize }
+// Admin middleware - shortcut for authorize('admin')
+const admin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next()
+    } else {
+        res.status(403)
+        throw new Error('Not authorized as admin')
+    }
+}
+
+module.exports = { protect, authorize, admin }
