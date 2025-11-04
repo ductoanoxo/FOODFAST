@@ -238,7 +238,14 @@ const AssignmentDashboard = () => {
                                 <small>{order.deliveryInfo?.address}</small>
                               </div>
                               <div className="order-footer">
-                                <Tag color="blue">{order.items?.length} items</Tag>
+                                <Space size="middle">
+                                  <Tag color="blue">{order.items?.length} items</Tag>
+                                  {order.distanceKm != null && (
+                                    <Tag icon={<EnvironmentOutlined />} color="purple">
+                                      ~{order.distanceKm} km
+                                    </Tag>
+                                  )}
+                                </Space>
                                 <strong>{order.totalAmount?.toLocaleString()} ₫</strong>
                               </div>
                             </div>
@@ -355,6 +362,16 @@ const AssignmentDashboard = () => {
               <p>
                 <strong>Total:</strong> {selectedOrder.totalAmount?.toLocaleString()} ₫
               </p>
+              {selectedOrder.distanceKm != null && (
+                <p>
+                  <strong>Khoảng cách:</strong> {selectedOrder.distanceKm} km
+                </p>
+              )}
+              {selectedOrder.distanceExplanation && (
+                <p style={{ fontSize: 12, color: '#666' }}>
+                  <strong>Cách tính:</strong> {selectedOrder.distanceExplanation}
+                </p>
+              )}
             </Card>
 
             <Card size="small" title="Drone Details">

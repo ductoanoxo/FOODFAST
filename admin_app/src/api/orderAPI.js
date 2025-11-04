@@ -13,8 +13,17 @@ export const getOrderById = async (orderId) => {
 };
 
 // Update order status
-export const updateOrderStatus = async (orderId, status) => {
-  const response = await axios.patch(`/orders/${orderId}/status`, { status });
+export const updateOrderStatus = async (orderId, status, reason = null) => {
+  const response = await axios.patch(`/orders/${orderId}/status`, { status, reason });
+  return response.data;
+};
+
+// Cancel order (admin)
+export const cancelOrder = async (orderId, reason) => {
+  const response = await axios.patch(`/orders/${orderId}/status`, { 
+    status: 'cancelled',
+    reason 
+  });
   return response.data;
 };
 
