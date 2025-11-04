@@ -11,6 +11,7 @@ import OrdersPage from './pages/Orders/OrdersPage';
 import DronesPage from './pages/Drones/DronesPage';
 import AssignmentDashboard from './pages/Assignment/AssignmentDashboard';
 import FleetMap from './pages/Fleet/FleetMap';
+import RefundsPage from './pages/Refunds/RefundsPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -38,6 +39,7 @@ function App() {
           <Route path="/drones" element={<DronesPage />} />
           <Route path="/assignment" element={<AssignmentDashboard />} />
           <Route path="/fleet-map" element={<FleetMap />} />
+          <Route path="/refunds" element={<RefundsPage />} />
         </Route>
       </Routes>
     </Router>

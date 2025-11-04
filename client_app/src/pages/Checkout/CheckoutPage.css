@@ -1,44 +1,161 @@
+/* General Page Style */
 .checkout-page {
-    padding: 40px 0;
-    min-height: calc(100vh - 64px - 70px);
+  padding: 40px 0;
+  background-color: #f7f8fc;
+  min-height: calc(100vh - 64px - 70px);
 }
 
 .checkout-card {
-    margin-bottom: 24px;
+  background-color: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
 }
 
-.payment-radio {
-    width: 100%;
-    padding: 16px;
-    border: 1px solid #d9d9d9;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    transition: all 0.3s;
+/* Custom Form Item Label */
+.ant-form-item-label > label {
+  font-weight: 600;
+  color: #333;
 }
 
-.payment-radio:hover {
-    border-color: #ff6b35;
-    background: #fff7f5;
+/* --- Payment Method Redesign --- */
+.payment-radio-group .ant-space-item {
+  width: 100%;
 }
 
-.payment-option {
-    display: flex;
-    align-items: center;
-    gap: 16px;
+.payment-option-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #e8e8e8;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.order-summary {
-    position: sticky;
-    top: 80px;
+.payment-option-card.selected {
+  border-color: #1890ff;
+  background-color: #e6f7ff;
+  box-shadow: 0 0 10px rgba(24, 144, 255, 0.2);
+}
+
+.payment-option-card:hover {
+  border-color: #1890ff;
+}
+
+/* --- Order Summary Redesign --- */
+.order-summary-card {
+  position: sticky;
+  top: 90px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.order-summary-card .ant-card-head {
+  border-bottom: none;
+  font-size: 20px;
+}
+
+.order-summary-card .ant-list-item {
+  border-bottom: 1px solid #f0f0f0 !important;
 }
 
 .summary-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 15px;
 }
 
-.summary-total {
-    margin-top: 16px;
+.total-section {
+  background-color: #001529; /* Dark Navy */
+  color: white;
+  padding: 20px 24px;
+  margin: 24px -24px -24px -24px;
+  border-radius: 0 0 12px 12px;
+}
+
+.total-section .summary-row .ant-typography {
+  color: white;
+}
+
+.place-order-btn {
+  width: 100%;
+  height: 50px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 20px;
+  background: linear-gradient(135deg, #ff6b35 0%, #fa8c16 100%);
+  border: none;
+}
+
+.place-order-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(250, 140, 22, 0.4);
+}
+
+
+/* Fee Calculator Panel */
+.fee-calculator-panel {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fafafa;
+  margin-bottom: 24px;
+}
+
+.fee-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.calc-fee-btn,
+.calc-fee-btn:hover,
+.calc-fee-btn:focus {
+  background: linear-gradient(135deg, #1890ff 0%, #0050b3 100%) !important;
+  color: white !important;
+  border: none !important;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.calc-fee-btn span,
+.calc-fee-btn:hover span,
+.calc-fee-btn:focus span {
+  color: white !important;
+}
+
+.calc-fee-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.4);
+  filter: brightness(1.1);
+}
+
+.view-map-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.distance-highlight {
+  background: linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%);
+  border: 1px solid #91d5ff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  font-size: 15px;
+}
+
+.distance-highlight .anticon {
+  color: #1890ff;
+  font-size: 18px;
 }

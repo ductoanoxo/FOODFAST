@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Card, Table, Tag, Button, Typography } from 'antd'
-import { EyeOutlined } from '@ant-design/icons'
+import { EyeOutlined, ClockCircleOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, RollbackOutlined } from "@ant-design/icons"
 import { useNavigate } from 'react-router-dom'
 import { orderAPI } from '../../api/orderAPI'
 import './OrderHistoryPage.css'
@@ -57,6 +57,39 @@ const OrderHistoryPage = () => {
       cancelled: 'Đã hủy',
     }
     return texts[status] || status
+  }
+
+  const getPaymentStatusText = (paymentStatus) => {
+    const texts = {
+      pending: 'Chưa thanh toán',
+      paid: 'Đã thanh toán',
+      refund_pending: 'Đang hoàn tiền',
+      refund_failed: 'Hoàn tiền thất bại',
+      refunded: 'Đã hoàn tiền',
+    }
+    return texts[paymentStatus] || paymentStatus
+  }
+
+  const getPaymentStatusColor = (paymentStatus) => {
+    const colors = {
+      pending: 'orange',
+      paid: 'green',
+      refund_pending: 'gold',
+      refund_failed: 'red',
+      refunded: 'cyan',
+    }
+    return colors[paymentStatus] || 'default'
+  }
+
+  const getPaymentStatusIcon = (paymentStatus) => {
+    const icons = {
+      pending: <ClockCircleOutlined />,
+      paid: <CheckCircleOutlined />,
+      refund_pending: <SyncOutlined />,
+      refund_failed: <CloseCircleOutlined />,
+      refunded: <RollbackOutlined />,
+    }
+    return icons[paymentStatus] || null
   }
 
   // Define a logical ordering for statuses for sorting
@@ -117,7 +150,17 @@ const OrderHistoryPage = () => {
       sortDirections: ['ascend', 'descend'],
     },
     {
-      title: 'Trạng thái',
+      title: 'TT Thanh toán',
+      dataIndex: 'paymentStatus',
+      key: 'paymentStatus',
+      render: (paymentStatus) => (
+        <Tag color={getPaymentStatusColor(paymentStatus)}>
+          {getPaymentStatusIcon(paymentStatus)} {getPaymentStatusText(paymentStatus)}
+        </Tag>
+      ),
+    },
+    {
+      title: 'TT Đơn hàng',
       dataIndex: 'status',
       key: 'status',
       render: (status) => (

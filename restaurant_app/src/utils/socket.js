@@ -96,6 +96,7 @@ export const onOrderStatusUpdate = (cb) => {
 
 export const onOrderCompleted = (cb) => getSocket().on('restaurant:order:completed', cb);
 export const onDroneAssigned = (cb) => getSocket().on('order:drone-assigned', cb); // NEW
+export const onOrderCancelled = (cb) => getSocket().on('order:cancelled', cb); // NEW - Customer cancelled order
 
 export const offNewOrder = (cb) => getSocket().off('new-order', cb);
 export const offOrderStatusUpdate = (cb) => {
@@ -105,3 +106,4 @@ export const offOrderStatusUpdate = (cb) => {
 };
 export const offOrderCompleted = (cb) => getSocket().off('restaurant:order:completed', cb);
 export const offDroneAssigned = (cb) => getSocket().off('order:drone-assigned', cb); // NEW
+export const offOrderCancelled = (cb) => getSocket().off('order:cancelled', cb); // NEW

@@ -38,10 +38,10 @@ app.use(
             'http://localhost:3002',  // Admin App (production)
             'http://localhost:3003',  // Drone App (production)
             // EC2 Production URLs
-            'http://54.221.100.67:3000',  // Client App on EC2
-            'http://54.221.100.67:3001',  // Admin App on EC2
-            'http://54.221.100.67:3002',  // Restaurant App on EC2
-            'http://54.221.100.67:3003',  // Drone App on EC2
+            'http://34.229.140.181:3000',  // Client App on EC2
+            'http://34.229.140.181:3001',  // Admin App on EC2
+            'http://34.229.140.181:3002',  // Restaurant App on EC2
+            'http://34.229.140.181:3003',  // Drone App on EC2
             // Env vars (fallback/override)
             process.env.CLIENT_URL,
             process.env.RESTAURANT_URL,
@@ -92,6 +92,7 @@ app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
 app.use('/api/vouchers', require('./API/Routers/voucherRouter'));
 app.use('/api/map', require('./API/Routers/mapRouter'));
 app.use('/api/promotions', require('./API/Routers/promotionRouter'));
+app.use('/api/refunds', require('./API/Routers/refundRouter')); // NEW: Refund management
 
 // Admin and dashboard routers
 app.use('/api/admin', require('./API/Routers/adminRouter'));

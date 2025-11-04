@@ -10,6 +10,7 @@ import {
   SafetyOutlined,
   ThunderboltOutlined,
   EnvironmentOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -39,6 +40,7 @@ const MainLayout = () => {
     { key: '/restaurants', icon: <ShopOutlined />, label: 'Nhà hàng' },
     { key: '/orders', icon: <ShoppingOutlined />, label: 'Đơn hàng' },
     { key: '/drones', icon: <RobotOutlined />, label: 'Drone' },
+    { key: '/refunds', icon: <DollarOutlined />, label: 'Hoàn tiền' },
   ];
 
   const userMenuItems = [

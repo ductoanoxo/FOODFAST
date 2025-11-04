@@ -1,21 +1,7 @@
 .reviews-page {
-  padding: 24px;
+    padding: 24px;
 }
 
 .reviews-header {
-  margin-bottom: 24px;
-}
-
-.reviews-page .ant-card {
-  border-radius: 8px;
-}
-
-.reviews-page .ant-table-cell {
-  vertical-align: top;
-}
-
-@media (max-width: 768px) {
-  .reviews-page {
-    padding: 16px;
-  }
+    margin-bottom: 24px;
 }

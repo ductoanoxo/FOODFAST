@@ -10,9 +10,11 @@ const {
     getOrderHistory,
     confirmDelivery,
     restaurantConfirmHandover,
+    calculateFee,
 } = require('../Controllers/orderController')
 const { protect, authorize } = require('../Middleware/authMiddleware')
 
+router.post('/calculate-fee', protect, calculateFee)
 router.get('/history', protect, getOrderHistory)
 router.get('/restaurant', protect, authorize('restaurant', 'admin'), getOrders)
 
