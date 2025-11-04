@@ -64,6 +64,16 @@ const orderSchema = new mongoose.Schema({
             coordinates: [Number],
         },
     },
+    // Distance between restaurant and delivery address (in km)
+    distanceKm: {
+        type: Number,
+        default: null,
+    },
+    // Human-readable explanation of how distance/fee was calculated
+    distanceExplanation: {
+        type: String,
+        default: null,
+    },
     note: {
         type: String,
         default: '',
