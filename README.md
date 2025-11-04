@@ -4,14 +4,7 @@
 > 
 > **Version:** Deploy Branch - Testing Conflict Resolution
 **CI/CD Status:** GitHub Actions + Vercel + Railway
-## VIDEO DEMO
-<h2 align="center">🎬 Video Demo</h2>
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=vwBItmEOFMM" target="_blank">
-    <img src="https://img.youtube.com/vi/vwBItmEOFMM/maxresdefault.jpg" 
-         alt="FoodFast Demo Video" width="700">
-  </a>
-</p>
+
 
 <p align="center">
   🎥 <i>Click vào ảnh để xem video demo trên YouTube</i>
