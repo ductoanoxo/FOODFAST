@@ -6,7 +6,7 @@ export default defineConfig({
     plugins: [react()],
     test: {
         globals: true,
-        environment: 'jsdom',
+        environment: 'happy-dom', // Dùng happy-dom thay vì jsdom để tránh webidl-conversions error
         setupFiles: './vitest.setup.js',
         css: true,
         // Chỉ chạy unit tests (không bao gồm integration tests)
@@ -19,6 +19,11 @@ export default defineConfig({
                 singleFork: true,
             },
         },
+        // Tăng timeout cho CI environment
+        testTimeout: 10000,
+        hookTimeout: 10000,
+        // Silent mode để tránh console spam
+        silent: false,
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
