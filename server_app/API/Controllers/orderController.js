@@ -11,6 +11,162 @@ const axios = require('axios')
 const crypto = require('crypto')
 const moment = require('moment')
 
+// Helper function: Process refund logic
+const processRefund = async (order, cancelledBy, cancelReason) => {
+    const now = new Date()
+    let refundInfo = null
+
+    if (order.paymentStatus === 'paid') {
+        try {
+            order.paymentStatus = 'refund_pending'
+            
+            await OrderAudit.create({
+                order: order._id,
+                user: cancelledBy._id,
+                action: 'refund_requested',
+                reason: `${cancelledBy.role === 'user' ? 'Khách hàng' : cancelledBy.role === 'restaurant' ? 'Nhà hàng' : 'Admin'} hủy đơn đã thanh toán`,
+                meta: { 
+                    initiatedByRole: cancelledBy.role,
+                    cancelledByName: cancelledBy.name || cancelledBy.email,
+                    paymentInfo: order.paymentInfo,
+                    totalAmount: order.totalAmount 
+                }
+            })
+
+            const vnpApi = process.env.VNPAY_API || null
+            const vnpTmn = process.env.VNPAY_TMN_CODE || null
+            const vnpHash = process.env.VNPAY_HASH_SECRET || null
+
+            if (order.paymentInfo && order.paymentInfo.method === 'vnpay' && vnpApi && vnpTmn && vnpHash) {
+                try {
+                    const vnp_RequestId = moment(now).format('HHmmss')
+                    const vnp_Version = '2.1.0'
+                    const vnp_Command = 'refund'
+                    const vnp_TxnRef = order.paymentInfo.transactionId
+                    const vnp_TransactionDate = order.paidAt ? moment(order.paidAt).format('YYYYMMDDHHmmss') : moment().format('YYYYMMDDHHmmss')
+                    const vnp_Amount = Math.round((order.totalAmount || 0) * 100)
+                    const vnp_TransactionType = '02'
+                    const vnp_CreateBy = cancelledBy.email || String(cancelledBy._id)
+                    const vnp_OrderInfo = 'Hoan tien GD ma:' + vnp_TxnRef
+                    const vnp_IpAddr = '127.0.0.1'
+                    const vnp_CreateDate = moment(now).format('YYYYMMDDHHmmss')
+                    const vnp_TransactionNo = '0'
+
+                    const data = vnp_RequestId + '|' + vnp_Version + '|' + vnp_Command + '|' + vnpTmn + '|' + vnp_TransactionType + '|' + vnp_TxnRef + '|' + vnp_Amount + '|' + vnp_TransactionNo + '|' + vnp_TransactionDate + '|' + vnp_CreateBy + '|' + vnp_CreateDate + '|' + vnp_IpAddr + '|' + vnp_OrderInfo
+                    const hmac = crypto.createHmac('sha512', vnpHash)
+                    const vnp_SecureHash = hmac.update(Buffer.from(data, 'utf-8')).digest('hex')
+
+                    const payload = {
+                        vnp_RequestId,
+                        vnp_Version,
+                        vnp_Command,
+                        vnp_TmnCode: vnpTmn,
+                        vnp_TransactionType: vnp_TransactionType,
+                        vnp_TxnRef,
+                        vnp_Amount,
+                        vnp_TransactionNo,
+                        vnp_CreateBy,
+                        vnp_OrderInfo,
+                        vnp_TransactionDate,
+                        vnp_CreateDate,
+                        vnp_IpAddr,
+                        vnp_SecureHash,
+                    }
+
+                    const resp = await axios.post(vnpApi, payload)
+
+                    if (resp && resp.data && (resp.data.RspCode === '00' || resp.data.success)) {
+                        order.paymentStatus = 'refunded'
+                        refundInfo = {
+                            status: 'success',
+                            method: 'vnpay',
+                            amount: order.totalAmount,
+                            requestedAt: now,
+                            processedAt: now,
+                            estimatedTime: '3-7 ngày làm việc',
+                            message: 'Tiền sẽ được hoàn về tài khoản/thẻ bạn đã thanh toán trong vòng 3-7 ngày làm việc',
+                            transactionId: resp.data.vnp_TransactionNo || vnp_RequestId
+                        }
+                        order.refundInfo = refundInfo
+                        await OrderAudit.create({
+                            order: order._id,
+                            user: cancelledBy._id,
+                            action: 'refund_completed',
+                            reason: 'Hoàn tiền qua VNPay thành công',
+                            meta: { response: resp.data }
+                        })
+                    } else {
+                        order.paymentStatus = 'refund_failed'
+                        refundInfo = {
+                            status: 'pending',
+                            method: 'manual',
+                            amount: order.totalAmount,
+                            requestedAt: now,
+                            message: 'Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong 24h'
+                        }
+                        order.refundInfo = refundInfo
+                        await OrderAudit.create({
+                            order: order._id,
+                            user: cancelledBy._id,
+                            action: 'refund_failed',
+                            reason: 'VNPay refund API returned failure',
+                            meta: { response: resp?.data }
+                        })
+                    }
+                } catch (refundErr) {
+                    console.error('VNPay refund attempt failed', refundErr)
+                    order.paymentStatus = 'refund_failed'
+                    refundInfo = {
+                        status: 'pending',
+                        method: 'manual',
+                        amount: order.totalAmount,
+                        requestedAt: now,
+                        message: 'Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong 24h'
+                    }
+                    order.refundInfo = refundInfo
+                    await OrderAudit.create({
+                        order: order._id,
+                        user: cancelledBy._id,
+                        action: 'refund_failed',
+                        reason: 'VNPay refund attempt threw error',
+                        meta: { error: String(refundErr) }
+                    })
+                }
+            } else {
+                order.paymentStatus = 'refund_pending'
+                const userPhone = order.user?.phone || 'đã đăng ký'
+                refundInfo = {
+                    status: 'pending',
+                    method: 'manual',
+                    amount: order.totalAmount,
+                    requestedAt: now,
+                    message: `Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn qua số điện thoại ${userPhone} trong vòng 24h`
+                }
+                order.refundInfo = refundInfo
+            }
+        } catch (e) {
+            console.error('Error processing refund:', e)
+            order.paymentStatus = 'refund_pending'
+            refundInfo = {
+                status: 'pending',
+                method: 'manual',
+                amount: order.totalAmount,
+                requestedAt: now,
+                message: 'Yêu cầu hoàn tiền đã được ghi nhận. Chúng tôi sẽ liên hệ với bạn sớm nhất'
+            }
+            order.refundInfo = refundInfo
+        }
+    } else if (order.paymentMethod === 'COD') {
+        refundInfo = {
+            status: 'not_applicable',
+            message: 'Đơn hàng COD - Không có giao dịch cần hoàn'
+        }
+        order.refundInfo = refundInfo
+    }
+
+    return refundInfo
+}
+
 // @desc    Create new order
 // @route   POST /api/orders
 // @access  Private
@@ -162,7 +318,24 @@ const createOrder = asyncHandler(async(req, res) => {
         throw new Error('Restaurant not found')
     }
 
-    const deliveryFee = req.body.deliveryFee || 15000
+    // --- Delivery Fee Calculation ---
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant || !restaurant.location || !restaurant.location.coordinates) {
+        res.status(400);
+        throw new Error('Restaurant location is not available for fee calculation.');
+    }
+    const [restLon, restLat] = restaurant.location.coordinates;
+
+    const userCoordinates = await geocodeWithFallback(deliveryInfo.address);
+    if (!userCoordinates) {
+        res.status(400);
+        throw new Error('Could not determine your location from the address to calculate the delivery fee.');
+    }
+    const [userLon, userLat] = userCoordinates;
+
+    const distance = getDistanceFromLatLonInKm(restLat, restLon, userLat, userLon);
+    const deliveryFee = calculateDeliveryFee(distance);
+    // --- End Delivery Fee Calculation ---
 
     // Handle voucher discount
     let discountAmount = 0
@@ -254,24 +427,12 @@ const createOrder = asyncHandler(async(req, res) => {
         }
     }
 
-    // 🗺️ GEOCODING: Chuyển địa chỉ giao hàng thành tọa độ
-    let deliveryCoordinates = null
-    if (deliveryInfo && deliveryInfo.address) {
-        console.log('🔄 Starting geocoding for address:', deliveryInfo.address);
-        deliveryCoordinates = await geocodeWithFallback(deliveryInfo.address);
-        console.log('✅ Geocoding completed. Coordinates:', deliveryCoordinates);
-    } else {
-        console.warn('⚠️ No delivery address provided, using default coordinates');
-        deliveryCoordinates = [105.8342, 21.0278]; // Hanoi default
-    }
-
-
     // Prepare deliveryInfo with location coordinates
     const deliveryInfoWithLocation = {
         ...deliveryInfo,
         location: {
             type: 'Point',
-            coordinates: deliveryCoordinates, // [longitude, latitude]
+            coordinates: userCoordinates, // Use coordinates calculated earlier
         },
     }
 
@@ -505,6 +666,8 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
 
     // Update timestamps
     const now = new Date()
+    let refundInfo = null // Initialize refund info variable
+    
     if (status === 'confirmed') order.confirmedAt = now
     if (status === 'preparing') order.preparingAt = now
     if (status === 'ready') order.readyAt = now
@@ -567,109 +730,13 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
             console.error('Failed to create OrderAudit entry', e)
         }
 
-        // If order was already paid, attempt a best-effort VNPay refund (if configured).
-        if (order.paymentStatus === 'paid') {
-            try {
-                // mark refund as requested
-                order.paymentStatus = 'refund_pending'
-                await order.save()
-
-                await OrderAudit.create({
-                    order: order._id,
-                    user: req.user._id,
-                    action: 'refund_requested',
-                    reason: 'Auto refund requested after restaurant cancellation',
-                    meta: { initiatedByRole: req.user.role, paymentInfo: order.paymentInfo }
-                })
-
-                // Try to call VNPay refund API if available
-                const vnpApi = process.env.VNPAY_API || null
-                const vnpTmn = process.env.VNPAY_TMN_CODE || null
-                const vnpHash = process.env.VNPAY_HASH_SECRET || null
-
-                if (order.paymentInfo && order.paymentInfo.method === 'vnpay' && vnpApi && vnpTmn && vnpHash) {
-                    try {
-                        const date = new Date()
-                        const vnp_RequestId = moment(date).format('HHmmss')
-                        const vnp_Version = '2.1.0'
-                        const vnp_Command = 'refund'
-                        const vnp_TxnRef = order.paymentInfo.transactionId
-                        const vnp_TransactionDate = order.paidAt ? moment(order.paidAt).format('YYYYMMDDHHmmss') : moment().format('YYYYMMDDHHmmss')
-                        const vnp_Amount = Math.round((order.totalAmount || 0) * 100)
-                        const vnp_TransactionType = '02'
-                        const vnp_CreateBy = req.user.email || String(req.user._id)
-                        const vnp_OrderInfo = 'Hoan tien GD ma:' + vnp_TxnRef
-                        const vnp_IpAddr = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || ''
-                        const vnp_CreateDate = moment(date).format('YYYYMMDDHHmmss')
-                        const vnp_TransactionNo = '0'
-
-                        const data = vnp_RequestId + '|' + vnp_Version + '|' + vnp_Command + '|' + vnpTmn + '|' + vnp_TransactionType + '|' + vnp_TxnRef + '|' + vnp_Amount + '|' + vnp_TransactionNo + '|' + vnp_TransactionDate + '|' + vnp_CreateBy + '|' + vnp_CreateDate + '|' + vnp_IpAddr + '|' + vnp_OrderInfo
-                        const hmac = crypto.createHmac('sha512', vnpHash)
-                        const vnp_SecureHash = hmac.update(Buffer.from(data, 'utf-8')).digest('hex')
-
-                        const payload = {
-                            vnp_RequestId,
-                            vnp_Version,
-                            vnp_Command,
-                            vnp_TmnCode: vnpTmn,
-                            vnp_TransactionType: vnp_TransactionType,
-                            vnp_TxnRef,
-                            vnp_Amount,
-                            vnp_TransactionNo,
-                            vnp_CreateBy,
-                            vnp_OrderInfo,
-                            vnp_TransactionDate,
-                            vnp_CreateDate,
-                            vnp_IpAddr,
-                            vnp_SecureHash,
-                        }
-
-                        const resp = await axios.post(vnpApi, payload)
-
-                        // Basic success heuristic: VNPay returns a RspCode or success flag
-                        if (resp && resp.data && (resp.data.RspCode === '00' || resp.data.success)) {
-                            order.paymentStatus = 'refunded'
-                            await order.save()
-                            await OrderAudit.create({
-                                order: order._id,
-                                user: req.user._id,
-                                action: 'refund_completed',
-                                reason: 'Refund processed via VNPay API',
-                                meta: { response: resp.data }
-                            })
-                        } else {
-                            // Mark as failed and keep refund_pending for manual handling
-                            order.paymentStatus = 'refund_failed'
-                            await order.save()
-                            await OrderAudit.create({
-                                order: order._id,
-                                user: req.user._id,
-                                action: 'refund_failed',
-                                reason: 'VNPay refund API returned failure or unexpected response',
-                                meta: { response: resp?.data }
-                            })
-                        }
-                    } catch (refundErr) {
-                        console.error('VNPay refund attempt failed', refundErr)
-                        order.paymentStatus = 'refund_failed'
-                        await order.save()
-                        try {
-                            await OrderAudit.create({
-                                order: order._id,
-                                user: req.user._id,
-                                action: 'refund_failed',
-                                reason: 'VNPay refund attempt threw error',
-                                meta: { error: String(refundErr) }
-                            })
-                        } catch (e) {
-                            console.error('Failed to create refund failed audit', e)
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error('Error while attempting refund for cancelled order', e)
-            }
+        // 💰 REFUND LOGIC - Use helper function
+        // Populate order.user if needed
+        if (!order.user || !order.user.name) {
+            await order.populate('user', 'name email phone')
         }
+        
+        refundInfo = await processRefund(order, req.user, order.cancelReason)
     }
 
     await order.save()
@@ -682,11 +749,18 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
         orderNumber: order.orderNumber,
         status: order.status,
         timestamp: now,
+        ...(refundInfo && { refundInfo }), // Include refund info if cancellation happened
     }
 
     // Emit with colon format
     io.to(`order-${order._id}`).emit('order:status-updated', payload)
     io.to(`restaurant-${order.restaurant}`).emit('order:status-updated', {...payload, restaurantId: order.restaurant })
+
+    // If order was cancelled, emit cancellation event
+    if (status === 'cancelled') {
+        io.to(`order-${order._id}`).emit('order:cancelled', payload)
+        io.to(`restaurant-${order.restaurant}`).emit('order:cancelled', {...payload, restaurantId: order.restaurant })
+    }
 
     // Also emit hyphen variant for older clients that still listen to 'order-status-updated'
     io.to(`order-${order._id}`).emit('order-status-updated', payload)
@@ -723,13 +797,15 @@ const trackOrder = asyncHandler(async(req, res) => {
 // @access  Private
 const cancelOrder = asyncHandler(async(req, res) => {
     const order = await Order.findById(req.params.id)
+        .populate('restaurant', 'name')
+        .populate('user', 'name email phone')
 
     if (!order) {
         res.status(404)
         throw new Error('Order not found')
     }
 
-    if (order.user.toString() !== req.user._id.toString()) {
+    if (order.user._id.toString() !== req.user._id.toString()) {
         res.status(401)
         throw new Error('Not authorized')
     }
@@ -739,15 +815,90 @@ const cancelOrder = asyncHandler(async(req, res) => {
         throw new Error('Cannot cancel this order')
     }
 
+    // Check if order is too far in process to cancel
+    if (['delivering', 'picked_up'].includes(order.status)) {
+        res.status(400)
+        throw new Error('Không thể hủy đơn hàng đang giao. Vui lòng liên hệ hotline hỗ trợ.')
+    }
+
+    const now = new Date()
     order.status = 'cancelled'
-    order.cancelledAt = new Date()
-    order.cancelReason = req.body.reason || 'Cancelled by user'
+    order.cancelledAt = now
+    order.cancelReason = req.body.reason || 'Khách hàng hủy đơn'
+
+    // Rollback voucher usage and product soldCount
+    try {
+        // Rollback voucher
+        if (order.appliedVoucher && order.appliedVoucher.id) {
+            const usage = await VoucherUsage.findOne({ order: order._id })
+            if (usage) {
+                await Voucher.findByIdAndUpdate(usage.voucher, { $inc: { usageCount: -1 } })
+                await VoucherUsage.deleteOne({ _id: usage._id })
+            }
+        }
+
+        // Rollback soldCount
+        if (order.items && order.items.length > 0) {
+            for (const item of order.items) {
+                await Product.findByIdAndUpdate(item.product, { 
+                    $inc: { soldCount: -Math.abs(item.quantity) } 
+                })
+            }
+        }
+    } catch (e) {
+        console.error('Error rolling back order data:', e)
+    }
+
+    // Create audit log
+    try {
+        await OrderAudit.create({
+            order: order._id,
+            user: req.user._id,
+            action: 'cancelled',
+            reason: order.cancelReason,
+            meta: { initiatedByRole: 'user' }
+        })
+    } catch (e) {
+        console.error('Failed to create OrderAudit entry', e)
+    }
+
+    // 💰 REFUND LOGIC - Use helper function
+    const refundInfo = await processRefund(order, req.user, order.cancelReason)
 
     await order.save()
+
+    // Emit socket event
+    try {
+        const io = req.app.get('io')
+        const cancelPayload = {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            status: 'cancelled',
+            cancelledAt: now,
+            refundInfo: refundInfo,
+            timestamp: now,
+        }
+
+        io.to(`order-${order._id}`).emit('order:status-updated', cancelPayload)
+        io.to(`order-${order._id}`).emit('order:cancelled', cancelPayload)
+        
+        if (order.restaurant && order.restaurant._id) {
+            io.to(`restaurant-${order.restaurant._id}`).emit('order:cancelled', {
+                ...cancelPayload,
+                restaurantId: order.restaurant._id,
+                cancelledBy: 'customer',
+                customerName: order.user.name
+            })
+        }
+    } catch (e) {
+        console.error('Failed to emit cancel event:', e)
+    }
 
     res.json({
         success: true,
         data: order,
+        refundInfo: refundInfo,
+        message: refundInfo && refundInfo.message ? refundInfo.message : 'Đơn hàng đã được hủy thành công'
     })
 })
 
@@ -967,6 +1118,50 @@ const restaurantConfirmHandover = asyncHandler(async(req, res) => {
     });
 });
 
+const { getDistanceFromLatLonInKm, calculateDeliveryFee } = require('../utils/locationUtils')
+
+// @desc    Calculate delivery fee
+// @route   POST /api/orders/calculate-fee
+// @access  Private
+const calculateFee = asyncHandler(async (req, res) => {
+    const { restaurantId, userAddress } = req.body;
+
+    if (!restaurantId || !userAddress) {
+        res.status(400);
+        throw new Error('Restaurant ID and user address are required');
+    }
+
+    // Get restaurant location
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant || !restaurant.location || !restaurant.location.coordinates) {
+        res.status(404);
+        throw new Error('Restaurant not found or has no location');
+    }
+    const [restLon, restLat] = restaurant.location.coordinates;
+
+    // Geocode user address
+    const userCoordinates = await geocodeWithFallback(userAddress);
+    if (!userCoordinates) {
+        res.status(400);
+        throw new Error('Could not determine location from the provided address');
+    }
+    const [userLon, userLat] = userCoordinates;
+
+    // Calculate distance
+    const distance = getDistanceFromLatLonInKm(restLat, restLon, userLat, userLon);
+
+    // Calculate fee
+    const fee = calculateDeliveryFee(distance);
+
+    res.json({
+        success: true,
+        deliveryFee: fee,
+        distance: distance.toFixed(2), // in km
+        restaurantLocation: restaurant.location,
+        userLocation: { type: 'Point', coordinates: userCoordinates }
+    });
+});
+
 module.exports = {
     createOrder,
     getOrders,
@@ -977,4 +1172,5 @@ module.exports = {
     getOrderHistory,
     confirmDelivery,
     restaurantConfirmHandover,
+    calculateFee,
 }

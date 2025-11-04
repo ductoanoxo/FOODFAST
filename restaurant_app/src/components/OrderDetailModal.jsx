@@ -31,9 +31,15 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
   return (
     <Modal
       title={
-        <Title level={4} style={{ margin: 0 }}>
-          Chi tiết đơn hàng #{order._id?.slice(-8).toUpperCase()}
-        </Title>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <Title level={4} style={{ margin: 0 }}>
+            Chi tiết đơn hàng {order.orderNumber ? `#${order.orderNumber}` : `#${order._id?.slice(-8).toUpperCase()}`}
+          </Title>
+          {/* show internal id as small secondary text */}
+          <Text type="secondary" style={{ fontSize: 12, marginTop: 4 }}>
+            ID nội bộ: {order._id}
+          </Text>
+        </div>
       }
       open={visible}
       onCancel={onClose}

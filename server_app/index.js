@@ -92,6 +92,7 @@ app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
 app.use('/api/vouchers', require('./API/Routers/voucherRouter'));
 app.use('/api/map', require('./API/Routers/mapRouter'));
 app.use('/api/promotions', require('./API/Routers/promotionRouter'));
+app.use('/api/refunds', require('./API/Routers/refundRouter')); // NEW: Refund management
 
 // Admin and dashboard routers
 app.use('/api/admin', require('./API/Routers/adminRouter'));
