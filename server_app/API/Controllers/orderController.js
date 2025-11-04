@@ -1118,7 +1118,7 @@ const restaurantConfirmHandover = asyncHandler(async(req, res) => {
     });
 });
 
-const { getDistanceFromLatLonInKm, calculateDeliveryFee } = require('../utils/locationUtils')
+const { getDistanceFromLatLonInKm, calculateDeliveryFee } = require('../Utils/locationUtils')
 
 // @desc    Calculate delivery fee
 // @route   POST /api/orders/calculate-fee
