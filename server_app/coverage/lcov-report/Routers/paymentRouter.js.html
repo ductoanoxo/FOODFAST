@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>15/15</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>15/15</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -104,8 +104,8 @@
 <a name='L39'></a><a href='#L39'>39</a>
 <a name='L40'></a><a href='#L40'>40</a>
 <a name='L41'></a><a href='#L41'>41</a>
-<a name='L42'></a><a href='#L42'>42</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L42'></a><a href='#L42'>42</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -115,27 +115,24 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -143,10 +140,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const express = <span class="cstat-no" title="statement not covered" >require('express')</span>
-const router = <span class="cstat-no" title="statement not covered" >express.Router()</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span></td><td class="text"><pre class="prettyprint lang-js">const express = require('express')
+const router = express.Router()
 const {
     createVNPayPayment,
     vnpayReturn,
@@ -156,24 +156,24 @@ const {
     createMomoPayment,
     momoCallback,
     getPaymentInfo,
-} = <span class="cstat-no" title="statement not covered" >require('../Controllers/paymentController')</span>
-const { protect } = <span class="cstat-no" title="statement not covered" >require('../Middleware/authMiddleware')</span>
+} = require('../Controllers/paymentController')
+const { protect } = require('../Middleware/authMiddleware')
 &nbsp;
 // VNPay routes
-<span class="cstat-no" title="statement not covered" >router.post('/vnpay/create', protect, createVNPayPayment)</span>
-<span class="cstat-no" title="statement not covered" >router.get('/vnpay/return', vnpayReturn)</span>
-<span class="cstat-no" title="statement not covered" >router.get('/vnpay/ipn', vnpayIPN)</span>
-<span class="cstat-no" title="statement not covered" >router.post('/vnpay/querydr', protect, queryVNPayTransaction)</span>
-<span class="cstat-no" title="statement not covered" >router.post('/vnpay/refund', protect, refundVNPayTransaction)</span>
+router.post('/vnpay/create', protect, createVNPayPayment)
+router.get('/vnpay/return', vnpayReturn)
+router.get('/vnpay/ipn', vnpayIPN)
+router.post('/vnpay/querydr', protect, queryVNPayTransaction)
+router.post('/vnpay/refund', protect, refundVNPayTransaction)
 &nbsp;
 // Momo routes
-<span class="cstat-no" title="statement not covered" >router.post('/momo/create', protect, createMomoPayment)</span>
-<span class="cstat-no" title="statement not covered" >router.post('/momo/callback', momoCallback)</span>
+router.post('/momo/create', protect, createMomoPayment)
+router.post('/momo/callback', momoCallback)
 &nbsp;
 // Get payment info
 // Payment methods
-<span class="cstat-no" title="statement not covered" >router.get('/methods', <span class="fstat-no" title="function not covered" >(r</span>eq, res) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    res.json({</span>
+router.get('/methods', (req, res) =&gt; {
+    res.json({
         success: true,
         data: [
             { id: 'COD', name: 'Thanh toán khi nhận hàng', icon: 'wallet' },
@@ -184,16 +184,16 @@ const { protect } = <span class="cstat-no" title="statement not covered" >requir
 })
 &nbsp;
 // Get payment info
-<span class="cstat-no" title="statement not covered" >router.get('/:orderId', protect, getPaymentInfo)</span>
+router.get('/:orderId', protect, getPaymentInfo)
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = router</span></pre></td></tr></table></pre>
+module.exports = router</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-28T07:49:17.445Z
+                at 2025-11-03T16:36:08.519Z
             </div>
         <script src="../prettify.js"></script>
         <script>
