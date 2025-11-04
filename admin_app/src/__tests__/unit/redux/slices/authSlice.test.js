@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import authReducer, { loginSuccess, logout } from './authSlice';
+import authReducer, { loginSuccess, logout } from '@/redux/slices/authSlice';
 
 describe('Admin authSlice', () => {
     let initialState;
