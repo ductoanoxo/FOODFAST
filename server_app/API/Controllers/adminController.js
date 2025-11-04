@@ -1,6 +1,7 @@
 const Order = require('../Models/Order');
 const Drone = require('../Models/Drone');
 const User = require('../Models/User');
+const { getDistanceFromLatLonInKm } = require('../utils/locationUtils'); // Import distance utility
 
 // @desc    Get all pending orders (waiting for drone assignment)
 // @route   GET /api/admin/orders/pending
@@ -18,10 +19,24 @@ exports.getPendingOrders = async(req, res) => {
             .populate('items.product', 'name price image')
             .sort({ createdAt: -1 });
 
+        const ordersWithDistance = orders.map(order => {
+            if (order.restaurant?.location?.coordinates && order.deliveryInfo?.location?.coordinates) {
+                const [restLon, restLat] = order.restaurant.location.coordinates;
+                const [userLon, userLat] = order.deliveryInfo.location.coordinates;
+
+                const distance = getDistanceFromLatLonInKm(restLat, restLon, userLat, userLon);
+                return {
+                    ...order.toObject(), // Convert Mongoose document to plain object
+                    distanceKm: distance.toFixed(2),
+                };
+            }
+            return order.toObject(); // Return as is if locations are missing
+        });
+
         res.json({
             success: true,
-            count: orders.length,
-            data: orders,
+            count: ordersWithDistance.length,
+            data: ordersWithDistance,
         });
     } catch (error) {
         res.status(500).json({

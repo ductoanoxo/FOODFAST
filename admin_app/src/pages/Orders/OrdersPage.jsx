@@ -12,13 +12,17 @@ import {
     Input,
     Form,
     Popconfirm,
+    Typography,
+    Skeleton,
+    Empty,
 } from 'antd'
-import { EyeOutlined, CloseCircleOutlined } from '@ant-design/icons'
+import { EyeOutlined, CloseCircleOutlined, EnvironmentOutlined, DollarCircleOutlined } from '@ant-design/icons'
 import { getAllOrders, cancelOrder } from '../../api/orderAPI'
 import './OrdersPage.css'
 
 const { Option } = Select
 const { TextArea } = Input
+const { Text } = Typography
 
 const OrdersPage = () => {
     const [orders, setOrders] = useState([])
@@ -244,6 +248,9 @@ const OrdersPage = () => {
                     </Select>
                 </div>
 
+                {loading ? (
+                    <Skeleton active paragraph={{ rows: 10 }} />
+                ) : (
                 <Table
                     columns={columns}
                     dataSource={orders}
@@ -253,7 +260,18 @@ const OrdersPage = () => {
                         pageSize: 10,
                         showTotal: (total) => `Tổng ${total} đơn hàng`,
                     }}
+                    locale={{
+                        emptyText: (
+                            <Empty
+                                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                description={<span>Không có đơn hàng nào.</span>}
+                            >
+                                <Button type="primary" onClick={fetchOrders}>Làm mới</Button>
+                            </Empty>
+                        ),
+                    }}
                 />
+                )}
             </Card>
 
             {/* Details Modal */}
@@ -281,6 +299,14 @@ const OrdersPage = () => {
                             </Descriptions.Item>
                             <Descriptions.Item label="Địa chỉ giao hàng" span={2}>
                                 {selectedOrder.deliveryInfo?.address}
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Khoảng cách giao hàng">
+                                <EnvironmentOutlined style={{ marginRight: 8 }} />
+                                <Text strong>{selectedOrder.distanceKm ? `${selectedOrder.distanceKm} km` : 'N/A'}</Text>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Phí giao hàng">
+                                <DollarCircleOutlined style={{ marginRight: 8 }} />
+                                <Text strong>{selectedOrder.deliveryFee?.toLocaleString()}đ</Text>
                             </Descriptions.Item>
                             <Descriptions.Item label="Ghi chú" span={2}>
                                 {selectedOrder.note || 'Không có'}

@@ -335,6 +335,9 @@ const createOrder = asyncHandler(async(req, res) => {
 
     const distance = getDistanceFromLatLonInKm(restLat, restLon, userLat, userLon);
     const deliveryFee = calculateDeliveryFee(distance);
+    const distanceKm = parseFloat(distance.toFixed(2));
+    // Explanation uses the same constants as locationUtils (BASE_FEE=15000,VND, BASE_DISTANCE=2km, FEE_PER_KM=5000 VND)
+    const distanceExplanation = `Khoảng cách được tính theo đường thẳng (Haversine) giữa tọa độ nhà hàng (${restLat.toFixed(6)}, ${restLon.toFixed(6)}) và địa chỉ giao (${userLat.toFixed(6)}, ${userLon.toFixed(6)}). Khoảng cách: ${distanceKm} km. Phí vận chuyển: 15,000₫ cho 2 km đầu; sau đó 5,000₫ cho mỗi km tiếp theo (làm tròn lên mỗi km).`;
     // --- End Delivery Fee Calculation ---
 
     // Handle voucher discount
@@ -444,6 +447,8 @@ const createOrder = asyncHandler(async(req, res) => {
         note: note || '',
         subtotal,
         deliveryFee,
+        distanceKm,
+        distanceExplanation,
         discount: discountAmount,
         appliedPromo: appliedVoucher ? null : null, // Keep for backward compatibility but deprecated
         appliedPromotions: appliedPromotionsList,
