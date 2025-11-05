@@ -1,10 +1,21 @@
 # 🍔🚁 **FOODFAST DRONE DELIVERY — Deploy Branch Version**
 
-> Hệ thống đặt đồ ăn với giao hàng bằng drone - Food delivery system with drone management
-> 
-> **Version:** Deploy Branch - Testing Conflict Resolution
-**CI/CD Status:** GitHub Actions + Vercel + Railway
+> 🛰️ *Hệ thống đặt đồ ăn với giao hàng bằng drone*  
+> 🍱 *Food delivery system with drone management*  
+>  
+> **🔖 Version:** *Deploy Branch — Testing Conflict Resolution*  
+> **⚙️ CI/CD:** *GitHub Actions • Vercel • Railway*
 
+---
+
+<h2 align="center">🎬 Video Demo</h2>
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=vwBItmEOFMM" target="_blank">
+    <img src="https://img.youtube.com/vi/vwBItmEOFMM/maxresdefault.jpg"
+         alt="FoodFast Demo Video" width="720" style="border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.25);">
+  </a>
+</p>
 
 <p align="center">
   🎥 <i>Click vào ảnh để xem video demo trên YouTube</i>
