@@ -22,7 +22,7 @@ const Footer = () => {
           {/* About */}
           <Col xs={24} sm={12} md={6}>
             <Title level={4} style={{ color: '#fff' }}>
-              Về FoodFast
+              Về FoodFast 
             </Title>
             <Space direction="vertical" size="small">
               <Link to="/about">Giới thiệu</Link>
