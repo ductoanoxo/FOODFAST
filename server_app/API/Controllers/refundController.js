@@ -117,22 +117,17 @@ const processManualRefund = asyncHandler(async (req, res) => {
 const getRefundStats = asyncHandler(async (req, res) => {
     const totalRefunds = await Order.countDocuments({
         status: 'cancelled',
-        paymentStatus: { $in: ['refunded', 'refund_pending', 'refund_failed'] },
+        paymentStatus: { $in: ['refunded', 'refund_pending'] },
     })
 
     const pendingRefunds = await Order.countDocuments({
         status: 'cancelled',
-        paymentStatus: { $in: ['refund_pending', 'refund_failed'] },
+        paymentStatus: 'refund_pending',
     })
 
     const completedRefunds = await Order.countDocuments({
         status: 'cancelled',
         paymentStatus: 'refunded',
-    })
-
-    const failedRefunds = await Order.countDocuments({
-        status: 'cancelled',
-        paymentStatus: 'refund_failed',
     })
 
     // Calculate total refund amount
@@ -159,7 +154,6 @@ const getRefundStats = asyncHandler(async (req, res) => {
             total: totalRefunds,
             pending: pendingRefunds,
             completed: completedRefunds,
-            failed: failedRefunds,
             totalRefundAmount,
         },
     })

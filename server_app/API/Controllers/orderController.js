@@ -97,39 +97,47 @@ const processRefund = async (order, cancelledBy, cancelReason) => {
                             meta: { response: resp.data }
                         })
                     } else {
-                        order.paymentStatus = 'refund_failed'
+                        // VNPay API failed or returned non-success code
+                        // Set to refund_pending so admin can process manually
+                        order.paymentStatus = 'refund_pending'
                         refundInfo = {
                             status: 'pending',
                             method: 'manual',
                             amount: order.totalAmount,
                             requestedAt: now,
-                            message: 'Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong 24h'
+                            message: 'Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong 24h',
+                            adminNote: 'VNPay API không phản hồi thành công (có thể do sandbox). Cần xử lý hoàn tiền thủ công.'
                         }
                         order.refundInfo = refundInfo
                         await OrderAudit.create({
                             order: order._id,
                             user: cancelledBy._id,
-                            action: 'refund_failed',
-                            reason: 'VNPay refund API returned failure',
-                            meta: { response: resp?.data }
+                            action: 'refund_pending',
+                            reason: 'VNPay refund API không thành công - Chờ xử lý thủ công',
+                            meta: { 
+                                response: resp?.data,
+                                note: 'VNPay Sandbox không hỗ trợ hoàn tiền tự động. Admin cần xử lý thủ công.'
+                            }
                         })
                     }
                 } catch (refundErr) {
                     console.error('VNPay refund attempt failed', refundErr)
-                    order.paymentStatus = 'refund_failed'
+                    // Set to refund_pending so admin can process manually
+                    order.paymentStatus = 'refund_pending'
                     refundInfo = {
                         status: 'pending',
                         method: 'manual',
                         amount: order.totalAmount,
                         requestedAt: now,
-                        message: 'Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong 24h'
+                        message: 'Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong 24h',
+                        adminNote: 'Lỗi khi gọi VNPay API. Cần xử lý hoàn tiền thủ công.'
                     }
                     order.refundInfo = refundInfo
                     await OrderAudit.create({
                         order: order._id,
                         user: cancelledBy._id,
-                        action: 'refund_failed',
-                        reason: 'VNPay refund attempt threw error',
+                        action: 'refund_pending',
+                        reason: 'Lỗi khi gọi VNPay API - Chờ xử lý thủ công',
                         meta: { error: String(refundErr) }
                     })
                 }
