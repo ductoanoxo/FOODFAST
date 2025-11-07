@@ -1,4 +1,4 @@
-import { Modal, Descriptions, Typography, Tag, Divider, Timeline, Space, Row, Col, Card, List } from 'antd';
+import { Modal, Descriptions, Typography, Tag, Divider, Timeline, Space, Row, Col, Card, List, Alert } from 'antd';
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -8,6 +8,7 @@ import {
   EnvironmentOutlined,
   UserOutlined,
   PhoneOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -123,10 +124,46 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
             <Card size="small" title="Thông tin thanh toán">
               <div style={{ marginBottom: 8 }}>
                 <Text strong>Trạng thái:&nbsp;</Text>
-                <Tag color={order.paymentStatus === 'paid' ? 'green' : 'orange'}>
-                  {order.paymentStatus === 'paid' ? 'Đã thanh toán' : (order.paymentStatus === 'refund_pending' ? 'Đang hoàn tiền' : 'Chưa thanh toán')}
+                <Tag color={
+                  order.paymentStatus === 'paid' ? 'green' : 
+                  order.paymentStatus === 'failed' ? 'red' : 
+                  order.paymentStatus === 'refunded' ? 'blue' : 
+                  order.paymentStatus === 'refund_pending' ? 'orange' : 
+                  'default'
+                }>
+                  {order.paymentStatus === 'paid' ? 'Đã thanh toán' : 
+                   order.paymentStatus === 'failed' ? 'Thanh toán thất bại' :
+                   order.paymentStatus === 'refunded' ? 'Đã hoàn tiền' :
+                   order.paymentStatus === 'refund_pending' ? 'Đang hoàn tiền' : 
+                   order.paymentStatus === 'refund_failed' ? 'Hoàn tiền thất bại' :
+                   'Chưa thanh toán'}
                 </Tag>
               </div>
+              
+              {/* Hiển thị lỗi thanh toán nếu có */}
+              {order.paymentStatus === 'failed' && order.paymentInfo?.errorMessage && (
+                <Alert
+                  message="Thanh toán thất bại"
+                  description={
+                    <div>
+                      <p style={{ marginBottom: 4 }}><strong>Mã lỗi:</strong> {order.paymentInfo.errorCode}</p>
+                      <p style={{ marginBottom: 0 }}><strong>Chi tiết:</strong> {order.paymentInfo.errorMessage}</p>
+                      {order.paymentInfo.failedAt && (
+                        <p style={{ marginTop: 8, marginBottom: 0 }}>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            Thời gian: {dayjs(order.paymentInfo.failedAt).format('DD/MM/YYYY HH:mm:ss')}
+                          </Text>
+                        </p>
+                      )}
+                    </div>
+                  }
+                  type="error"
+                  showIcon
+                  icon={<WarningOutlined />}
+                  style={{ marginBottom: 12 }}
+                />
+              )}
+              
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between'}}>
                   <Text>Tổng tiền hàng:</Text>

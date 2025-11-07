@@ -34,6 +34,7 @@ const VNPayReturnPage = () => {
       })
     } catch (error) {
       console.error('VNPay return error:', error)
+      
       setPaymentResult({
         success: false,
         message: error.response?.data?.message || error.message || 'Có lỗi xảy ra khi xử lý thanh toán',

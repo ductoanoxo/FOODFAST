@@ -152,6 +152,10 @@ const orderSchema = new mongoose.Schema({
         method: String,
         transactionId: String,
         paidAt: Date,
+        errorCode: String,
+        errorMessage: String,
+        transactionStatus: String,
+        failedAt: Date,
     },
     refundInfo: {
         status: {

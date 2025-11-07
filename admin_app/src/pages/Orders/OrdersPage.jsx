@@ -15,8 +15,9 @@ import {
     Typography,
     Skeleton,
     Empty,
+    Alert,
 } from 'antd'
-import { EyeOutlined, CloseCircleOutlined, EnvironmentOutlined, DollarCircleOutlined } from '@ant-design/icons'
+import { EyeOutlined, CloseCircleOutlined, EnvironmentOutlined, DollarCircleOutlined, WarningOutlined } from '@ant-design/icons'
 import { getAllOrders, cancelOrder } from '../../api/orderAPI'
 import './OrdersPage.css'
 
@@ -121,6 +122,7 @@ const OrdersPage = () => {
         const texts = {
             pending: 'Chưa thanh toán',
             paid: 'Đã thanh toán',
+            failed: 'Thanh toán thất bại',
             refund_pending: 'Đang hoàn tiền',
             refund_failed: 'Hoàn tiền thất bại',
             refunded: 'Đã hoàn tiền',
@@ -132,6 +134,7 @@ const OrdersPage = () => {
         const colors = {
             pending: 'orange',
             paid: 'green',
+            failed: 'red',
             refund_pending: 'gold',
             refund_failed: 'red',
             refunded: 'cyan',
@@ -326,6 +329,35 @@ const OrdersPage = () => {
                                     {getPaymentStatusText(selectedOrder.paymentStatus)}
                                 </Tag>
                             </Descriptions.Item>
+                            
+                            {/* Hiển thị lỗi thanh toán chi tiết nếu có */}
+                            {selectedOrder.paymentStatus === 'failed' && selectedOrder.paymentInfo?.errorMessage && (
+                                <Descriptions.Item label="Lỗi thanh toán" span={2}>
+                                    <Alert
+                                        message="Chi tiết lỗi thanh toán"
+                                        description={
+                                            <div>
+                                                <p style={{ marginBottom: 4 }}>
+                                                    <strong>Mã lỗi:</strong> {selectedOrder.paymentInfo.errorCode}
+                                                </p>
+                                                <p style={{ marginBottom: 0 }}>
+                                                    <strong>Mô tả:</strong> {selectedOrder.paymentInfo.errorMessage}
+                                                </p>
+                                                {selectedOrder.paymentInfo.failedAt && (
+                                                    <p style={{ marginTop: 8, marginBottom: 0, fontSize: '12px', color: '#999' }}>
+                                                        Thời gian thất bại: {new Date(selectedOrder.paymentInfo.failedAt).toLocaleString('vi-VN')}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        }
+                                        type="error"
+                                        showIcon
+                                        icon={<WarningOutlined />}
+                                        style={{ marginTop: 8 }}
+                                    />
+                                </Descriptions.Item>
+                            )}
+                            
                             <Descriptions.Item label="Trạng thái đơn hàng">
                                 <Tag color={getStatusColor(selectedOrder.status)}>
                                     {getStatusText(selectedOrder.status)}

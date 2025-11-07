@@ -22,6 +22,7 @@ const OrderCard = ({ order, onUpdateStatus, onConfirmHandover, onViewDetails, on
     const texts = {
       pending: 'Chưa thanh toán',
       paid: 'Đã thanh toán',
+      failed: 'Thanh toán thất bại',
       refund_pending: 'Đang hoàn tiền',
       refund_failed: 'Hoàn tiền thất bại',
       refunded: 'Đã hoàn tiền',
@@ -33,6 +34,7 @@ const OrderCard = ({ order, onUpdateStatus, onConfirmHandover, onViewDetails, on
     const colors = {
       pending: 'orange',
       paid: 'green',
+      failed: 'red',
       refund_pending: 'gold',
       refund_failed: 'red',
       refunded: 'cyan',
