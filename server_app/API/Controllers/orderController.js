@@ -6,6 +6,7 @@ const PromoUsage = require('../Models/PromoUsage')
 const Voucher = require('../Models/Voucher')
 const VoucherUsage = require('../Models/VoucherUsage')
 const { geocodeWithFallback } = require('../../services/geocodingService')
+const { getDistanceWithFallback } = require('../../services/routingService')
 const OrderAudit = require('../Models/OrderAudit')
 const axios = require('axios')
 const crypto = require('crypto')
@@ -333,11 +334,24 @@ const createOrder = asyncHandler(async(req, res) => {
     }
     const [userLon, userLat] = userCoordinates;
 
-    const distance = getDistanceFromLatLonInKm(restLat, restLon, userLat, userLon);
+    // 🚀 Tính khoảng cách THỰC TẾ theo đường đi (routing), không phải đường thẳng
+    const routingInfo = await getDistanceWithFallback(restLat, restLon, userLat, userLon);
+    const distance = routingInfo.distance; // km theo đường đi thực tế
+    const estimatedDuration = routingInfo.duration; // phút
+    const routingMethod = routingInfo.method; // 'routing' | 'haversine_adjusted' | 'haversine_fallback'
+    
     const deliveryFee = calculateDeliveryFee(distance);
     const distanceKm = parseFloat(distance.toFixed(2));
-    // Explanation uses the same constants as locationUtils (BASE_FEE=15000,VND, BASE_DISTANCE=2km, FEE_PER_KM=5000 VND)
-    const distanceExplanation = `Khoảng cách được tính theo đường thẳng (Haversine) giữa tọa độ nhà hàng (${restLat.toFixed(6)}, ${restLon.toFixed(6)}) và địa chỉ giao (${userLat.toFixed(6)}, ${userLon.toFixed(6)}). Khoảng cách: ${distanceKm} km. Phí vận chuyển: 15,000₫ cho 2 km đầu; sau đó 5,000₫ cho mỗi km tiếp theo (làm tròn lên mỗi km).`;
+    
+    // Explanation mô tả rõ cách tính
+    let distanceExplanation = '';
+    if (routingMethod === 'routing') {
+        distanceExplanation = `Khoảng cách được tính theo ĐƯỜNG ĐI THỰC TẾ (sử dụng OSRM routing API) từ nhà hàng (Lat: ${restLat.toFixed(6)}, Lon: ${restLon.toFixed(6)}) đến địa chỉ giao hàng (Lat: ${userLat.toFixed(6)}, Lon: ${userLon.toFixed(6)}). Khoảng cách: ${distanceKm} km. Thời gian ước tính: ~${estimatedDuration} phút. Phí vận chuyển: 15,000₫ cho 2 km đầu; sau đó 5,000₫ cho mỗi km tiếp theo (làm tròn lên).`;
+    } else if (routingMethod === 'haversine_adjusted') {
+        distanceExplanation = `Khoảng cách được tính theo đường thẳng (Haversine) và điều chỉnh thêm ~35% để phản ánh đường đi thực tế trong thành phố. Tọa độ: Nhà hàng (Lat: ${restLat.toFixed(6)}, Lon: ${restLon.toFixed(6)}) - Giao hàng (Lat: ${userLat.toFixed(6)}, Lon: ${userLon.toFixed(6)}). Khoảng cách ước tính: ${distanceKm} km. Thời gian ước tính: ~${estimatedDuration} phút. Phí vận chuyển: 15,000₫ cho 2 km đầu; sau đó 5,000₫ cho mỗi km tiếp theo.`;
+    } else {
+        distanceExplanation = `Khoảng cách được ước tính dựa trên đường thẳng với hệ số điều chỉnh. Khoảng cách: ${distanceKm} km. Phí vận chuyển: 15,000₫ cho 2 km đầu; sau đó 5,000₫/km.`;
+    }
     // --- End Delivery Fee Calculation ---
 
     // Handle voucher discount
@@ -449,13 +463,16 @@ const createOrder = asyncHandler(async(req, res) => {
         deliveryFee,
         distanceKm,
         distanceExplanation,
+        routingMethod,
+        estimatedDuration,
+        routeGeometry: routingInfo.route?.geometry, // Lưu route geometry từ OSRM
         discount: discountAmount,
         appliedPromo: appliedVoucher ? null : null, // Keep for backward compatibility but deprecated
         appliedPromotions: appliedPromotionsList,
         appliedVoucher: appliedVoucher, // Store voucher info in dedicated field
         totalAmount,
         paymentMethod: paymentMethod || 'COD',
-        estimatedDeliveryTime: new Date(Date.now() + 30 * 60000), // 30 minutes
+        estimatedDeliveryTime: new Date(Date.now() + (estimatedDuration || 30) * 60000), // Dùng estimated duration từ routing
     })
 
     // Debug logs: show voucher application details
@@ -1123,7 +1140,7 @@ const restaurantConfirmHandover = asyncHandler(async(req, res) => {
     });
 });
 
-const { getDistanceFromLatLonInKm, calculateDeliveryFee } = require('../Utils/locationUtils')
+const { calculateDeliveryFee } = require('../Utils/locationUtils')
 
 // @desc    Calculate delivery fee
 // @route   POST /api/orders/calculate-fee
@@ -1152,8 +1169,10 @@ const calculateFee = asyncHandler(async (req, res) => {
     }
     const [userLon, userLat] = userCoordinates;
 
-    // Calculate distance
-    const distance = getDistanceFromLatLonInKm(restLat, restLon, userLat, userLon);
+    // 🚀 Tính khoảng cách THỰC TẾ theo đường đi (routing)
+    const routingInfo = await getDistanceWithFallback(restLat, restLon, userLat, userLon);
+    const distance = routingInfo.distance;
+    const estimatedDuration = routingInfo.duration;
 
     // Calculate fee
     const fee = calculateDeliveryFee(distance);
@@ -1161,7 +1180,10 @@ const calculateFee = asyncHandler(async (req, res) => {
     res.json({
         success: true,
         deliveryFee: fee,
-        distance: distance.toFixed(2), // in km
+        distance: distance.toFixed(2), // km (routing distance)
+        estimatedDuration: estimatedDuration, // phút
+        routingMethod: routingInfo.method,
+        routeGeometry: routingInfo.route?.geometry, // GeoJSON geometry cho map
         restaurantLocation: restaurant.location,
         userLocation: { type: 'Point', coordinates: userCoordinates }
     });

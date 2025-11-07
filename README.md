@@ -1,10 +1,21 @@
 # 🍔🚁 **FOODFAST DRONE DELIVERY — Deploy Branch Version**
 
-> Hệ thống đặt đồ ăn với giao hàng bằng drone - Food delivery system with drone management
-> 
-> **Version:** Deploy Branch - Testing Conflict Resolution
-**CI/CD Status:** GitHub Actions + Vercel + Railway
+> 🛰️ *Hệ thống đặt đồ ăn với giao hàng bằng drone*  
+> 🍱 *Food delivery system with drone management*  
+>  
+> **🔖 Version:** *Deploy Branch — Testing Conflict Resolution*  
+> **⚙️ CI/CD:** *GitHub Actions • Vercel • Railway*
 
+---
+
+<h2 align="center">🎬 Video Demo</h2>
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=vwBItmEOFMM" target="_blank">
+    <img src="https://img.youtube.com/vi/vwBItmEOFMM/maxresdefault.jpg"
+         alt="FoodFast Demo Video" width="720" style="border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.25);">
+  </a>
+</p>
 
 <p align="center">
   🎥 <i>Click vào ảnh để xem video demo trên YouTube</i>
@@ -138,7 +149,7 @@ GitHub → GitHub Actions (CI/Test) → Docker Build & Push (GHCR)
 ## 🌐 Hạ tầng triển khai
 
 - **Máy chủ Production:** AWS EC2  
-  🌍 **Public IP (hiện tại):** `34.229.140.181`  
+  🌍 **Public IP (hiện tại):** `174.129.123.199`  
 - **Registry:** GitHub Container Registry (**GHCR**)  
 - **CI/CD Pipeline:** GitHub Actions (3 workflow chính)  
 - **Runtime:** Docker + Docker Compose  
@@ -156,10 +167,10 @@ GitHub → GitHub Actions (CI/Test) → Docker Build & Push (GHCR)
 
 | Ứng dụng | Mô tả | URL |
 |----------|--------|------|
-| 👥 **Client (Người dùng)** | Đặt món, thanh toán, theo dõi đơn hàng | [http://34.229.140.181:3000](http://34.229.140.181:3000) |
-| 🍴 **Restaurant (Nhà hàng)** | Quản lý đơn hàng, menu, doanh thu | [http://34.229.140.181:3001](http://34.229.140.181:3001) |
-| 🧑‍💼 **Admin Dashboard** | Quản trị hệ thống toàn bộ | [http://34.229.140.181:3002](http://34.229.140.181:3002) |
-| ⚙️ **Backend API** | REST API trung tâm | [http://34.229.140.181:5000](http://34.229.140.181:5000) |
+| 👥 **Client (Người dùng)** | Đặt món, thanh toán, theo dõi đơn hàng | [http://174.129.123.199:3000](http://174.129.123.199:3000) |
+| 🍴 **Restaurant (Nhà hàng)** | Quản lý đơn hàng, menu, doanh thu | [http://174.129.123.199:3001](http://174.129.123.199:3001) |
+| 🧑‍💼 **Admin Dashboard** | Quản trị hệ thống toàn bộ | [http://174.129.123.199:3002](http://174.129.123.199:3002) |
+| ⚙️ **Backend API** | REST API trung tâm | [http://174.129.123.199:5000](http://174.129.123.199:5000) |
 
 **📍 Healthcheck Endpoints:**  
 - `/health`  
@@ -187,7 +198,7 @@ GitHub → GitHub Actions (CI/Test) → Docker Build & Push (GHCR)
   ```
 - **Trigger:** Tự động chạy khi `ci-test.yml` hoàn tất thành công.  
 - **Lưu ý:**  
-  - Không nên hard-code IP (`http://34.229.140.181:5000`) trong build args.  
+  - Không nên hard-code IP (`http://174.129.123.199:5000`) trong build args.  
   - Thay thế bằng domain hoặc biến môi trường (`API_URL` từ secrets).
 
 ---
@@ -238,7 +249,7 @@ GitHub → GitHub Actions (CI/Test) → Docker Build & Push (GHCR)
 SSH vào server (Windows PowerShell hoặc WSL):
 
 ```bash
-ssh -i "C:/Users/ADMIN/Downloads/CNPM_AWS_SGU.pem" ubuntu@34.229.140.181
+ssh -i "C:/Users/ADMIN/Downloads/CNPM_AWS_SGU.pem" ubuntu@174.129.123.199
 ```
 
 Sau khi đăng nhập:
