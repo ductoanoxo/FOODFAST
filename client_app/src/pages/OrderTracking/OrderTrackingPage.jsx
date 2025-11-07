@@ -335,7 +335,45 @@ const OrderTrackingPage = () => {
             )}
 
             {(order.restaurant?.location?.coordinates && order.deliveryInfo?.location?.coordinates) && (
-              <Card className="tracking-card-re" title={<span><RocketOutlined /> {order.drone ? 'Theo dõi Drone real-time' : 'Bản đồ giao hàng'}</span>}>
+              <Card 
+                className="tracking-card-re" 
+                title={
+                  <span>
+                    <RocketOutlined /> {order.drone ? 'Theo dõi Drone real-time' : 'Bản đồ giao hàng'}
+                    {order.routingMethod === 'routing' && (
+                      <Tag color="green" style={{ marginLeft: 8, fontSize: '12px' }}>
+                        ✓ Lộ trình thực tế (OSRM)
+                      </Tag>
+                    )}
+                  </span>
+                }
+              >
+                {order.routingMethod && (
+                  <div style={{ 
+                    marginBottom: 12, 
+                    padding: '8px 12px', 
+                    background: order.routingMethod === 'routing' ? '#f6ffed' : '#fff7e6',
+                    border: `1px solid ${order.routingMethod === 'routing' ? '#b7eb8f' : '#ffd591'}`,
+                    borderRadius: '6px',
+                    fontSize: '13px'
+                  }}>
+                    {order.routingMethod === 'routing' && (
+                      <Text style={{ color: '#52c41a' }}>
+                        🗺️ <strong>Lộ trình được tính bằng OSRM</strong> - Hiển thị đường đi thực tế trên đường phố
+                      </Text>
+                    )}
+                    {order.routingMethod === 'haversine_adjusted' && (
+                      <Text style={{ color: '#fa8c16' }}>
+                        📐 <strong>Khoảng cách ước tính</strong> - Tính theo đường thẳng với hệ số điều chỉnh +35%
+                      </Text>
+                    )}
+                    {order.routingMethod === 'haversine_fallback' && (
+                      <Text style={{ color: '#faad14' }}>
+                        📏 <strong>Khoảng cách ước tính cơ bản</strong> - Đường thẳng với hệ số tối thiểu
+                      </Text>
+                    )}
+                  </div>
+                )}
                 <DroneMap order={order} />
               </Card>
             )}
@@ -346,7 +384,35 @@ const OrderTrackingPage = () => {
               <div className="info-row-re"><Text type="secondary">Người nhận:</Text><Text strong>{order.deliveryInfo?.name || 'N/A'}</Text></div>
               <div className="info-row-re"><Text type="secondary">Số điện thoại:</Text><Text strong>{order.deliveryInfo?.phone || 'N/A'}</Text></div>
               <div className="info-row-re"><Text type="secondary">Địa chỉ:</Text><Text strong>{order.deliveryInfo?.address || 'N/A'}</Text></div>
-              {order.distanceKm != null && <div className="info-row-re"><Text type="secondary">Khoảng cách:</Text><Text strong>{order.distanceKm} km</Text></div>}
+              {order.distanceKm != null && (
+                <div className="info-row-re">
+                  <Text type="secondary">Khoảng cách:</Text>
+                  <Text strong>
+                    {order.distanceKm} km
+                    {order.routingMethod === 'routing' && (
+                      <Tag color="green" style={{ marginLeft: 8, fontSize: '11px' }}>
+                        Thực tế
+                      </Tag>
+                    )}
+                  </Text>
+                </div>
+              )}
+              {order.estimatedDuration != null && (
+                <div className="info-row-re">
+                  <Text type="secondary">Thời gian dự kiến:</Text>
+                  <Text strong>~{order.estimatedDuration} phút</Text>
+                </div>
+              )}
+              {order.routingMethod && (
+                <div className="info-row-re">
+                  <Text type="secondary">Phương thức tính:</Text>
+                  <Text style={{ fontSize: '12px' }}>
+                    {order.routingMethod === 'routing' && '🗺️ OSRM (đường đi thực tế)'}
+                    {order.routingMethod === 'haversine_adjusted' && '📐 Ước tính có điều chỉnh'}
+                    {order.routingMethod === 'haversine_fallback' && '📏 Ước tính cơ bản'}
+                  </Text>
+                </div>
+              )}
             </Card>
 
             <Card className="tracking-card-re" title="Sản phẩm đã đặt">
