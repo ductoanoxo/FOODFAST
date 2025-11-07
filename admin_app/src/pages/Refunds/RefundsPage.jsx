@@ -131,12 +131,31 @@ const RefundsPage = () => {
         }).format(price)
     }
 
-    const getPaymentStatusTag = (status) => {
+    const getPaymentStatusTag = (status, paymentMethod) => {
+        // Handle payment status based on payment method
+        if (status === 'pending') {
+            if (paymentMethod === 'COD') {
+                return (
+                    <Tag color="orange" icon={<ClockCircleOutlined />}>
+                        Thanh toán khi nhận hàng
+                    </Tag>
+                )
+            } else if (paymentMethod === 'VNPAY' || paymentMethod === 'MOMO') {
+                return (
+                    <Tag color="warning" icon={<ClockCircleOutlined />}>
+                        Đang chờ thanh toán online
+                    </Tag>
+                )
+            }
+        }
+
         const statusConfig = {
             refunded: { color: 'success', icon: <CheckCircleOutlined />, text: 'Đã hoàn tiền' },
-            refund_pending: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Đang chờ' },
-            refund_failed: { color: 'error', icon: <ExclamationCircleOutlined />, text: 'Thất bại' },
-            paid: { color: 'blue', text: 'Đã thanh toán' },
+            refund_pending: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Đang chờ hoàn tiền' },
+            refund_failed: { color: 'error', icon: <ExclamationCircleOutlined />, text: 'Hoàn tiền thất bại' },
+            paid: { color: 'blue', icon: <CheckCircleOutlined />, text: 'Đã thanh toán' },
+            failed: { color: 'error', icon: <ExclamationCircleOutlined />, text: 'Thanh toán thất bại' },
+            pending: { color: 'orange', icon: <ClockCircleOutlined />, text: 'Chưa thanh toán' },
         }
         const config = statusConfig[status] || { color: 'default', text: status }
         return (
@@ -199,7 +218,7 @@ const RefundsPage = () => {
             title: 'Trạng thái thanh toán',
             dataIndex: 'paymentStatus',
             key: 'paymentStatus',
-            render: (status) => getPaymentStatusTag(status),
+            render: (status, record) => getPaymentStatusTag(status, record.paymentMethod),
         },
         {
             title: 'Trạng thái hoàn tiền',
@@ -307,13 +326,16 @@ const RefundsPage = () => {
                     <Select
                         value={filters.paymentStatus}
                         onChange={(value) => setFilters({ ...filters, paymentStatus: value })}
-                        style={{ width: 180 }}
+                        style={{ width: 200 }}
+                        placeholder="Lọc theo trạng thái"
                     >
-                        <Select.Option value="all">Tất cả trạng thái</Select.Option>
-                        <Select.Option value="refund_pending">Đang chờ</Select.Option>
-                        <Select.Option value="refund_failed">Thất bại</Select.Option>
-                        <Select.Option value="refunded">Đã hoàn</Select.Option>
+                        <Select.Option value="all">Tất cả trạng thái thanh toán</Select.Option>
                         <Select.Option value="paid">Đã thanh toán</Select.Option>
+                        <Select.Option value="pending">Chưa thanh toán/Đang chờ</Select.Option>
+                        <Select.Option value="failed">Thanh toán thất bại</Select.Option>
+                        <Select.Option value="refund_pending">Đang chờ hoàn tiền</Select.Option>
+                        <Select.Option value="refunded">Đã hoàn tiền</Select.Option>
+                        <Select.Option value="refund_failed">Hoàn tiền thất bại</Select.Option>
                     </Select>
                     <Button icon={<ReloadOutlined />} onClick={fetchRefunds}>
                         Làm mới
@@ -382,7 +404,7 @@ const RefundsPage = () => {
                                 {selectedRefund.paymentMethod}
                             </Descriptions.Item>
                             <Descriptions.Item label="Trạng thái TT">
-                                {getPaymentStatusTag(selectedRefund.paymentStatus)}
+                                {getPaymentStatusTag(selectedRefund.paymentStatus, selectedRefund.paymentMethod)}
                             </Descriptions.Item>
                             <Descriptions.Item label="Trạng thái hoàn tiền">
                                 {getRefundStatusTag(selectedRefund.refundInfo)}

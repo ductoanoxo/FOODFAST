@@ -136,7 +136,8 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
                    order.paymentStatus === 'refunded' ? 'Đã hoàn tiền' :
                    order.paymentStatus === 'refund_pending' ? 'Đang hoàn tiền' : 
                    order.paymentStatus === 'refund_failed' ? 'Hoàn tiền thất bại' :
-                   'Chưa thanh toán'}
+                   order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' :
+                   'Đang chờ thanh toán online'}
                 </Tag>
               </div>
               

@@ -41,6 +41,11 @@ const OrderTrackingPage = () => {
 
     const handleOrderStatusUpdate = (data) => {
       if (data.orderId === orderId || data._id === orderId) {
+        // Update order state immediately if paymentStatus is provided
+        if (data.paymentStatus) {
+          setOrder(prev => prev ? { ...prev, status: data.status || prev.status, paymentStatus: data.paymentStatus } : prev);
+        }
+        // Fetch full order data to ensure everything is in sync
         fetchOrderTracking();
       }
     };
@@ -471,7 +476,8 @@ const OrderTrackingPage = () => {
                     order.paymentStatus === 'refunded' ? 'Đã hoàn tiền' : 
                     order.paymentStatus === 'refund_pending' ? 'Đang hoàn tiền' : 
                     order.paymentStatus === 'refund_failed' ? 'Hoàn tiền thất bại' : 
-                    'Chờ thanh toán'
+                    order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' :
+                    'Đang chờ thanh toán online'
                   }
                 </Tag>
               </div>

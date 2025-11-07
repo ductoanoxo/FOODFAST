@@ -118,9 +118,18 @@ const OrdersPage = () => {
         return texts[status] || status
     }
 
-    const getPaymentStatusText = (paymentStatus) => {
+    const getPaymentStatusText = (paymentStatus, paymentMethod) => {
+        // Handle payment status based on payment method for better UX
+        if (paymentStatus === 'pending') {
+            if (paymentMethod === 'COD') {
+                return 'Thanh toán khi nhận hàng'
+            } else if (paymentMethod === 'VNPAY' || paymentMethod === 'MOMO') {
+                return 'Đang chờ thanh toán online'
+            }
+            return 'Chưa thanh toán'
+        }
+        
         const texts = {
-            pending: 'Chưa thanh toán',
             paid: 'Đã thanh toán',
             failed: 'Thanh toán thất bại',
             refund_pending: 'Đang hoàn tiền',
@@ -183,9 +192,9 @@ const OrdersPage = () => {
             title: 'TT Thanh toán',
             dataIndex: 'paymentStatus',
             key: 'paymentStatus',
-            render: (paymentStatus) => (
+            render: (paymentStatus, record) => (
                 <Tag color={getPaymentStatusColor(paymentStatus)}>
-                    {getPaymentStatusText(paymentStatus)}
+                    {getPaymentStatusText(paymentStatus, record.paymentMethod)}
                 </Tag>
             ),
         },
@@ -326,7 +335,7 @@ const OrdersPage = () => {
                             </Descriptions.Item>
                             <Descriptions.Item label="Trạng thái thanh toán">
                                 <Tag color={getPaymentStatusColor(selectedOrder.paymentStatus)}>
-                                    {getPaymentStatusText(selectedOrder.paymentStatus)}
+                                    {getPaymentStatusText(selectedOrder.paymentStatus, selectedOrder.paymentMethod)}
                                 </Tag>
                             </Descriptions.Item>
                             
