@@ -6,7 +6,7 @@ import {
     calculateDiscount,
     calculateFinalPrice,
     formatNumber,
-} from './priceUtils';
+} from '@/services/priceUtils';
 
 describe('Price Utilities', () => {
     describe('formatPrice', () => {

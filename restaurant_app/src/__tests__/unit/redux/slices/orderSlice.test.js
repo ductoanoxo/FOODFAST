@@ -5,7 +5,7 @@ import orderReducer, {
     clearError,
     setCurrentOrder,
     updateOrderInList,
-} from './orderSlice';
+} from '@/redux/slices/orderSlice';
 
 describe('Restaurant orderSlice', () => {
     let initialState;
