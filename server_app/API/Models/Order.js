@@ -74,6 +74,25 @@ const orderSchema = new mongoose.Schema({
         type: String,
         default: null,
     },
+    // Routing method used: 'routing' | 'haversine_adjusted' | 'haversine_fallback'
+    routingMethod: {
+        type: String,
+        enum: ['routing', 'haversine_adjusted', 'haversine_fallback'],
+        default: null,
+    },
+    // Estimated delivery duration in minutes
+    estimatedDuration: {
+        type: Number,
+        default: null,
+    },
+    // Route geometry from OSRM (GeoJSON LineString)
+    routeGeometry: {
+        type: {
+            type: String,
+            enum: ['LineString'],
+        },
+        coordinates: [[Number]], // Array of [lng, lat] pairs
+    },
     note: {
         type: String,
         default: '',

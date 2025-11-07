@@ -370,8 +370,15 @@ const DroneMap = ({ order }) => {
 
   const currentDronePos = droneLocation || restaurantPos
 
-  // Create route line (straight line from restaurant to delivery)
-  const routePath = [restaurantPos, deliveryPos]
+  // Create route line 
+  // ✅ Ưu tiên dùng route geometry từ OSRM nếu có, nếu không thì dùng đường thẳng
+  let routePath = [restaurantPos, deliveryPos] // Fallback: đường thẳng
+  
+  if (order?.routeGeometry?.coordinates) {
+    // OSRM trả về GeoJSON LineString với format [[lng, lat], [lng, lat], ...]
+    // Chuyển đổi sang Leaflet format [[lat, lng], [lat, lng], ...]
+    routePath = order.routeGeometry.coordinates.map(coord => [coord[1], coord[0]])
+  }
 
   return (
     <div className="drone-map-container">
@@ -395,6 +402,11 @@ const DroneMap = ({ order }) => {
           <Text strong style={{ color: 'white', fontSize: '14px' }}>
             ⚠️ Chưa có drone được phân công. Map hiển thị vị trí nhà hàng và điểm giao hàng.
           </Text>
+          {order?.routingMethod === 'routing' && (
+            <div style={{ marginTop: '4px', fontSize: '12px', opacity: 0.9 }}>
+              ✓ Lộ trình được tính bằng OSRM (đường đi thực tế)
+            </div>
+          )}
         </div>
       )}
       

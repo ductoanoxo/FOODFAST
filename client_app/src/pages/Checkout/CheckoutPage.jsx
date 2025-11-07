@@ -45,6 +45,8 @@ const CheckoutPage = () => {
   const [deliveryFee, setDeliveryFee] = useState(0)
   const [isCalculatingFee, setIsCalculatingFee] = useState(false)
   const [distance, setDistance] = useState(null)
+  const [estimatedDuration, setEstimatedDuration] = useState(null)
+  const [routingMethod, setRoutingMethod] = useState(null)
   const [feeCalculated, setFeeCalculated] = useState(false)
   const [mapModalVisible, setMapModalVisible] = useState(false)
   const [mapData, setMapData] = useState(null)
@@ -89,8 +91,24 @@ const CheckoutPage = () => {
       if (responseData && responseData.deliveryFee !== undefined) {
         setDeliveryFee(responseData.deliveryFee)
         setDistance(responseData.distance)
+        setEstimatedDuration(responseData.estimatedDuration)
+        setRoutingMethod(responseData.routingMethod)
         setFeeCalculated(true)
-        message.success(`Đã tính phí giao hàng cho khoảng cách ${responseData.distance} km.`)
+        
+        // Message hiển thị phương thức tính khoảng cách
+        let methodText = ''
+        if (responseData.routingMethod === 'routing') {
+          methodText = '(đường đi thực tế qua OSRM)'
+        } else if (responseData.routingMethod === 'haversine_adjusted') {
+          methodText = '(ước tính với hệ số điều chỉnh)'
+        } else {
+          methodText = '(ước tính)'
+        }
+        
+        message.success(
+          `Đã tính phí giao hàng: ${responseData.distance} km ${methodText}. ` +
+          `Thời gian dự kiến: ~${responseData.estimatedDuration} phút.`
+        )
 
         setMapData({
           restaurant: {
@@ -101,6 +119,8 @@ const CheckoutPage = () => {
             address: form.getFieldValue('address'),
             location: responseData.userLocation,
           },
+          routeGeometry: responseData.routeGeometry, // Thêm route geometry từ OSRM
+          routingMethod: responseData.routingMethod,
         })
       } else {
         console.error('Unexpected API response structure:', response)
@@ -300,8 +320,20 @@ const CheckoutPage = () => {
                   {feeCalculated && distance && (
                     <div className="distance-highlight">
                       <EnvironmentOutlined />
-                      <Text>Khoảng cách giao hàng: </Text>
+                      <Text>Khoảng cách: </Text>
                       <Text strong>~{distance} km</Text>
+                      {estimatedDuration && (
+                        <>
+                          <Text style={{ margin: '0 8px' }}>•</Text>
+                          <Text>Thời gian: </Text>
+                          <Text strong>~{estimatedDuration} phút</Text>
+                        </>
+                      )}
+                      {routingMethod === 'routing' && (
+                        <Text type="success" style={{ marginLeft: 8, fontSize: '12px' }}>
+                          ✓ Đường đi thực tế
+                        </Text>
+                      )}
                     </div>
                   )}
                 </div>
