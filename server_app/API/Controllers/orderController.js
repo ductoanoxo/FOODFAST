@@ -13,12 +13,15 @@ const crypto = require('crypto')
 const moment = require('moment')
 
 // Helper function: Process refund logic
+// Chỉ đánh dấu đơn hàng là refund_pending, không tự động hoàn tiền
+// Admin sẽ phải vào trang Refunds và bấm nút xác nhận để hoàn tiền
 const processRefund = async (order, cancelledBy, cancelReason) => {
     const now = new Date()
     let refundInfo = null
 
     if (order.paymentStatus === 'paid') {
         try {
+            // Đánh dấu là đang chờ xử lý hoàn tiền
             order.paymentStatus = 'refund_pending'
             
             await OrderAudit.create({
@@ -34,175 +37,16 @@ const processRefund = async (order, cancelledBy, cancelReason) => {
                 }
             })
 
-            const vnpApi = process.env.VNPAY_API || null
-            const vnpTmn = process.env.VNPAY_TMN_CODE || null
-            const vnpHash = process.env.VNPAY_HASH_SECRET || null
-
-            if (order.paymentInfo && order.paymentInfo.method === 'vnpay' && vnpApi && vnpTmn && vnpHash) {
-                try {
-                    const vnp_RequestId = moment(now).format('HHmmss')
-                    const vnp_Version = '2.1.0'
-                    const vnp_Command = 'refund'
-                    const vnp_TxnRef = order.paymentInfo.transactionId
-                    const vnp_TransactionDate = order.paidAt ? moment(order.paidAt).format('YYYYMMDDHHmmss') : moment().format('YYYYMMDDHHmmss')
-                    const vnp_Amount = Math.round((order.totalAmount || 0) * 100)
-                    const vnp_TransactionType = '02'
-                    const vnp_CreateBy = cancelledBy.email || String(cancelledBy._id)
-                    const vnp_OrderInfo = 'Hoan tien GD ma:' + vnp_TxnRef
-                    const vnp_IpAddr = '127.0.0.1'
-                    const vnp_CreateDate = moment(now).format('YYYYMMDDHHmmss')
-                    const vnp_TransactionNo = '0'
-
-                    const data = vnp_RequestId + '|' + vnp_Version + '|' + vnp_Command + '|' + vnpTmn + '|' + vnp_TransactionType + '|' + vnp_TxnRef + '|' + vnp_Amount + '|' + vnp_TransactionNo + '|' + vnp_TransactionDate + '|' + vnp_CreateBy + '|' + vnp_CreateDate + '|' + vnp_IpAddr + '|' + vnp_OrderInfo
-                    const hmac = crypto.createHmac('sha512', vnpHash)
-                    const vnp_SecureHash = hmac.update(Buffer.from(data, 'utf-8')).digest('hex')
-
-                    const payload = {
-                        vnp_RequestId,
-                        vnp_Version,
-                        vnp_Command,
-                        vnp_TmnCode: vnpTmn,
-                        vnp_TransactionType: vnp_TransactionType,
-                        vnp_TxnRef,
-                        vnp_Amount,
-                        vnp_TransactionNo,
-                        vnp_CreateBy,
-                        vnp_OrderInfo,
-                        vnp_TransactionDate,
-                        vnp_CreateDate,
-                        vnp_IpAddr,
-                        vnp_SecureHash,
-                    }
-
-                    const resp = await axios.post(vnpApi, payload)
-
-                    // 🔒 Verify VNPay response signature (according to VNPay refund API spec)
-                    let isValidSignature = false
-                    if (resp && resp.data && resp.data.vnp_SecureHash) {
-                        try {
-                            const {
-                                vnp_ResponseId,
-                                vnp_Command,
-                                vnp_ResponseCode,
-                                vnp_Message,
-                                vnp_TmnCode,
-                                vnp_TxnRef,
-                                vnp_Amount,
-                                vnp_BankCode,
-                                vnp_PayDate,
-                                vnp_TransactionNo,
-                                vnp_TransactionType,
-                                vnp_TransactionStatus,
-                                vnp_OrderInfo,
-                                vnp_SecureHash
-                            } = resp.data
-
-                            const signData = vnp_ResponseId + '|' + vnp_Command + '|' + vnp_ResponseCode + '|' + vnp_Message + '|' + vnp_TmnCode + '|' + vnp_TxnRef + '|' + vnp_Amount + '|' + vnp_BankCode + '|' + vnp_PayDate + '|' + vnp_TransactionNo + '|' + vnp_TransactionType + '|' + vnp_TransactionStatus + '|' + vnp_OrderInfo
-                            const hmacCheck = crypto.createHmac('sha512', vnpHash)
-                            const computedHash = hmacCheck.update(Buffer.from(signData, 'utf-8')).digest('hex')
-                            isValidSignature = computedHash === vnp_SecureHash
-                        } catch (signErr) {
-                            console.error('Failed to verify VNPay refund signature', signErr)
-                            isValidSignature = false
-                        }
-                    }
-
-                    // ✅ Check if refund was successful (vnp_ResponseCode === '00' according to VNPay spec)
-                    const isSuccess = resp && resp.data && resp.data.vnp_ResponseCode === '00'
-
-                    if (isSuccess) {
-                        if (!isValidSignature) {
-                            console.warn('⚠️ VNPay refund success but signature invalid - treating as pending for security')
-                        }
-
-                        order.paymentStatus = 'refunded'
-                        refundInfo = {
-                            status: 'success',
-                            method: 'vnpay',
-                            amount: order.totalAmount,
-                            requestedAt: now,
-                            processedAt: now,
-                            estimatedTime: '3-7 ngày làm việc',
-                            message: 'Tiền sẽ được hoàn về tài khoản/thẻ bạn đã thanh toán trong vòng 3-7 ngày làm việc',
-                            transactionId: resp.data.vnp_TransactionNo || vnp_RequestId,
-                            bankCode: resp.data.vnp_BankCode || '',
-                            transactionType: resp.data.vnp_TransactionType === '02' ? 'Hoàn toàn phần' : 'Hoàn một phần'
-                        }
-                        order.refundInfo = refundInfo
-                        await OrderAudit.create({
-                            order: order._id,
-                            user: cancelledBy._id,
-                            action: 'refund_completed',
-                            reason: 'Hoàn tiền qua VNPay thành công',
-                            meta: { 
-                                response: resp.data,
-                                signatureValid: isValidSignature,
-                                vnpayResponseCode: resp.data.vnp_ResponseCode,
-                                vnpayMessage: resp.data.vnp_Message
-                            }
-                        })
-                    } else {
-                        // VNPay API failed or returned non-success code
-                        // Set to refund_pending so admin can process manually
-                        const responseCode = resp?.data?.vnp_ResponseCode || 'unknown'
-                        const responseMsg = resp?.data?.vnp_Message || 'No response from VNPay'
-                        
-                        order.paymentStatus = 'refund_pending'
-                        refundInfo = {
-                            status: 'pending',
-                            method: 'manual',
-                            amount: order.totalAmount,
-                            requestedAt: now,
-                            message: 'Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong 24h',
-                            adminNote: `VNPay API trả về mã lỗi: ${responseCode} - ${responseMsg}. Cần xử lý hoàn tiền thủ công.`
-                        }
-                        order.refundInfo = refundInfo
-                        await OrderAudit.create({
-                            order: order._id,
-                            user: cancelledBy._id,
-                            action: 'refund_pending',
-                            reason: `VNPay refund API không thành công (Mã lỗi: ${responseCode})`,
-                            meta: { 
-                                response: resp?.data,
-                                vnpayResponseCode: responseCode,
-                                vnpayMessage: responseMsg,
-                                note: 'VNPay Sandbox không hỗ trợ hoàn tiền tự động. Admin cần xử lý thủ công.'
-                            }
-                        })
-                    }
-                } catch (refundErr) {
-                    console.error('VNPay refund attempt failed', refundErr)
-                    // Set to refund_pending so admin can process manually
-                    order.paymentStatus = 'refund_pending'
-                    refundInfo = {
-                        status: 'pending',
-                        method: 'manual',
-                        amount: order.totalAmount,
-                        requestedAt: now,
-                        message: 'Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong 24h',
-                        adminNote: 'Lỗi khi gọi VNPay API. Cần xử lý hoàn tiền thủ công.'
-                    }
-                    order.refundInfo = refundInfo
-                    await OrderAudit.create({
-                        order: order._id,
-                        user: cancelledBy._id,
-                        action: 'refund_pending',
-                        reason: 'Lỗi khi gọi VNPay API - Chờ xử lý thủ công',
-                        meta: { error: String(refundErr) }
-                    })
-                }
-            } else {
-                order.paymentStatus = 'refund_pending'
-                const userPhone = order.user?.phone || 'đã đăng ký'
-                refundInfo = {
-                    status: 'pending',
-                    method: 'manual',
-                    amount: order.totalAmount,
-                    requestedAt: now,
-                    message: `Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn qua số điện thoại ${userPhone} trong vòng 24h`
-                }
-                order.refundInfo = refundInfo
+            // Lưu thông tin để admin xác nhận sau
+            const userPhone = order.user?.phone || 'đã đăng ký'
+            refundInfo = {
+                status: 'pending',
+                method: order.paymentInfo?.method || 'manual', // Lưu phương thức thanh toán ban đầu
+                amount: order.totalAmount,
+                requestedAt: now,
+                message: `Yêu cầu hoàn tiền đang được xử lý. Admin sẽ xác nhận và hoàn tiền trong vòng 24h. Chúng tôi sẽ liên hệ với bạn qua số điện thoại ${userPhone}`
             }
+            order.refundInfo = refundInfo
         } catch (e) {
             console.error('Error processing refund:', e)
             order.paymentStatus = 'refund_pending'
@@ -211,7 +55,7 @@ const processRefund = async (order, cancelledBy, cancelReason) => {
                 method: 'manual',
                 amount: order.totalAmount,
                 requestedAt: now,
-                message: 'Yêu cầu hoàn tiền đã được ghi nhận. Chúng tôi sẽ liên hệ với bạn sớm nhất'
+                message: 'Yêu cầu hoàn tiền đã được ghi nhận. Admin sẽ xử lý trong vòng 24h'
             }
             order.refundInfo = refundInfo
         }
