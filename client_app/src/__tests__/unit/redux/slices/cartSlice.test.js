@@ -5,7 +5,7 @@ import cartReducer, {
     updateQuantity,
     clearCart,
     updateItemDetails,
-} from './cartSlice';
+} from '@/redux/slices/cartSlice';
 
 describe('Cart Slice', () => {
     let initialState;

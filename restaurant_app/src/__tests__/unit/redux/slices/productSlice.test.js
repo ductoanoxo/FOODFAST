@@ -5,7 +5,7 @@ import productReducer, {
     updateProduct,
     deleteProduct,
     clearError,
-} from './productSlice';
+} from '@/redux/slices/productSlice';
 
 describe('Restaurant productSlice', () => {
     let initialState;

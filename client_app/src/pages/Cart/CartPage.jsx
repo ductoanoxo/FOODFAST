@@ -279,7 +279,7 @@ const CartPage = () => {
                 onClick={() => navigate('/menu')}
                 style={{ marginTop: 12 }}
               >
-                Tiếp tục mua hàng
+                Tiếp tục mua hàng 
               </Button>
             </Card>
           </Col>

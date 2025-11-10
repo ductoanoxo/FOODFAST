@@ -98,6 +98,7 @@ jobs:
         env:
           NODE_ENV: test
           CI: true
+          NODE_OPTIONS: '--no-warnings --experimental-vm-modules'
 
       - name: Generate test coverage
         working-directory: ./${{ matrix.app }}
