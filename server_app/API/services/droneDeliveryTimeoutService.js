@@ -13,9 +13,9 @@ const Order = require('../Models/Order');
 const Drone = require('../Models/Drone');
 const { sendPushNotification, sendSMS } = require('./notificationService');
 
-// Thời gian đợi khách (milliseconds)
-const WAITING_TIMEOUT = 5 * 60 * 1000; // 5 phút
-// const WAITING_TIMEOUT = 30 * 1000; // 30 giây (test mode)
+// Thời gian đợi khách (milliseconds) - DEMO MODE: 40 giây
+const WAITING_TIMEOUT = 40 * 1000; // 40 giây
+// const WAITING_TIMEOUT = 5 * 60 * 1000; // 5 phút (production)
 
 // Lưu trữ timers đang chạy
 const activeTimers = new Map();

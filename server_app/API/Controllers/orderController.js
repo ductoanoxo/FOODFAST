@@ -15,7 +15,7 @@ const moment = require('moment')
 // Helper function: Process refund logic
 // Chỉ đánh dấu đơn hàng là refund_pending, không tự động hoàn tiền
 // Admin sẽ phải vào trang Refunds và bấm nút xác nhận để hoàn tiền
-const processRefund = async (order, cancelledBy, cancelReason) => {
+const processRefund = async(order, cancelledBy, cancelReason) => {
     const now = new Date()
     let refundInfo = null
 
@@ -23,25 +23,25 @@ const processRefund = async (order, cancelledBy, cancelReason) => {
         try {
             // Đánh dấu là đang chờ xử lý hoàn tiền
             order.paymentStatus = 'refund_pending'
-            
+
             await OrderAudit.create({
                 order: order._id,
                 user: cancelledBy._id,
                 action: 'refund_requested',
                 reason: `${cancelledBy.role === 'user' ? 'Khách hàng' : cancelledBy.role === 'restaurant' ? 'Nhà hàng' : 'Admin'} hủy đơn đã thanh toán`,
-                meta: { 
+                meta: {
                     initiatedByRole: cancelledBy.role,
                     cancelledByName: cancelledBy.name || cancelledBy.email,
                     paymentInfo: order.paymentInfo,
-                    totalAmount: order.totalAmount 
+                    totalAmount: order.totalAmount
                 }
             })
 
             // Lưu thông tin để admin xác nhận sau
-            const userPhone = order.user?.phone || 'đã đăng ký'
+            const userPhone = order.user ? .phone || 'đã đăng ký'
             refundInfo = {
                 status: 'pending',
-                method: order.paymentInfo?.method || 'manual', // Lưu phương thức thanh toán ban đầu
+                method: order.paymentInfo ? .method || 'manual', // Lưu phương thức thanh toán ban đầu
                 amount: order.totalAmount,
                 requestedAt: now,
                 message: `Yêu cầu hoàn tiền đang được xử lý. Admin sẽ xác nhận và hoàn tiền trong vòng 24h. Chúng tôi sẽ liên hệ với bạn qua số điện thoại ${userPhone}`
@@ -241,10 +241,10 @@ const createOrder = asyncHandler(async(req, res) => {
     const distance = routingInfo.distance; // km theo đường đi thực tế
     const estimatedDuration = routingInfo.duration; // phút
     const routingMethod = routingInfo.method; // 'routing' | 'haversine_adjusted' | 'haversine_fallback'
-    
+
     const deliveryFee = calculateDeliveryFee(distance);
     const distanceKm = parseFloat(distance.toFixed(2));
-    
+
     // Explanation mô tả rõ cách tính
     let distanceExplanation = '';
     if (routingMethod === 'routing') {
@@ -367,7 +367,7 @@ const createOrder = asyncHandler(async(req, res) => {
         distanceExplanation,
         routingMethod,
         estimatedDuration,
-        routeGeometry: routingInfo.route?.geometry, // Lưu route geometry từ OSRM
+        routeGeometry: routingInfo.route ? .geometry, // Lưu route geometry từ OSRM
         discount: discountAmount,
         appliedPromo: appliedVoucher ? null : null, // Keep for backward compatibility but deprecated
         appliedPromotions: appliedPromotionsList,
@@ -594,7 +594,7 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
     // Update timestamps
     const now = new Date()
     let refundInfo = null // Initialize refund info variable
-    
+
     if (status === 'confirmed') order.confirmedAt = now
     if (status === 'preparing') order.preparingAt = now
     if (status === 'ready') order.readyAt = now
@@ -662,7 +662,7 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
         if (!order.user || !order.user.name) {
             await order.populate('user', 'name email phone')
         }
-        
+
         refundInfo = await processRefund(order, req.user, order.cancelReason)
     }
 
@@ -767,8 +767,8 @@ const cancelOrder = asyncHandler(async(req, res) => {
         // Rollback soldCount
         if (order.items && order.items.length > 0) {
             for (const item of order.items) {
-                await Product.findByIdAndUpdate(item.product, { 
-                    $inc: { soldCount: -Math.abs(item.quantity) } 
+                await Product.findByIdAndUpdate(item.product, {
+                    $inc: { soldCount: -Math.abs(item.quantity) }
                 })
             }
         }
@@ -808,7 +808,7 @@ const cancelOrder = asyncHandler(async(req, res) => {
 
         io.to(`order-${order._id}`).emit('order:status-updated', cancelPayload)
         io.to(`order-${order._id}`).emit('order:cancelled', cancelPayload)
-        
+
         if (order.restaurant && order.restaurant._id) {
             io.to(`restaurant-${order.restaurant._id}`).emit('order:cancelled', {
                 ...cancelPayload,
@@ -992,6 +992,89 @@ const restaurantConfirmHandover = asyncHandler(async(req, res) => {
 
     await order.save();
 
+    // 🎯 DEMO LOGIC: Sau 5 giây → waiting_for_customer, sau 40 giây → timeout
+    setTimeout(async() => {
+        try {
+            // Sau 5 giây: Drone "đã đến" nơi giao hàng
+            const updatedOrder = await Order.findById(order._id);
+            if (!updatedOrder || updatedOrder.status !== 'delivering') {
+                console.log(`⚠️ Order ${order._id} status changed, skipping timeout logic`);
+                return;
+            }
+
+            updatedOrder.status = 'waiting_for_customer';
+            updatedOrder.arrivedAt = new Date();
+            await updatedOrder.save();
+
+            console.log(`⏰ Order ${order._id} → waiting_for_customer (40s countdown started)`);
+
+            // Emit socket event
+            if (socketService && socketService.io) {
+                socketService.io.emit('order:status-updated', {
+                    orderId: updatedOrder._id,
+                    status: 'waiting_for_customer',
+                    arrivedAt: updatedOrder.arrivedAt,
+                    message: 'Drone đã đến - Vui lòng nhận hàng trong 40 giây!'
+                });
+                socketService.io.to(`order-${updatedOrder._id}`).emit('order:status-updated', {
+                    orderId: updatedOrder._id,
+                    status: 'waiting_for_customer',
+                    arrivedAt: updatedOrder.arrivedAt,
+                    message: 'Drone đã đến - Vui lòng nhận hàng trong 40 giây!'
+                });
+            }
+
+            // Set timeout 40 giây
+            setTimeout(async() => {
+                try {
+                    const finalOrder = await Order.findById(order._id).populate('drone');
+                    if (!finalOrder || finalOrder.status !== 'waiting_for_customer') {
+                        console.log(`✅ Order ${order._id} đã được nhận hoặc đã xử lý`);
+                        return;
+                    }
+
+                    // Timeout: Chuyển drone về available
+                    console.log(`❌ Order ${order._id} TIMEOUT! Drone về trạng thái sẵn sàng`);
+
+                    finalOrder.status = 'delivery_failed';
+                    finalOrder.cancelReason = 'Không gặp người nhận sau 40 giây';
+                    await finalOrder.save();
+
+                    // Drone về available
+                    if (finalOrder.drone) {
+                        const Drone = require('../Models/Drone');
+                        const droneToFree = await Drone.findById(finalOrder.drone._id);
+                        if (droneToFree) {
+                            droneToFree.status = 'available';
+                            droneToFree.currentOrder = null;
+                            await droneToFree.save();
+                            console.log(`🚁 Drone ${droneToFree.name} → available`);
+                        }
+                    }
+
+                    // Emit socket event
+                    if (socketService && socketService.io) {
+                        socketService.io.emit('order:status-updated', {
+                            orderId: finalOrder._id,
+                            status: 'delivery_failed',
+                            message: 'Giao hàng thất bại - Không gặp người nhận'
+                        });
+                        socketService.io.to(`order-${finalOrder._id}`).emit('order:status-updated', {
+                            orderId: finalOrder._id,
+                            status: 'delivery_failed',
+                            message: 'Giao hàng thất bại - Không gặp người nhận'
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ Error in timeout handler:', error);
+                }
+            }, 40000); // 40 giây
+
+        } catch (error) {
+            console.error('❌ Error in arrival handler:', error);
+        }
+    }, 5000); // 5 giây
+
     // Emit socket events
     const socketService = req.app.get('socketService');
     if (socketService) {
@@ -1052,7 +1135,7 @@ const { calculateDeliveryFee } = require('../Utils/locationUtils')
 // @desc    Calculate delivery fee
 // @route   POST /api/orders/calculate-fee
 // @access  Private
-const calculateFee = asyncHandler(async (req, res) => {
+const calculateFee = asyncHandler(async(req, res) => {
     const { restaurantId, userAddress } = req.body;
 
     if (!restaurantId || !userAddress) {
@@ -1090,7 +1173,7 @@ const calculateFee = asyncHandler(async (req, res) => {
         distance: distance.toFixed(2), // km (routing distance)
         estimatedDuration: estimatedDuration, // phút
         routingMethod: routingInfo.method,
-        routeGeometry: routingInfo.route?.geometry, // GeoJSON geometry cho map
+        routeGeometry: routingInfo.route ? .geometry, // GeoJSON geometry cho map
         restaurantLocation: restaurant.location,
         userLocation: { type: 'Point', coordinates: userCoordinates }
     });

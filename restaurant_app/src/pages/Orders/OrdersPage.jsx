@@ -142,8 +142,18 @@ const OrdersPage = () => {
   const filterOrders = (status) => {
     if (status === 'all') return orders;
     if (status === 'completed') return orders.filter((order) => order.status === 'completed' || order.status === 'delivered');
-    // ✅ Tab "Đang giao" hiển thị cả picked_up (đã giao cho drone) và delivering (đang bay)
-    if (status === 'delivering') return orders.filter((order) => order.status === 'picked_up' || order.status === 'delivering');
+    // ✅ Tab "Đang giao" hiển thị picked_up, delivering, waiting_for_customer (chờ khách nhận)
+    if (status === 'delivering') return orders.filter((order) => 
+      order.status === 'picked_up' || 
+      order.status === 'delivering' || 
+      order.status === 'waiting_for_customer'
+    );
+    // ✅ Tab "Thất bại" hiển thị delivery_failed, returning_to_restaurant, returned
+    if (status === 'failed') return orders.filter((order) => 
+      order.status === 'delivery_failed' || 
+      order.status === 'returning_to_restaurant' || 
+      order.status === 'returned'
+    );
     if (status === 'cancelled') return orders.filter((order) => order.status === 'cancelled');
     return orders.filter((order) => order.status === status);
   };
@@ -189,13 +199,25 @@ const OrdersPage = () => {
     },
     {
       key: 'delivering',
-      // ✅ Count delivering orders
-      label: `Đang giao (${orders.filter((o) => o.status === 'delivering').length})`,
+      // ✅ Count delivering + waiting_for_customer
+      label: `Đang giao (${orders.filter((o) => 
+        o.status === 'delivering' || 
+        o.status === 'waiting_for_customer'
+      ).length})`,
     },
     {
       key: 'completed',
       // Count both 'completed' and 'delivered' orders as completed
       label: `Hoàn thành (${orders.filter((o) => o.status === 'completed' || o.status === 'delivered').length})`,
+    },
+    {
+      key: 'failed',
+      // ✅ Count delivery_failed, returning, returned
+      label: `Thất bại (${orders.filter((o) => 
+        o.status === 'delivery_failed' || 
+        o.status === 'returning_to_restaurant' || 
+        o.status === 'returned'
+      ).length})`,
     },
     {
       key: 'cancelled',
