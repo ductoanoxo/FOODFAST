@@ -10,6 +10,9 @@ import {
   Progress,
   Spin,
   message,
+  Space,
+  Typography,
+  Empty,
 } from 'antd'
 import { 
   UserOutlined, 
@@ -24,7 +27,15 @@ import {
   CheckCircleOutlined,
   SyncOutlined,
   CloseCircleOutlined,
+  TagOutlined,
+  GiftOutlined,
+  EnvironmentOutlined,
+  CreditCardOutlined,
+  UndoOutlined,
+  CarOutlined,
 } from '@ant-design/icons'
+
+const { Text } = Typography
 import { useEffect, useState } from 'react'
 import {
   getDashboardStats,
@@ -127,6 +138,69 @@ const DashboardPage = () => {
       dataIndex: 'totalAmount',
       key: 'totalAmount',
       render: (amount) => formatCurrency(amount),
+    },
+    {
+      title: 'Thanh toán',
+      key: 'payment',
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          <Tag color={
+            record.paymentMethod === 'COD' ? 'green' :
+            record.paymentMethod === 'VNPAY' ? 'blue' :
+            record.paymentMethod === 'MOMO' ? 'magenta' : 'purple'
+          }>
+            {record.paymentMethod || 'COD'}
+          </Tag>
+          {record.paymentStatus && (
+            <Tag color={
+              record.paymentStatus === 'paid' ? 'success' :
+              record.paymentStatus === 'refunded' ? 'error' :
+              record.paymentStatus === 'failed' ? 'error' : 'warning'
+            }>
+              {record.paymentStatus}
+            </Tag>
+          )}
+        </Space>
+      ),
+    },
+    {
+      title: 'Giảm giá',
+      key: 'discount',
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          {record.discount > 0 && (
+            <Text type="danger">-{formatCurrency(record.discount)}</Text>
+          )}
+          {record.appliedVoucher && (
+            <Tag color="orange" icon={<TagOutlined />}>
+              {record.appliedVoucher.code}
+            </Tag>
+          )}
+        </Space>
+      ),
+    },
+    {
+      title: 'Giao hàng',
+      key: 'delivery',
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          {record.distanceKm && (
+            <Text style={{ fontSize: 12 }}>
+              <EnvironmentOutlined /> {record.distanceKm.toFixed(1)} km
+            </Text>
+          )}
+          {record.estimatedDuration && (
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              <ClockCircleOutlined /> ~{record.estimatedDuration} phút
+            </Text>
+          )}
+          {record.drone && (
+            <Tag color="blue" icon={<RobotOutlined />} style={{ fontSize: 11 }}>
+              {record.drone.droneId}
+            </Tag>
+          )}
+        </Space>
+      ),
     },
     {
       title: 'Trạng thái',
@@ -304,6 +378,137 @@ const DashboardPage = () => {
         </Col>
       </Row>
 
+      {/* Payment, Delivery & Promotions Statistics */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        {/* Payment & Refund */}
+        <Col xs={24} sm={12} lg={8}>
+          <Card title={<><CreditCardOutlined /> Thanh toán & Hoàn tiền</>}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Statistic
+                  title="Đã hoàn tiền"
+                  value={stats.payment?.refunded?.count || 0}
+                  prefix={<UndoOutlined />}
+                  valueStyle={{ color: '#ff4d4f', fontSize: 20 }}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title="Số tiền hoàn"
+                  value={stats.payment?.refunded?.amount || 0}
+                  suffix="₫"
+                  valueStyle={{ color: '#ff4d4f', fontSize: 20 }}
+                />
+              </Col>
+            </Row>
+            {stats.payment?.methodBreakdown && (
+              <div style={{ marginTop: 16 }}>
+                <Text type="secondary">Phương thức thanh toán:</Text>
+                <div style={{ marginTop: 8 }}>
+                  {Object.entries(stats.payment.methodBreakdown).map(([method, count]) => (
+                    <Tag 
+                      key={method}
+                      color={
+                        method === 'COD' ? 'green' :
+                        method === 'VNPAY' ? 'blue' :
+                        method === 'MOMO' ? 'magenta' : 'purple'
+                      }
+                      style={{ marginBottom: 4 }}
+                    >
+                      {method}: {count}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
+        </Col>
+
+        {/* Delivery Statistics */}
+        <Col xs={24} sm={12} lg={8}>
+          <Card title={<><CarOutlined /> Giao hàng</>}>
+            {stats.delivery ? (
+              <>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Statistic
+                      title="Khoảng cách TB"
+                      value={stats.delivery.avgDistance || 0}
+                      suffix="km"
+                      precision={2}
+                      valueStyle={{ color: '#1890ff', fontSize: 20 }}
+                    />
+                  </Col>
+                  <Col span={12}>
+                    <Statistic
+                      title="Thời gian TB"
+                      value={stats.delivery.avgDuration || 0}
+                      suffix="phút"
+                      valueStyle={{ color: '#52c41a', fontSize: 20 }}
+                    />
+                  </Col>
+                </Row>
+                <div style={{ marginTop: 16 }}>
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Text type="secondary">
+                      Phí giao TB: <Text strong>{formatCurrency(stats.delivery.avgDeliveryFee || 0)}</Text>
+                    </Text>
+                    <Text type="secondary">
+                      Xa nhất: <Text strong>{stats.delivery.maxDistance?.toFixed(1) || 0} km</Text>
+                    </Text>
+                  </Space>
+                </div>
+              </>
+            ) : (
+              <Empty description="Chưa có dữ liệu giao hàng" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+        </Col>
+
+        {/* Promotions & Vouchers */}
+        <Col xs={24} sm={12} lg={8}>
+          <Card title={<><GiftOutlined /> Khuyến mãi & Voucher</>}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Statistic
+                  title="Đơn có voucher"
+                  value={stats.promotions?.ordersWithVouchers || 0}
+                  prefix={<TagOutlined />}
+                  valueStyle={{ color: '#fa8c16', fontSize: 20 }}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title="Đơn có KM"
+                  value={stats.promotions?.ordersWithPromotions || 0}
+                  prefix={<GiftOutlined />}
+                  valueStyle={{ color: '#eb2f96', fontSize: 20 }}
+                />
+              </Col>
+            </Row>
+            {stats.promotions?.discount && (
+              <div style={{ marginTop: 16 }}>
+                <Progress
+                  percent={Math.min(
+                    stats.orders.total > 0 
+                      ? (stats.promotions.discount.count / stats.orders.total) * 100 
+                      : 0,
+                    100
+                  )}
+                  strokeColor="#fa8c16"
+                  format={(percent) => `${percent.toFixed(0)}%`}
+                />
+                <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+                  Tổng giảm: <Text strong style={{ color: '#ff4d4f' }}>
+                    {formatCurrency(stats.promotions.discount.total || 0)}
+                  </Text>
+                </Text>
+              </div>
+            )}
+          </Card>
+        </Col>
+      </Row>
+
       {/* Recent Orders */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col span={24}>
@@ -342,7 +547,7 @@ const DashboardPage = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span>{restaurant.name}</span>
                         <Tag color="gold">
-                          ⭐ {restaurant.rating?.toFixed(1) || 'N/A'}
+                          ⭐ {restaurant && restaurant.rating > 0 ? Number(restaurant.rating).toFixed(1) : '0.0'}
                         </Tag>
                       </div>
                     }

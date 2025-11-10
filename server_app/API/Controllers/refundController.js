@@ -6,7 +6,7 @@ const OrderAudit = require('../Models/OrderAudit')
 // @route   GET /api/refunds
 // @access  Private (Admin only)
 const getRefundRequests = asyncHandler(async (req, res) => {
-    const { status, paymentStatus, search } = req.query
+    const { status, paymentStatus, search, page = 1, limit = 10 } = req.query
 
     let query = {
         status: 'cancelled',
@@ -29,15 +29,24 @@ const getRefundRequests = asyncHandler(async (req, res) => {
         ]
     }
 
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const total = await Order.countDocuments(query)
+
     const refundRequests = await Order.find(query)
+        .select('orderNumber user totalAmount paymentMethod paymentStatus refundInfo cancelledAt cancelReason createdAt')
         .populate('user', 'name email phone')
-        .populate('restaurant', 'name')
         .sort('-cancelledAt')
-        .limit(100)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean() // Convert to plain JS objects for better performance
 
     res.json({
         success: true,
         count: refundRequests.length,
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
         data: refundRequests,
     })
 })

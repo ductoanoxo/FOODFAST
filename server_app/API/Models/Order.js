@@ -206,11 +206,20 @@ const orderSchema = new mongoose.Schema({
     timestamps: true,
 })
 
+// Add indexes for better query performance
+orderSchema.index({ user: 1, createdAt: -1 })
+orderSchema.index({ restaurant: 1, status: 1 })
+orderSchema.index({ orderNumber: 1 })
+orderSchema.index({ status: 1 })
+orderSchema.index({ drone: 1 })
+
 // Generate order number before saving
 orderSchema.pre('save', async function(next) {
     if (!this.orderNumber) {
-        const count = await mongoose.model('Order').countDocuments()
-        this.orderNumber = `ORD${Date.now()}${count + 1}`
+        // Use a more efficient approach: timestamp + random for uniqueness
+        const timestamp = Date.now()
+        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+        this.orderNumber = `ORD${timestamp}${random}`
     }
     next()
 })

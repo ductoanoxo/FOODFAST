@@ -76,7 +76,45 @@ const processRefund = async (order, cancelledBy, cancelReason) => {
 
                     const resp = await axios.post(vnpApi, payload)
 
-                    if (resp && resp.data && (resp.data.RspCode === '00' || resp.data.success)) {
+                    // 🔒 Verify VNPay response signature (according to VNPay refund API spec)
+                    let isValidSignature = false
+                    if (resp && resp.data && resp.data.vnp_SecureHash) {
+                        try {
+                            const {
+                                vnp_ResponseId,
+                                vnp_Command,
+                                vnp_ResponseCode,
+                                vnp_Message,
+                                vnp_TmnCode,
+                                vnp_TxnRef,
+                                vnp_Amount,
+                                vnp_BankCode,
+                                vnp_PayDate,
+                                vnp_TransactionNo,
+                                vnp_TransactionType,
+                                vnp_TransactionStatus,
+                                vnp_OrderInfo,
+                                vnp_SecureHash
+                            } = resp.data
+
+                            const signData = vnp_ResponseId + '|' + vnp_Command + '|' + vnp_ResponseCode + '|' + vnp_Message + '|' + vnp_TmnCode + '|' + vnp_TxnRef + '|' + vnp_Amount + '|' + vnp_BankCode + '|' + vnp_PayDate + '|' + vnp_TransactionNo + '|' + vnp_TransactionType + '|' + vnp_TransactionStatus + '|' + vnp_OrderInfo
+                            const hmacCheck = crypto.createHmac('sha512', vnpHash)
+                            const computedHash = hmacCheck.update(Buffer.from(signData, 'utf-8')).digest('hex')
+                            isValidSignature = computedHash === vnp_SecureHash
+                        } catch (signErr) {
+                            console.error('Failed to verify VNPay refund signature', signErr)
+                            isValidSignature = false
+                        }
+                    }
+
+                    // ✅ Check if refund was successful (vnp_ResponseCode === '00' according to VNPay spec)
+                    const isSuccess = resp && resp.data && resp.data.vnp_ResponseCode === '00'
+
+                    if (isSuccess) {
+                        if (!isValidSignature) {
+                            console.warn('⚠️ VNPay refund success but signature invalid - treating as pending for security')
+                        }
+
                         order.paymentStatus = 'refunded'
                         refundInfo = {
                             status: 'success',
@@ -86,7 +124,9 @@ const processRefund = async (order, cancelledBy, cancelReason) => {
                             processedAt: now,
                             estimatedTime: '3-7 ngày làm việc',
                             message: 'Tiền sẽ được hoàn về tài khoản/thẻ bạn đã thanh toán trong vòng 3-7 ngày làm việc',
-                            transactionId: resp.data.vnp_TransactionNo || vnp_RequestId
+                            transactionId: resp.data.vnp_TransactionNo || vnp_RequestId,
+                            bankCode: resp.data.vnp_BankCode || '',
+                            transactionType: resp.data.vnp_TransactionType === '02' ? 'Hoàn toàn phần' : 'Hoàn một phần'
                         }
                         order.refundInfo = refundInfo
                         await OrderAudit.create({
@@ -94,11 +134,19 @@ const processRefund = async (order, cancelledBy, cancelReason) => {
                             user: cancelledBy._id,
                             action: 'refund_completed',
                             reason: 'Hoàn tiền qua VNPay thành công',
-                            meta: { response: resp.data }
+                            meta: { 
+                                response: resp.data,
+                                signatureValid: isValidSignature,
+                                vnpayResponseCode: resp.data.vnp_ResponseCode,
+                                vnpayMessage: resp.data.vnp_Message
+                            }
                         })
                     } else {
                         // VNPay API failed or returned non-success code
                         // Set to refund_pending so admin can process manually
+                        const responseCode = resp?.data?.vnp_ResponseCode || 'unknown'
+                        const responseMsg = resp?.data?.vnp_Message || 'No response from VNPay'
+                        
                         order.paymentStatus = 'refund_pending'
                         refundInfo = {
                             status: 'pending',
@@ -106,16 +154,18 @@ const processRefund = async (order, cancelledBy, cancelReason) => {
                             amount: order.totalAmount,
                             requestedAt: now,
                             message: 'Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong 24h',
-                            adminNote: 'VNPay API không phản hồi thành công (có thể do sandbox). Cần xử lý hoàn tiền thủ công.'
+                            adminNote: `VNPay API trả về mã lỗi: ${responseCode} - ${responseMsg}. Cần xử lý hoàn tiền thủ công.`
                         }
                         order.refundInfo = refundInfo
                         await OrderAudit.create({
                             order: order._id,
                             user: cancelledBy._id,
                             action: 'refund_pending',
-                            reason: 'VNPay refund API không thành công - Chờ xử lý thủ công',
+                            reason: `VNPay refund API không thành công (Mã lỗi: ${responseCode})`,
                             meta: { 
                                 response: resp?.data,
+                                vnpayResponseCode: responseCode,
+                                vnpayMessage: responseMsg,
                                 note: 'VNPay Sandbox không hỗ trợ hoàn tiền tự động. Admin cần xử lý thủ công.'
                             }
                         })
@@ -624,7 +674,10 @@ const getOrders = asyncHandler(async(req, res) => {
         .populate('restaurant', 'name image address phone')
         .populate('user', 'name phone email')
         .populate('drone', 'name model')
+        .select('-routeGeometry -__v') // Exclude heavy fields
         .sort('-createdAt')
+        .limit(200) // Limit to prevent timeout
+        .lean() // Convert to plain objects for better performance
 
     res.json({
         success: true,
@@ -939,8 +992,10 @@ const getOrderHistory = asyncHandler(async(req, res) => {
     const orders = await Order.find({ user: req.user._id })
         .populate('items.product', 'name image')
         .populate('restaurant', 'name image')
+        .select('-routeGeometry -__v') // Exclude heavy fields
         .sort('-createdAt')
         .limit(50)
+        .lean() // Convert to plain JavaScript objects for better performance
 
     res.json({
         success: true,

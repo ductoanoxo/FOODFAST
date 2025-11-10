@@ -9,6 +9,7 @@ import {
   UserOutlined,
   PhoneOutlined,
   WarningOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -135,7 +136,6 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
                    order.paymentStatus === 'failed' ? 'Thanh toán thất bại' :
                    order.paymentStatus === 'refunded' ? 'Đã hoàn tiền' :
                    order.paymentStatus === 'refund_pending' ? 'Đang hoàn tiền' : 
-                   order.paymentStatus === 'refund_failed' ? 'Hoàn tiền thất bại' :
                    order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' :
                    'Đang chờ thanh toán online'}
                 </Tag>
@@ -246,6 +246,12 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
               </Descriptions>
             </Card>
 
+            {order.note && (
+                <Card size="small" title={<><MessageOutlined style={{ marginRight: 8 }} />Ghi chú của khách</>}>
+                    <Text>{order.note}</Text>
+                </Card>
+            )}
+
             {order.distanceKm != null && (
               <Card size="small" title="Thông tin vận chuyển">
                 <Descriptions column={1} size="small">
@@ -337,12 +343,6 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
                 ].filter(Boolean)}
               />
             </Card>
-
-            {order.notes && (
-                <Card size="small" title="Ghi chú của khách">
-                    <Text>{order.notes}</Text>
-                </Card>
-            )}
           </Space>
         </Col>
       </Row>

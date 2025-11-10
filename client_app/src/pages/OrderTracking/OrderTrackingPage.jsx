@@ -475,7 +475,6 @@ const OrderTrackingPage = () => {
                     order.paymentStatus === 'failed' ? 'Thanh toán thất bại' : 
                     order.paymentStatus === 'refunded' ? 'Đã hoàn tiền' : 
                     order.paymentStatus === 'refund_pending' ? 'Đang hoàn tiền' : 
-                    order.paymentStatus === 'refund_failed' ? 'Hoàn tiền thất bại' : 
                     order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' :
                     'Đang chờ thanh toán online'
                   }

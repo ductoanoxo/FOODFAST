@@ -74,7 +74,6 @@ const OrderHistoryPage = () => {
       paid: 'Đã thanh toán',
       failed: 'Thanh toán thất bại',
       refund_pending: 'Đang hoàn tiền',
-      refund_failed: 'Hoàn tiền thất bại',
       refunded: 'Đã hoàn tiền',
     }
     return texts[paymentStatus] || paymentStatus
@@ -86,7 +85,6 @@ const OrderHistoryPage = () => {
       paid: 'green',
       failed: 'red',
       refund_pending: 'gold',
-      refund_failed: 'red',
       refunded: 'cyan',
     }
     return colors[paymentStatus] || 'default'
@@ -98,7 +96,6 @@ const OrderHistoryPage = () => {
       paid: <CheckCircleOutlined />,
       failed: <CloseCircleOutlined />,
       refund_pending: <SyncOutlined />,
-      refund_failed: <CloseCircleOutlined />,
       refunded: <RollbackOutlined />,
     }
     return icons[paymentStatus] || null
