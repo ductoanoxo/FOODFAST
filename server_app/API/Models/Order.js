@@ -171,7 +171,21 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'confirmed', 'preparing', 'ready', 'picked_up', 'delivering', 'delivered', 'cancelled'],
+        enum: [
+            'pending', 
+            'confirmed', 
+            'preparing', 
+            'ready', 
+            'picked_up', 
+            'delivering', 
+            'arrived_at_location',      // Drone đã đến nơi
+            'waiting_for_customer',     // Đợi khách nhận (5 phút)
+            'delivered',                // Giao thành công
+            'delivery_failed',          // Không gặp khách
+            'returning_to_restaurant',  // Drone đang quay lại
+            'returned',                 // Đã trả lại nhà hàng
+            'cancelled'
+        ],
         default: 'pending',
     },
     drone: {
@@ -187,9 +201,23 @@ const orderSchema = new mongoose.Schema({
         ref: 'User', // Restaurant user who confirmed the handover
     },
     deliveringAt: Date,
+    arrivedAt: Date,                    // Thời điểm drone đến nơi
+    waitingStartedAt: Date,             // Bắt đầu đếm timeout
+    waitingEndedAt: Date,               // Kết thúc waiting (nhận hàng hoặc timeout)
     deliveredAt: Date,
+    deliveryFailedAt: Date,             // Thời điểm không gặp khách
+    returningAt: Date,                  // Bắt đầu quay lại
+    returnedAt: Date,                   // Đã trả lại nhà hàng
     cancelledAt: Date,
     cancelReason: String,
+    deliveryAttempts: {                 // Số lần thử giao hàng
+        type: Number,
+        default: 0
+    },
+    customerNotification: {             // Thông báo đã gửi cho khách
+        sentAt: Date,
+        method: String,                 // 'sms', 'push', 'call'
+    },
     estimatedDeliveryTime: Date,
     paidAt: Date,
     rating: {
