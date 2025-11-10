@@ -59,12 +59,21 @@ const OrderHistoryPage = () => {
     return texts[status] || status
   }
 
-  const getPaymentStatusText = (paymentStatus) => {
+  const getPaymentStatusText = (paymentStatus, paymentMethod) => {
+    // Handle payment status based on payment method for better UX
+    if (paymentStatus === 'pending') {
+      if (paymentMethod === 'COD') {
+        return 'Thanh toán khi nhận hàng'
+      } else if (paymentMethod === 'VNPAY' || paymentMethod === 'MOMO') {
+        return 'Đang chờ thanh toán online'
+      }
+      return 'Chưa thanh toán'
+    }
+    
     const texts = {
-      pending: 'Chưa thanh toán',
       paid: 'Đã thanh toán',
+      failed: 'Thanh toán thất bại',
       refund_pending: 'Đang hoàn tiền',
-      refund_failed: 'Hoàn tiền thất bại',
       refunded: 'Đã hoàn tiền',
     }
     return texts[paymentStatus] || paymentStatus
@@ -74,8 +83,8 @@ const OrderHistoryPage = () => {
     const colors = {
       pending: 'orange',
       paid: 'green',
+      failed: 'red',
       refund_pending: 'gold',
-      refund_failed: 'red',
       refunded: 'cyan',
     }
     return colors[paymentStatus] || 'default'
@@ -85,8 +94,8 @@ const OrderHistoryPage = () => {
     const icons = {
       pending: <ClockCircleOutlined />,
       paid: <CheckCircleOutlined />,
+      failed: <CloseCircleOutlined />,
       refund_pending: <SyncOutlined />,
-      refund_failed: <CloseCircleOutlined />,
       refunded: <RollbackOutlined />,
     }
     return icons[paymentStatus] || null
@@ -153,9 +162,9 @@ const OrderHistoryPage = () => {
       title: 'TT Thanh toán',
       dataIndex: 'paymentStatus',
       key: 'paymentStatus',
-      render: (paymentStatus) => (
+      render: (paymentStatus, record) => (
         <Tag color={getPaymentStatusColor(paymentStatus)}>
-          {getPaymentStatusIcon(paymentStatus)} {getPaymentStatusText(paymentStatus)}
+          {getPaymentStatusIcon(paymentStatus)} {getPaymentStatusText(paymentStatus, record.paymentMethod)}
         </Tag>
       ),
     },

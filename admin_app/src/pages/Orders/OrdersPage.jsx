@@ -15,8 +15,9 @@ import {
     Typography,
     Skeleton,
     Empty,
+    Alert,
 } from 'antd'
-import { EyeOutlined, CloseCircleOutlined, EnvironmentOutlined, DollarCircleOutlined } from '@ant-design/icons'
+import { EyeOutlined, CloseCircleOutlined, EnvironmentOutlined, DollarCircleOutlined, WarningOutlined } from '@ant-design/icons'
 import { getAllOrders, cancelOrder } from '../../api/orderAPI'
 import './OrdersPage.css'
 
@@ -45,9 +46,22 @@ const OrdersPage = () => {
             const filters = statusFilter !== 'all' ? { status: statusFilter } : {}
             const response = await getAllOrders(filters)
             setOrders(response.data || response)
+            
+            // Show success message only on first load or when filtering
+            if (response.data?.length > 0 || response.length > 0) {
+                console.log(`Loaded ${response.data?.length || response.length} orders successfully`)
+            }
         } catch (error) {
             console.error('Error fetching orders:', error)
-            message.error(error.response?.data?.message || 'Không thể tải danh sách đơn hàng')
+            
+            // Better error message handling
+            const errorMsg = error?.response?.data?.message 
+                || error?.message 
+                || (error?.code === 'ECONNABORTED' ? 'Timeout - Server mất quá nhiều thời gian phản hồi' : '')
+                || 'Không thể tải danh sách đơn hàng'
+            
+            message.error(errorMsg, 5) // Show error for 5 seconds
+            setOrders([]) // Set empty array on error
         } finally {
             setLoading(false)
         }
@@ -117,12 +131,21 @@ const OrdersPage = () => {
         return texts[status] || status
     }
 
-    const getPaymentStatusText = (paymentStatus) => {
+    const getPaymentStatusText = (paymentStatus, paymentMethod) => {
+        // Handle payment status based on payment method for better UX
+        if (paymentStatus === 'pending') {
+            if (paymentMethod === 'COD') {
+                return 'Thanh toán khi nhận hàng'
+            } else if (paymentMethod === 'VNPAY' || paymentMethod === 'MOMO') {
+                return 'Đang chờ thanh toán online'
+            }
+            return 'Chưa thanh toán'
+        }
+        
         const texts = {
-            pending: 'Chưa thanh toán',
             paid: 'Đã thanh toán',
-            refund_pending: 'Đang hoàn tiền',
-            refund_failed: 'Hoàn tiền thất bại',
+            failed: 'Thanh toán thất bại',
+            refund_pending: 'Chờ hoàn tiền thủ công',
             refunded: 'Đã hoàn tiền',
         }
         return texts[paymentStatus] || paymentStatus
@@ -132,8 +155,8 @@ const OrdersPage = () => {
         const colors = {
             pending: 'orange',
             paid: 'green',
+            failed: 'red',
             refund_pending: 'gold',
-            refund_failed: 'red',
             refunded: 'cyan',
         }
         return colors[paymentStatus] || 'default'
@@ -180,9 +203,9 @@ const OrdersPage = () => {
             title: 'TT Thanh toán',
             dataIndex: 'paymentStatus',
             key: 'paymentStatus',
-            render: (paymentStatus) => (
+            render: (paymentStatus, record) => (
                 <Tag color={getPaymentStatusColor(paymentStatus)}>
-                    {getPaymentStatusText(paymentStatus)}
+                    {getPaymentStatusText(paymentStatus, record.paymentMethod)}
                 </Tag>
             ),
         },
@@ -323,9 +346,38 @@ const OrdersPage = () => {
                             </Descriptions.Item>
                             <Descriptions.Item label="Trạng thái thanh toán">
                                 <Tag color={getPaymentStatusColor(selectedOrder.paymentStatus)}>
-                                    {getPaymentStatusText(selectedOrder.paymentStatus)}
+                                    {getPaymentStatusText(selectedOrder.paymentStatus, selectedOrder.paymentMethod)}
                                 </Tag>
                             </Descriptions.Item>
+                            
+                            {/* Hiển thị lỗi thanh toán chi tiết nếu có */}
+                            {selectedOrder.paymentStatus === 'failed' && selectedOrder.paymentInfo?.errorMessage && (
+                                <Descriptions.Item label="Lỗi thanh toán" span={2}>
+                                    <Alert
+                                        message="Chi tiết lỗi thanh toán"
+                                        description={
+                                            <div>
+                                                <p style={{ marginBottom: 4 }}>
+                                                    <strong>Mã lỗi:</strong> {selectedOrder.paymentInfo.errorCode}
+                                                </p>
+                                                <p style={{ marginBottom: 0 }}>
+                                                    <strong>Mô tả:</strong> {selectedOrder.paymentInfo.errorMessage}
+                                                </p>
+                                                {selectedOrder.paymentInfo.failedAt && (
+                                                    <p style={{ marginTop: 8, marginBottom: 0, fontSize: '12px', color: '#999' }}>
+                                                        Thời gian thất bại: {new Date(selectedOrder.paymentInfo.failedAt).toLocaleString('vi-VN')}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        }
+                                        type="error"
+                                        showIcon
+                                        icon={<WarningOutlined />}
+                                        style={{ marginTop: 8 }}
+                                    />
+                                </Descriptions.Item>
+                            )}
+                            
                             <Descriptions.Item label="Trạng thái đơn hàng">
                                 <Tag color={getStatusColor(selectedOrder.status)}>
                                     {getStatusText(selectedOrder.status)}
@@ -343,6 +395,45 @@ const OrdersPage = () => {
                                 <Descriptions.Item label="Thời gian hủy" span={2}>
                                     {new Date(selectedOrder.cancelledAt).toLocaleString('vi-VN')}
                                 </Descriptions.Item>
+                            )}
+                            
+                            {/* Hiển thị thông tin hoàn tiền nếu có */}
+                            {selectedOrder.refundInfo && (
+                                <>
+                                    <Descriptions.Item label="Thông tin hoàn tiền" span={2}>
+                                        <Alert
+                                            message={selectedOrder.refundInfo.message || 'Đang xử lý hoàn tiền'}
+                                            description={
+                                                <div>
+                                                    {selectedOrder.refundInfo.adminNote && (
+                                                        <p style={{ marginBottom: 8, color: '#ff4d4f' }}>
+                                                            <strong>Lưu ý cho Admin:</strong> {selectedOrder.refundInfo.adminNote}
+                                                        </p>
+                                                    )}
+                                                    <p style={{ marginBottom: 4 }}>
+                                                        <strong>Số tiền:</strong> {selectedOrder.refundInfo.amount?.toLocaleString()}đ
+                                                    </p>
+                                                    <p style={{ marginBottom: 4 }}>
+                                                        <strong>Phương thức:</strong> {selectedOrder.refundInfo.method === 'manual' ? 'Thủ công' : 'VNPay tự động'}
+                                                    </p>
+                                                    {selectedOrder.refundInfo.requestedAt && (
+                                                        <p style={{ marginBottom: 4 }}>
+                                                            <strong>Yêu cầu lúc:</strong> {new Date(selectedOrder.refundInfo.requestedAt).toLocaleString('vi-VN')}
+                                                        </p>
+                                                    )}
+                                                    {selectedOrder.refundInfo.processedAt && (
+                                                        <p style={{ marginBottom: 0 }}>
+                                                            <strong>Xử lý lúc:</strong> {new Date(selectedOrder.refundInfo.processedAt).toLocaleString('vi-VN')}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            }
+                                            type={selectedOrder.paymentStatus === 'refunded' ? 'success' : 'warning'}
+                                            showIcon
+                                            style={{ marginTop: 8 }}
+                                        />
+                                    </Descriptions.Item>
+                                </>
                             )}
                         </Descriptions>
 

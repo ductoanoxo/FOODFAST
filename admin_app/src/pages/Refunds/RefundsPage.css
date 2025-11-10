@@ -1,14 +1,37 @@
 .refunds-page {
     padding: 24px;
+    background-color: #f0f2f5;
+    min-height: 100vh;
 }
 
 .page-header {
     margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e8e8e8;
 }
 
 .page-header h2 {
     margin: 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    font-size: 24px;
+}
+
+.stat-card {
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ant-table-tbody > tr.ant-table-row:hover > td {
+    background: #e6f7ff !important;
+}
+
+.filter-card .ant-card-body {
+    padding-bottom: 8px !important;
 }

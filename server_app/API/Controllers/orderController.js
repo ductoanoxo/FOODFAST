@@ -13,12 +13,15 @@ const crypto = require('crypto')
 const moment = require('moment')
 
 // Helper function: Process refund logic
+// Chỉ đánh dấu đơn hàng là refund_pending, không tự động hoàn tiền
+// Admin sẽ phải vào trang Refunds và bấm nút xác nhận để hoàn tiền
 const processRefund = async (order, cancelledBy, cancelReason) => {
     const now = new Date()
     let refundInfo = null
 
     if (order.paymentStatus === 'paid') {
         try {
+            // Đánh dấu là đang chờ xử lý hoàn tiền
             order.paymentStatus = 'refund_pending'
             
             await OrderAudit.create({
@@ -34,117 +37,16 @@ const processRefund = async (order, cancelledBy, cancelReason) => {
                 }
             })
 
-            const vnpApi = process.env.VNPAY_API || null
-            const vnpTmn = process.env.VNPAY_TMN_CODE || null
-            const vnpHash = process.env.VNPAY_HASH_SECRET || null
-
-            if (order.paymentInfo && order.paymentInfo.method === 'vnpay' && vnpApi && vnpTmn && vnpHash) {
-                try {
-                    const vnp_RequestId = moment(now).format('HHmmss')
-                    const vnp_Version = '2.1.0'
-                    const vnp_Command = 'refund'
-                    const vnp_TxnRef = order.paymentInfo.transactionId
-                    const vnp_TransactionDate = order.paidAt ? moment(order.paidAt).format('YYYYMMDDHHmmss') : moment().format('YYYYMMDDHHmmss')
-                    const vnp_Amount = Math.round((order.totalAmount || 0) * 100)
-                    const vnp_TransactionType = '02'
-                    const vnp_CreateBy = cancelledBy.email || String(cancelledBy._id)
-                    const vnp_OrderInfo = 'Hoan tien GD ma:' + vnp_TxnRef
-                    const vnp_IpAddr = '127.0.0.1'
-                    const vnp_CreateDate = moment(now).format('YYYYMMDDHHmmss')
-                    const vnp_TransactionNo = '0'
-
-                    const data = vnp_RequestId + '|' + vnp_Version + '|' + vnp_Command + '|' + vnpTmn + '|' + vnp_TransactionType + '|' + vnp_TxnRef + '|' + vnp_Amount + '|' + vnp_TransactionNo + '|' + vnp_TransactionDate + '|' + vnp_CreateBy + '|' + vnp_CreateDate + '|' + vnp_IpAddr + '|' + vnp_OrderInfo
-                    const hmac = crypto.createHmac('sha512', vnpHash)
-                    const vnp_SecureHash = hmac.update(Buffer.from(data, 'utf-8')).digest('hex')
-
-                    const payload = {
-                        vnp_RequestId,
-                        vnp_Version,
-                        vnp_Command,
-                        vnp_TmnCode: vnpTmn,
-                        vnp_TransactionType: vnp_TransactionType,
-                        vnp_TxnRef,
-                        vnp_Amount,
-                        vnp_TransactionNo,
-                        vnp_CreateBy,
-                        vnp_OrderInfo,
-                        vnp_TransactionDate,
-                        vnp_CreateDate,
-                        vnp_IpAddr,
-                        vnp_SecureHash,
-                    }
-
-                    const resp = await axios.post(vnpApi, payload)
-
-                    if (resp && resp.data && (resp.data.RspCode === '00' || resp.data.success)) {
-                        order.paymentStatus = 'refunded'
-                        refundInfo = {
-                            status: 'success',
-                            method: 'vnpay',
-                            amount: order.totalAmount,
-                            requestedAt: now,
-                            processedAt: now,
-                            estimatedTime: '3-7 ngày làm việc',
-                            message: 'Tiền sẽ được hoàn về tài khoản/thẻ bạn đã thanh toán trong vòng 3-7 ngày làm việc',
-                            transactionId: resp.data.vnp_TransactionNo || vnp_RequestId
-                        }
-                        order.refundInfo = refundInfo
-                        await OrderAudit.create({
-                            order: order._id,
-                            user: cancelledBy._id,
-                            action: 'refund_completed',
-                            reason: 'Hoàn tiền qua VNPay thành công',
-                            meta: { response: resp.data }
-                        })
-                    } else {
-                        order.paymentStatus = 'refund_failed'
-                        refundInfo = {
-                            status: 'pending',
-                            method: 'manual',
-                            amount: order.totalAmount,
-                            requestedAt: now,
-                            message: 'Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong 24h'
-                        }
-                        order.refundInfo = refundInfo
-                        await OrderAudit.create({
-                            order: order._id,
-                            user: cancelledBy._id,
-                            action: 'refund_failed',
-                            reason: 'VNPay refund API returned failure',
-                            meta: { response: resp?.data }
-                        })
-                    }
-                } catch (refundErr) {
-                    console.error('VNPay refund attempt failed', refundErr)
-                    order.paymentStatus = 'refund_failed'
-                    refundInfo = {
-                        status: 'pending',
-                        method: 'manual',
-                        amount: order.totalAmount,
-                        requestedAt: now,
-                        message: 'Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong 24h'
-                    }
-                    order.refundInfo = refundInfo
-                    await OrderAudit.create({
-                        order: order._id,
-                        user: cancelledBy._id,
-                        action: 'refund_failed',
-                        reason: 'VNPay refund attempt threw error',
-                        meta: { error: String(refundErr) }
-                    })
-                }
-            } else {
-                order.paymentStatus = 'refund_pending'
-                const userPhone = order.user?.phone || 'đã đăng ký'
-                refundInfo = {
-                    status: 'pending',
-                    method: 'manual',
-                    amount: order.totalAmount,
-                    requestedAt: now,
-                    message: `Yêu cầu hoàn tiền đang được xử lý. Chúng tôi sẽ liên hệ với bạn qua số điện thoại ${userPhone} trong vòng 24h`
-                }
-                order.refundInfo = refundInfo
+            // Lưu thông tin để admin xác nhận sau
+            const userPhone = order.user?.phone || 'đã đăng ký'
+            refundInfo = {
+                status: 'pending',
+                method: order.paymentInfo?.method || 'manual', // Lưu phương thức thanh toán ban đầu
+                amount: order.totalAmount,
+                requestedAt: now,
+                message: `Yêu cầu hoàn tiền đang được xử lý. Admin sẽ xác nhận và hoàn tiền trong vòng 24h. Chúng tôi sẽ liên hệ với bạn qua số điện thoại ${userPhone}`
             }
+            order.refundInfo = refundInfo
         } catch (e) {
             console.error('Error processing refund:', e)
             order.paymentStatus = 'refund_pending'
@@ -153,7 +55,7 @@ const processRefund = async (order, cancelledBy, cancelReason) => {
                 method: 'manual',
                 amount: order.totalAmount,
                 requestedAt: now,
-                message: 'Yêu cầu hoàn tiền đã được ghi nhận. Chúng tôi sẽ liên hệ với bạn sớm nhất'
+                message: 'Yêu cầu hoàn tiền đã được ghi nhận. Admin sẽ xử lý trong vòng 24h'
             }
             order.refundInfo = refundInfo
         }
@@ -616,7 +518,10 @@ const getOrders = asyncHandler(async(req, res) => {
         .populate('restaurant', 'name image address phone')
         .populate('user', 'name phone email')
         .populate('drone', 'name model')
+        .select('-routeGeometry -__v') // Exclude heavy fields
         .sort('-createdAt')
+        .limit(200) // Limit to prevent timeout
+        .lean() // Convert to plain objects for better performance
 
     res.json({
         success: true,
@@ -931,8 +836,10 @@ const getOrderHistory = asyncHandler(async(req, res) => {
     const orders = await Order.find({ user: req.user._id })
         .populate('items.product', 'name image')
         .populate('restaurant', 'name image')
+        .select('-routeGeometry -__v') // Exclude heavy fields
         .sort('-createdAt')
         .limit(50)
+        .lean() // Convert to plain JavaScript objects for better performance
 
     res.json({
         success: true,

@@ -379,9 +379,17 @@ const getRestaurantOrders = asyncHandler(async(req, res) => {
     }
 
     const orders = await Order.find(query)
-        .populate('user', 'name phone')
-        .populate('items.product', 'name price')
+        .populate('user', 'name phone email')
+        .populate('drone', 'droneId status batteryLevel')
+        .populate('pickedUpBy', 'name email')
+        .populate({
+            path: 'items.product',
+            select: 'name price image category'
+        })
+        .select('-routeGeometry -__v') // Exclude heavy fields (routeGeometry can be very large)
         .sort('-createdAt')
+        .limit(100) // Limit results to prevent timeout
+        .lean() // Convert to plain objects for better performance
 
     res.json({
         success: true,
@@ -577,6 +585,83 @@ const getRestaurantStats = asyncHandler(async(req, res) => {
     const todayRevenue =
         todayRevenueData.length > 0 ? todayRevenueData[0].total : 0
 
+    // Payment statistics for restaurant
+    const paymentStats = await Order.aggregate([{
+            $match: {
+                restaurant: restaurant._id,
+                ...dateFilter,
+            }
+        },
+        {
+            $group: {
+                _id: '$paymentStatus',
+                count: { $sum: 1 },
+                totalAmount: { $sum: '$totalAmount' }
+            }
+        }
+    ])
+
+    const paymentBreakdown = {}
+    paymentStats.forEach(item => {
+        paymentBreakdown[item._id] = {
+            count: item.count,
+            totalAmount: item.totalAmount
+        }
+    })
+
+    // Delivery statistics
+    const deliveryStats = await Order.aggregate([{
+            $match: {
+                restaurant: restaurant._id,
+                distanceKm: { $exists: true, $ne: null },
+                ...dateFilter,
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                avgDistance: { $avg: '$distanceKm' },
+                maxDistance: { $max: '$distanceKm' },
+                avgDuration: { $avg: '$estimatedDuration' },
+                avgDeliveryFee: { $avg: '$deliveryFee' }
+            }
+        }
+    ])
+
+    // Promotion & Discount statistics
+    const promoStats = await Order.aggregate([{
+            $match: {
+                restaurant: restaurant._id,
+                ...dateFilter,
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                ordersWithVoucher: {
+                    $sum: {
+                        $cond: [
+                            { $ne: ['$appliedVoucher', null] },
+                            1,
+                            0
+                        ]
+                    }
+                },
+                ordersWithPromotion: {
+                    $sum: {
+                        $cond: [
+                            { $gt: [{ $size: { $ifNull: ['$appliedPromotions', []] } }, 0] },
+                            1,
+                            0
+                        ]
+                    }
+                },
+                totalDiscount: { $sum: '$discount' },
+                avgDiscount: { $avg: '$discount' }
+            }
+        }
+    ])
+
     res.json({
         success: true,
         data: {
@@ -589,6 +674,19 @@ const getRestaurantStats = asyncHandler(async(req, res) => {
             avgOrderValue: Math.round(avgOrderValue),
             revenueChange: Math.round(revenueChange * 100) / 100,
             ordersByStatus: statusBreakdown,
+            payment: paymentBreakdown,
+            delivery: deliveryStats.length > 0 ? {
+                avgDistance: Math.round(deliveryStats[0].avgDistance * 100) / 100,
+                maxDistance: Math.round(deliveryStats[0].maxDistance * 100) / 100,
+                avgDuration: Math.round(deliveryStats[0].avgDuration || 0),
+                avgDeliveryFee: Math.round(deliveryStats[0].avgDeliveryFee || 0)
+            } : null,
+            promotions: promoStats.length > 0 ? {
+                ordersWithVoucher: promoStats[0].ordersWithVoucher,
+                ordersWithPromotion: promoStats[0].ordersWithPromotion,
+                totalDiscount: Math.round(promoStats[0].totalDiscount || 0),
+                avgDiscount: Math.round(promoStats[0].avgDiscount || 0)
+            } : null
         },
     })
 })

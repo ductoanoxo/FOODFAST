@@ -2,7 +2,10 @@ import axios from './axios';
 
 // Get all orders
 export const getAllOrders = async (filters) => {
-  const response = await axios.get('/orders', { params: filters });
+  const response = await axios.get('/orders', { 
+    params: filters,
+    timeout: 30000 // 30 seconds timeout for loading all orders
+  });
   return response.data;
 };
 
