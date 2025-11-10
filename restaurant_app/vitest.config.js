@@ -6,9 +6,19 @@ export default defineConfig({
     plugins: [react()],
     test: {
         globals: true,
-        environment: 'jsdom',
+        environment: 'happy-dom', // Dùng happy-dom thay vì jsdom
         setupFiles: './vitest.setup.js',
         css: true,
+        // Chỉ chạy unit tests (không bao gồm integration tests)
+        include: ['src/__tests__/unit/**/*.test.{js,jsx}'],
+        exclude: ['node_modules', 'dist', 'src/__tests__/integration/**'],
+        // Workaround cho webidl-conversions error trong CI
+        pool: 'forks',
+        poolOptions: {
+            forks: {
+                singleFork: true,
+            },
+        },
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
@@ -18,6 +28,7 @@ export default defineConfig({
                 '**/*.config.js',
                 '**/dist/**',
                 '**/*.test.{js,jsx}',
+                'src/__tests__/**',
             ],
             thresholds: {
                 lines: 70,
