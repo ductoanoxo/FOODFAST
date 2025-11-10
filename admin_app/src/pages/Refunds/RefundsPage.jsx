@@ -561,22 +561,27 @@ const RefundsPage = () => {
 
             {/* Process Refund Modal */}
             <Modal
-                title="Xác nhận đã hoàn tiền thủ công"
+                title="Xác nhận hoàn tiền"
                 open={processModalVisible}
                 onCancel={() => setProcessModalVisible(false)}
                 onOk={() => form.submit()}
                 confirmLoading={processing}
-                okText="Xác nhận"
+                okText="Xác nhận hoàn tiền"
                 cancelText="Hủy"
+                width={600}
             >
                 {selectedRefund && (
                     <>
                         <Alert
                             message="Xác nhận hoàn tiền"
-                            description={`Bạn xác nhận đã hoàn ${formatPrice(
-                                selectedRefund.totalAmount
-                            )} cho khách hàng ${selectedRefund.user?.name || 'N/A'}?`}
-                            type="warning"
+                            description={
+                                <div>
+                                    <div>Số tiền: <strong>{formatPrice(selectedRefund.totalAmount)}</strong></div>
+                                    <div>Khách hàng: <strong>{selectedRefund.user?.name || 'N/A'}</strong></div>
+                                    <div>Phương thức thanh toán gốc: <strong>{selectedRefund.paymentMethod}</strong></div>
+                                </div>
+                            }
+                            type="info"
                             showIcon
                             style={{ marginBottom: 16 }}
                         />
@@ -585,17 +590,69 @@ const RefundsPage = () => {
                                 name="method"
                                 label="Phương thức hoàn tiền"
                                 rules={[{ required: true, message: 'Vui lòng chọn phương thức' }]}
+                                extra={
+                                    <div style={{ marginTop: 8 }}>
+                                        {form.getFieldValue('method') === 'vnpay' && (
+                                            <Alert
+                                                message="Hoàn tiền tự động qua VNPay"
+                                                description="Hệ thống sẽ tự động gọi API VNPay để hoàn tiền. Tiền sẽ về tài khoản khách hàng trong 3-7 ngày làm việc."
+                                                type="success"
+                                                showIcon
+                                                icon={<CheckCircleOutlined />}
+                                            />
+                                        )}
+                                        {form.getFieldValue('method') === 'manual' && (
+                                            <Alert
+                                                message="Hoàn tiền thủ công"
+                                                description="Bạn xác nhận đã chuyển khoản thủ công cho khách hàng. Vui lòng nhập mã giao dịch và ghi chú."
+                                                type="warning"
+                                                showIcon
+                                            />
+                                        )}
+                                        {(form.getFieldValue('method') === 'momo' || form.getFieldValue('method') === 'cash') && (
+                                            <Alert
+                                                message="Xác nhận thủ công"
+                                                description="Bạn xác nhận đã hoàn tiền cho khách hàng qua phương thức này."
+                                                type="warning"
+                                                showIcon
+                                            />
+                                        )}
+                                    </div>
+                                }
                             >
-                                <Select placeholder="Chọn phương thức">
-                                    <Select.Option value="manual">Chuyển khoản ngân hàng</Select.Option>
-                                    <Select.Option value="vnpay">VNPay</Select.Option>
-                                    <Select.Option value="momo">MoMo</Select.Option>
-                                    <Select.Option value="cash">Tiền mặt</Select.Option>
+                                <Select 
+                                    placeholder="Chọn phương thức"
+                                    onChange={() => form.validateFields(['method'])}
+                                >
+                                    {selectedRefund.paymentMethod === 'VNPAY' && (
+                                        <Select.Option value="vnpay">
+                                            <CreditCardOutlined /> VNPay (Tự động)
+                                        </Select.Option>
+                                    )}
+                                    <Select.Option value="manual">
+                                        <MoneyCollectOutlined /> Chuyển khoản ngân hàng (Thủ công)
+                                    </Select.Option>
+                                    <Select.Option value="momo">
+                                        <CreditCardOutlined /> MoMo (Thủ công)
+                                    </Select.Option>
+                                    <Select.Option value="cash">
+                                        <DollarOutlined /> Tiền mặt
+                                    </Select.Option>
                                 </Select>
                             </Form.Item>
-                            <Form.Item name="transactionId" label="Mã giao dịch (tùy chọn)">
-                                <Input placeholder="VD: TXN123456789" />
-                            </Form.Item>
+                            
+                            {form.getFieldValue('method') !== 'vnpay' && (
+                                <Form.Item 
+                                    name="transactionId" 
+                                    label="Mã giao dịch (tùy chọn)"
+                                >
+                                    <Input 
+                                        placeholder="VD: TXN123456789" 
+                                        prefix={<CreditCardOutlined />}
+                                    />
+                                </Form.Item>
+                            )}
+                            
                             <Form.Item
                                 name="notes"
                                 label="Ghi chú"
@@ -603,7 +660,11 @@ const RefundsPage = () => {
                             >
                                 <TextArea
                                     rows={3}
-                                    placeholder="VD: Đã chuyển khoản vào tài khoản ACB số xxx"
+                                    placeholder={
+                                        form.getFieldValue('method') === 'vnpay'
+                                            ? "VD: Admin xác nhận hoàn tiền tự động qua VNPay"
+                                            : "VD: Đã chuyển khoản vào tài khoản ACB số xxx"
+                                    }
                                 />
                             </Form.Item>
                         </Form>
