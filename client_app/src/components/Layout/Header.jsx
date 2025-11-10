@@ -105,7 +105,7 @@ const Header = () => {
         {/* Location */}
         <div className="header-location">
           <EnvironmentOutlined />
-          <span>Giao đến: <strong>273  An Dương Vương, Phường, Chợ Quán, Thành phố Hồ Chí Minh 700000, Việt Nam</strong></span>
+          <span>Giao đến: <strong>{isAuthenticated ? (user?.address ? user.address : 'Cập nhật địa chỉ') : 'Vui lòng đăng nhập'}</strong></span>
         </div>
 
         {/* Search */}

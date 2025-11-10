@@ -43,12 +43,25 @@ export const getRestaurantStats = async (params = {}) => {
     // Lấy restaurant ID
     const userResponse = await axios.get('/auth/profile');
     const restaurant = userResponse.data.data.restaurant;
+    
+    if (!restaurant) {
+      throw new Error('Không tìm thấy thông tin nhà hàng');
+    }
+    
     const restaurantId = typeof restaurant === 'object' ? restaurant._id : restaurant;
     
-    const response = await axios.get(`/restaurants/${restaurantId}/stats`, { params });
+    if (!restaurantId) {
+      throw new Error('Restaurant ID không hợp lệ');
+    }
+    
+    const response = await axios.get(`/restaurants/${restaurantId}/stats`, { 
+      params,
+      timeout: 30000 // Increase timeout for stats endpoint
+    });
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Không thể tải thống kê';
+    console.error('getRestaurantStats error:', error);
+    throw error.response?.data?.message || error.message || 'Không thể tải thống kê';
   }
 };
 
@@ -57,12 +70,25 @@ export const getRestaurantOrders = async (params = {}) => {
     // Lấy restaurant ID
     const userResponse = await axios.get('/auth/profile');
     const restaurant = userResponse.data.data.restaurant;
+    
+    if (!restaurant) {
+      throw new Error('Không tìm thấy thông tin nhà hàng');
+    }
+    
     const restaurantId = typeof restaurant === 'object' ? restaurant._id : restaurant;
     
-    const response = await axios.get(`/restaurants/${restaurantId}/orders`, { params });
+    if (!restaurantId) {
+      throw new Error('Restaurant ID không hợp lệ');
+    }
+    
+    const response = await axios.get(`/restaurants/${restaurantId}/orders`, { 
+      params,
+      timeout: 30000 // Increase timeout for orders endpoint
+    });
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Không thể tải đơn hàng';
+    console.error('getRestaurantOrders error:', error);
+    throw error.response?.data?.message || error.message || 'Không thể tải đơn hàng';
   }
 };
 
@@ -71,12 +97,22 @@ export const getRestaurantMenu = async () => {
     // Lấy restaurant ID
     const userResponse = await axios.get('/auth/profile');
     const restaurant = userResponse.data.data.restaurant;
+    
+    if (!restaurant) {
+      throw new Error('Không tìm thấy thông tin nhà hàng');
+    }
+    
     const restaurantId = typeof restaurant === 'object' ? restaurant._id : restaurant;
+    
+    if (!restaurantId) {
+      throw new Error('Restaurant ID không hợp lệ');
+    }
     
     const response = await axios.get(`/restaurants/${restaurantId}/menu`);
     return response.data;
   } catch (error) {
-    throw error.response?.data?.message || 'Không thể tải menu';
+    console.error('getRestaurantMenu error:', error);
+    throw error.response?.data?.message || error.message || 'Không thể tải menu';
   }
 };
 

@@ -41,6 +41,11 @@ const OrderTrackingPage = () => {
 
     const handleOrderStatusUpdate = (data) => {
       if (data.orderId === orderId || data._id === orderId) {
+        // Update order state immediately if paymentStatus is provided
+        if (data.paymentStatus) {
+          setOrder(prev => prev ? { ...prev, status: data.status || prev.status, paymentStatus: data.paymentStatus } : prev);
+        }
+        // Fetch full order data to ensure everything is in sync
         fetchOrderTracking();
       }
     };
@@ -450,6 +455,47 @@ const OrderTrackingPage = () => {
                 <Title level={4}>Tổng cộng:</Title>
                 <Title level={4} type="danger">{formatPrice(order.totalAmount || 0)}</Title>
               </div>
+              
+              {/* Thông tin thanh toán */}
+              <Divider style={{ margin: '12px 0' }} />
+              <div className="summary-row-re">
+                <Text strong>Phương thức thanh toán:</Text>
+                <Text>{order.paymentMethod === 'COD' ? 'Tiền mặt (COD)' : 'VNPay'}</Text>
+              </div>
+              <div className="summary-row-re">
+                <Text strong>Trạng thái thanh toán:</Text>
+                <Tag color={
+                  order.paymentStatus === 'paid' ? 'success' : 
+                  order.paymentStatus === 'failed' ? 'error' : 
+                  order.paymentStatus === 'refunded' ? 'blue' : 
+                  'warning'
+                }>
+                  {
+                    order.paymentStatus === 'paid' ? 'Đã thanh toán' : 
+                    order.paymentStatus === 'failed' ? 'Thanh toán thất bại' : 
+                    order.paymentStatus === 'refunded' ? 'Đã hoàn tiền' : 
+                    order.paymentStatus === 'refund_pending' ? 'Đang hoàn tiền' : 
+                    order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' :
+                    'Đang chờ thanh toán online'
+                  }
+                </Tag>
+              </div>
+              
+              {/* Hiển thị thông tin lỗi thanh toán */}
+              {order.paymentStatus === 'failed' && order.paymentInfo?.errorMessage && (
+                <Alert
+                  message="Thanh toán thất bại"
+                  description={
+                    <div>
+                      <p><strong>Mã lỗi:</strong> {order.paymentInfo.errorCode}</p>
+                      <p style={{ marginBottom: 0 }}><strong>Chi tiết:</strong> {order.paymentInfo.errorMessage}</p>
+                    </div>
+                  }
+                  type="error"
+                  showIcon
+                  style={{ marginTop: 12 }}
+                />
+              )}
             </Card>
           </Col>
         </Row>

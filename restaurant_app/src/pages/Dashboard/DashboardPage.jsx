@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Row, Col, Card, Statistic, Typography, Spin, Empty, Table, Select, Space, message } from 'antd';
+import { Row, Col, Card, Statistic, Typography, Spin, Empty, Table, Select, Space, message, Tag, Progress } from 'antd';
 import {
   ShoppingOutlined,
   ClockCircleOutlined,
@@ -9,6 +9,11 @@ import {
   FallOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
+  TagOutlined,
+  GiftOutlined,
+  EnvironmentOutlined,
+  CarOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
 import { 
   BarChart, 
@@ -157,8 +162,24 @@ const DashboardPage = () => {
       }
 
     } catch (error) {
-      message.error('Không thể tải dữ liệu dashboard: ' + (error.message || error));
       console.error('Error loading dashboard:', error);
+      const errorMsg = error?.response?.data?.message || error?.message || error || 'Không thể tải dữ liệu dashboard';
+      message.error(errorMsg);
+      
+      // Set empty data to prevent UI crash
+      setStats({
+        totalOrders: 0,
+        pendingOrders: 0,
+        totalRevenue: 0,
+        totalProducts: 0,
+        todayOrders: 0,
+        todayRevenue: 0,
+        avgOrderValue: 0,
+        revenueChange: 0,
+        ordersByStatus: {},
+      });
+      setRevenueData([]);
+      setRecentOrders([]);
     } finally {
       setLoading(false);
     }
@@ -237,6 +258,30 @@ const DashboardPage = () => {
       dataIndex: 'totalAmount',
       key: 'amount',
       render: (amount) => `${amount?.toLocaleString('vi-VN')}₫`,
+    },
+    {
+      title: 'Chi tiết',
+      key: 'details',
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          {record.appliedVoucher && (
+            <Tag color="orange" icon={<TagOutlined />} style={{ fontSize: 11 }}>
+              {record.appliedVoucher.code}
+            </Tag>
+          )}
+
+          {record.distanceKm && (
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              <EnvironmentOutlined /> {record.distanceKm.toFixed(1)} km
+            </Text>
+          )}
+          {record.drone && (
+            <Tag color="blue" icon={<RobotOutlined />} style={{ fontSize: 11 }}>
+              {record.drone.droneId}
+            </Tag>
+          )}
+        </Space>
+      ),
     },
     {
       title: 'Trạng thái',
@@ -518,7 +563,7 @@ const DashboardPage = () => {
         </Col>
       </Row>
 
-      {/* Summary */}
+      {/* Summary & New Statistics */}
       <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
         <Col xs={24} md={12}>
           <Card>
@@ -552,6 +597,119 @@ const DashboardPage = () => {
             <Text type="secondary">
               Giá trị TB/đơn: {stats.avgOrderValue?.toLocaleString('vi-VN')}₫
             </Text>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Promotions & Delivery Statistics */}
+      <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+        {/* Promotions & Discounts */}
+        <Col xs={24} lg={12}>
+          <Card title={<><GiftOutlined /> Khuyến mãi & Giảm giá</>}>
+            {stats.promotions ? (
+              <>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Statistic
+                      title="Đơn có voucher"
+                      value={stats.promotions.ordersWithVoucher || 0}
+                      prefix={<TagOutlined />}
+                      valueStyle={{ color: '#fa8c16', fontSize: 20 }}
+                    />
+                  </Col>
+                  <Col span={12}>
+                    <Statistic
+                      title="Đơn có khuyến mãi"
+                      value={stats.promotions.ordersWithPromotion || 0}
+                      prefix={<GiftOutlined />}
+                      valueStyle={{ color: '#eb2f96', fontSize: 20 }}
+                    />
+                  </Col>
+                </Row>
+                <div style={{ marginTop: 16 }}>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Text type="secondary">Tổng giảm giá</Text>
+                      <br />
+                      <Text strong style={{ fontSize: 18, color: '#ff4d4f' }}>
+                        {stats.promotions.totalDiscount?.toLocaleString('vi-VN') || 0}₫
+                      </Text>
+                    </Col>
+                    <Col span={12}>
+                      <Text type="secondary">TB/đơn</Text>
+                      <br />
+                      <Text strong style={{ fontSize: 18 }}>
+                        {stats.promotions.avgDiscount?.toLocaleString('vi-VN') || 0}₫
+                      </Text>
+                    </Col>
+                  </Row>
+                  {stats.totalOrders > 0 && (
+                    <Progress
+                      percent={Math.min(
+                        ((stats.promotions.ordersWithVoucher + stats.promotions.ordersWithPromotion) / stats.totalOrders) * 100,
+                        100
+                      )}
+                      strokeColor="#fa8c16"
+                      style={{ marginTop: 12 }}
+                      format={(percent) => `${percent.toFixed(0)}% đơn có ưu đãi`}
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <Empty description="Chưa có dữ liệu khuyến mãi" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+        </Col>
+
+        {/* Delivery Statistics */}
+        <Col xs={24} lg={12}>
+          <Card title={<><CarOutlined /> Thông tin giao hàng</>}>
+            {stats.delivery ? (
+              <>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Statistic
+                      title="Khoảng cách TB"
+                      value={stats.delivery.avgDistance}
+                      suffix="km"
+                      precision={2}
+                      prefix={<EnvironmentOutlined />}
+                      valueStyle={{ fontSize: 20 }}
+                    />
+                  </Col>
+                  <Col span={12}>
+                    <Statistic
+                      title="Thời gian TB"
+                      value={stats.delivery.avgDuration}
+                      suffix="phút"
+                      prefix={<ClockCircleOutlined />}
+                      valueStyle={{ fontSize: 20 }}
+                    />
+                  </Col>
+                </Row>
+                <div style={{ marginTop: 16 }}>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Text type="secondary">Khoảng cách xa nhất</Text>
+                      <br />
+                      <Text strong style={{ fontSize: 16 }}>
+                        {stats.delivery.maxDistance?.toFixed(1) || 0} km
+                      </Text>
+                    </Col>
+                    <Col span={12}>
+                      <Text type="secondary">Phí giao TB</Text>
+                      <br />
+                      <Text strong style={{ fontSize: 16 }}>
+                        {stats.delivery.avgDeliveryFee?.toLocaleString('vi-VN') || 0}₫
+                      </Text>
+                    </Col>
+                  </Row>
+                </div>
+              </>
+            ) : (
+              <Empty description="Chưa có dữ liệu giao hàng" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
           </Card>
         </Col>
       </Row>

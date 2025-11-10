@@ -28,6 +28,8 @@ import {
     ReloadOutlined,
     EyeOutlined,
     CheckOutlined,
+    CreditCardOutlined,
+    MoneyCollectOutlined,
 } from '@ant-design/icons'
 import {
     getRefundStats,
@@ -44,6 +46,11 @@ const RefundsPage = () => {
     const [loading, setLoading] = useState(false)
     const [refunds, setRefunds] = useState([])
     const [stats, setStats] = useState({})
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 10,
+        total: 0,
+    })
     const [filters, setFilters] = useState({
         status: 'all',
         paymentStatus: 'all',
@@ -57,13 +64,17 @@ const RefundsPage = () => {
     const [form] = Form.useForm()
 
     useEffect(() => {
-        fetchStats()
-        fetchRefunds()
+        // Fetch both stats and refunds in parallel
+        Promise.all([fetchStats(), fetchRefunds(1)])
     }, [])
 
     useEffect(() => {
-        fetchRefunds()
-    }, [filters])
+        // Debounce search to avoid too many API calls
+        const timer = setTimeout(() => {
+            fetchRefunds(1)
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [filters.search, filters.status, filters.paymentStatus])
 
     const fetchStats = async () => {
         try {
@@ -74,11 +85,20 @@ const RefundsPage = () => {
         }
     }
 
-    const fetchRefunds = async () => {
+    const fetchRefunds = async (page = pagination.current) => {
         try {
             setLoading(true)
-            const response = await getRefundRequests(filters)
+            const response = await getRefundRequests({
+                ...filters,
+                page,
+                limit: pagination.pageSize,
+            })
             setRefunds(response.data || [])
+            setPagination({
+                ...pagination,
+                current: response.page || page,
+                total: response.total || 0,
+            })
         } catch (error) {
             console.error('Error fetching refunds:', error)
             message.error('Không thể tải danh sách hoàn tiền')
@@ -131,12 +151,30 @@ const RefundsPage = () => {
         }).format(price)
     }
 
-    const getPaymentStatusTag = (status) => {
+    const getPaymentStatusTag = (status, paymentMethod) => {
+        // Handle payment status based on payment method
+        if (status === 'pending') {
+            if (paymentMethod === 'COD') {
+                return (
+                    <Tag color="orange" icon={<ClockCircleOutlined />}>
+                        Thanh toán khi nhận hàng
+                    </Tag>
+                )
+            } else if (paymentMethod === 'VNPAY' || paymentMethod === 'MOMO') {
+                return (
+                    <Tag color="warning" icon={<ClockCircleOutlined />}>
+                        Đang chờ thanh toán online
+                    </Tag>
+                )
+            }
+        }
+
         const statusConfig = {
             refunded: { color: 'success', icon: <CheckCircleOutlined />, text: 'Đã hoàn tiền' },
-            refund_pending: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Đang chờ' },
-            refund_failed: { color: 'error', icon: <ExclamationCircleOutlined />, text: 'Thất bại' },
-            paid: { color: 'blue', text: 'Đã thanh toán' },
+            refund_pending: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Đang chờ hoàn tiền' },
+            paid: { color: 'blue', icon: <CheckCircleOutlined />, text: 'Đã thanh toán' },
+            failed: { color: 'error', icon: <ExclamationCircleOutlined />, text: 'Thanh toán thất bại' },
+            pending: { color: 'orange', icon: <ClockCircleOutlined />, text: 'Chưa thanh toán' },
         }
         const config = statusConfig[status] || { color: 'default', text: status }
         return (
@@ -146,21 +184,62 @@ const RefundsPage = () => {
         )
     }
 
-    const getRefundStatusTag = (refundInfo) => {
-        if (!refundInfo || !refundInfo.status) return <Tag>N/A</Tag>
+    const getRefundStatusTag = (record) => {
+        const { refundInfo, paymentMethod } = record;
+
+        if (paymentMethod === 'COD') {
+            return <Tag color="default">Không áp dụng (COD)</Tag>;
+        }
+
+        if (!refundInfo || !refundInfo.status) {
+            return <Tag color="warning" icon={<ClockCircleOutlined />}>Chờ xử lý</Tag>;
+        }
 
         const statusConfig = {
             success: { color: 'success', icon: <CheckCircleOutlined />, text: 'Thành công' },
             pending: { color: 'warning', icon: <ClockCircleOutlined />, text: 'Đang xử lý' },
             not_applicable: { color: 'default', text: 'Không áp dụng' },
-        }
-        const config = statusConfig[refundInfo.status] || { color: 'default', text: refundInfo.status }
+        };
+        const config = statusConfig[refundInfo.status] || { color: 'default', text: refundInfo.status };
         return (
             <Tag color={config.color} icon={config.icon}>
                 {config.text}
             </Tag>
-        )
+        );
     }
+
+    const getPaymentMethodTag = (method) => {
+        let color;
+        let icon;
+        let text;
+
+        switch (method) {
+            case 'COD':
+                color = 'green';
+                icon = <MoneyCollectOutlined />;
+                text = 'Tiền mặt';
+                break;
+            case 'VNPAY':
+                color = 'blue';
+                icon = <CreditCardOutlined />;
+                text = 'VNPay';
+                break;
+            case 'MOMO':
+                color = 'purple';
+                icon = <CreditCardOutlined />;
+                text = 'MoMo';
+                break;
+            default:
+                color = 'default';
+                icon = null;
+                text = method;
+        }
+        return (
+            <Tag color={color} icon={icon}>
+                {text}
+            </Tag>
+        );
+    };
 
     const columns = [
         {
@@ -176,7 +255,7 @@ const RefundsPage = () => {
             key: 'user',
             render: (user) => (
                 <div>
-                    <div>{user?.name || 'N/A'}</div>
+                    <div>{user?.name || 'Không có tên'}</div>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                         {user?.phone || user?.email || ''}
                     </Text>
@@ -193,49 +272,47 @@ const RefundsPage = () => {
             title: 'Phương thức thanh toán',
             dataIndex: 'paymentMethod',
             key: 'paymentMethod',
-            render: (method) => <Tag>{method}</Tag>,
+            render: (method) => getPaymentMethodTag(method),
         },
         {
             title: 'Trạng thái thanh toán',
             dataIndex: 'paymentStatus',
             key: 'paymentStatus',
-            render: (status) => getPaymentStatusTag(status),
+            render: (status, record) => getPaymentStatusTag(status, record.paymentMethod),
         },
         {
             title: 'Trạng thái hoàn tiền',
             dataIndex: 'refundInfo',
             key: 'refundStatus',
-            render: (refundInfo) => getRefundStatusTag(refundInfo),
+            render: (refundInfo, record) => getRefundStatusTag(record),
         },
         {
             title: 'Ngày hủy',
             dataIndex: 'cancelledAt',
             key: 'cancelledAt',
-            render: (date) => (date ? new Date(date).toLocaleString('vi-VN') : 'N/A'),
+            render: (date) => (date ? new Date(date).toLocaleString('vi-VN') : 'Chưa hủy'),
         },
         {
             title: 'Hành động',
             key: 'actions',
+            fixed: 'right',
+            width: 180,
             render: (_, record) => (
                 <Space>
-                    <Tooltip title="Xem chi tiết">
+                    <Button
+                        icon={<EyeOutlined />}
+                        onClick={() => handleViewDetails(record)}
+                    >
+                        Chi tiết
+                    </Button>
+                    {record.paymentStatus !== 'refunded' && record.paymentMethod !== 'COD' && (
                         <Button
-                            type="link"
-                            icon={<EyeOutlined />}
-                            onClick={() => handleViewDetails(record)}
-                        />
-                    </Tooltip>
-                    {record.paymentStatus !== 'refunded' && (
-                        <Tooltip title="Xác nhận đã hoàn tiền">
-                            <Button
-                                type="primary"
-                                size="small"
-                                icon={<CheckOutlined />}
-                                onClick={() => handleProcessRefund(record)}
-                            >
-                                Xác nhận
-                            </Button>
-                        </Tooltip>
+                            type="primary"
+                            icon={<CheckOutlined />}
+                            onClick={() => handleProcessRefund(record)}
+                        >
+                            Xác nhận
+                        </Button>
                     )}
                 </Space>
             ),
@@ -253,7 +330,7 @@ const RefundsPage = () => {
             {/* Statistics Cards */}
             <Row gutter={16} style={{ marginBottom: 24 }}>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card hoverable className="stat-card">
                         <Statistic
                             title="Tổng yêu cầu"
                             value={stats.total || 0}
@@ -262,7 +339,7 @@ const RefundsPage = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card hoverable className="stat-card">
                         <Statistic
                             title="Đang chờ xử lý"
                             value={stats.pending || 0}
@@ -272,7 +349,7 @@ const RefundsPage = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card hoverable className="stat-card">
                         <Statistic
                             title="Đã hoàn tiền"
                             value={stats.completed || 0}
@@ -282,7 +359,7 @@ const RefundsPage = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card hoverable className="stat-card">
                         <Statistic
                             title="Tổng tiền đã hoàn"
                             value={stats.totalRefundAmount || 0}
@@ -294,7 +371,7 @@ const RefundsPage = () => {
             </Row>
 
             {/* Filters */}
-            <Card style={{ marginBottom: 16 }}>
+            <Card title="Bộ lọc và Tìm kiếm" style={{ marginBottom: 16 }} className="filter-card">
                 <Space wrap>
                     <Input
                         placeholder="Tìm mã đơn hàng"
@@ -307,15 +384,17 @@ const RefundsPage = () => {
                     <Select
                         value={filters.paymentStatus}
                         onChange={(value) => setFilters({ ...filters, paymentStatus: value })}
-                        style={{ width: 180 }}
+                        style={{ width: 200 }}
+                        placeholder="Lọc theo trạng thái"
                     >
-                        <Select.Option value="all">Tất cả trạng thái</Select.Option>
-                        <Select.Option value="refund_pending">Đang chờ</Select.Option>
-                        <Select.Option value="refund_failed">Thất bại</Select.Option>
-                        <Select.Option value="refunded">Đã hoàn</Select.Option>
+                        <Select.Option value="all">Tất cả trạng thái thanh toán</Select.Option>
                         <Select.Option value="paid">Đã thanh toán</Select.Option>
+                        <Select.Option value="pending">Chưa thanh toán/Đang chờ</Select.Option>
+                        <Select.Option value="failed">Thanh toán thất bại</Select.Option>
+                        <Select.Option value="refund_pending">Đang chờ hoàn tiền</Select.Option>
+                        <Select.Option value="refunded">Đã hoàn tiền</Select.Option>
                     </Select>
-                    <Button icon={<ReloadOutlined />} onClick={fetchRefunds}>
+                    <Button icon={<ReloadOutlined />} onClick={() => fetchRefunds(1)}>
                         Làm mới
                     </Button>
                 </Space>
@@ -329,9 +408,15 @@ const RefundsPage = () => {
                     rowKey="_id"
                     loading={loading}
                     pagination={{
-                        pageSize: 10,
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: pagination.total,
                         showSizeChanger: true,
                         showTotal: (total) => `Tổng ${total} yêu cầu`,
+                        onChange: (page, pageSize) => {
+                            setPagination({ ...pagination, current: page, pageSize })
+                            fetchRefunds(page)
+                        },
                     }}
                 />
             </Card>
@@ -345,7 +430,7 @@ const RefundsPage = () => {
                     <Button key="close" onClick={() => setDetailModalVisible(false)}>
                         Đóng
                     </Button>,
-                    selectedRefund?.paymentStatus !== 'refunded' && (
+                    selectedRefund?.paymentStatus !== 'refunded' && selectedRefund?.paymentMethod !== 'COD' && (
                         <Button
                             key="process"
                             type="primary"
@@ -367,13 +452,13 @@ const RefundsPage = () => {
                                 <Text strong>{selectedRefund.orderNumber}</Text>
                             </Descriptions.Item>
                             <Descriptions.Item label="Khách hàng">
-                                {selectedRefund.user?.name || 'N/A'}
+                                {selectedRefund.user?.name || 'Chưa cung cấp'}
                             </Descriptions.Item>
                             <Descriptions.Item label="SĐT">
-                                {selectedRefund.user?.phone || 'N/A'}
+                                {selectedRefund.user?.phone || 'Chưa cung cấp'}
                             </Descriptions.Item>
                             <Descriptions.Item label="Email" span={2}>
-                                {selectedRefund.user?.email || 'N/A'}
+                                {selectedRefund.user?.email || 'Chưa cung cấp'}
                             </Descriptions.Item>
                             <Descriptions.Item label="Số tiền">
                                 {formatPrice(selectedRefund.totalAmount)}
@@ -382,28 +467,28 @@ const RefundsPage = () => {
                                 {selectedRefund.paymentMethod}
                             </Descriptions.Item>
                             <Descriptions.Item label="Trạng thái TT">
-                                {getPaymentStatusTag(selectedRefund.paymentStatus)}
+                                {getPaymentStatusTag(selectedRefund.paymentStatus, selectedRefund.paymentMethod)}
                             </Descriptions.Item>
                             <Descriptions.Item label="Trạng thái hoàn tiền">
-                                {getRefundStatusTag(selectedRefund.refundInfo)}
+                                {getRefundStatusTag(selectedRefund)}
                             </Descriptions.Item>
                             <Descriptions.Item label="Ngày hủy" span={2}>
                                 {selectedRefund.cancelledAt
                                     ? new Date(selectedRefund.cancelledAt).toLocaleString('vi-VN')
-                                    : 'N/A'}
+                                    : 'Chưa hủy'}
                             </Descriptions.Item>
                             <Descriptions.Item label="Lý do hủy" span={2}>
-                                {selectedRefund.cancelReason || 'N/A'}
+                                {selectedRefund.cancelReason || 'Không có lý do'}
                             </Descriptions.Item>
                         </Descriptions>
 
-                        {selectedRefund.refundInfo && (
+                        {selectedRefund.refundInfo ? (
                             <>
                                 <Title level={5} style={{ marginTop: 16 }}>
                                     Thông tin hoàn tiền
                                 </Title>
                                 <Alert
-                                    message={selectedRefund.refundInfo.message || 'N/A'}
+                                    message={selectedRefund.refundInfo.message || 'Chưa có thông báo.'}
                                     type={
                                         selectedRefund.refundInfo.status === 'success'
                                             ? 'success'
@@ -418,27 +503,35 @@ const RefundsPage = () => {
                                     style={{ marginTop: 8 }}
                                 >
                                     <Descriptions.Item label="Phương thức hoàn">
-                                        {selectedRefund.refundInfo.method || 'N/A'}
+                                        {selectedRefund.refundInfo.method || 'Chưa xử lý'}
                                     </Descriptions.Item>
                                     <Descriptions.Item label="Mã giao dịch">
-                                        {selectedRefund.refundInfo.transactionId || 'N/A'}
+                                        {selectedRefund.refundInfo.transactionId || 'Chưa có'}
                                     </Descriptions.Item>
                                     <Descriptions.Item label="Ngày yêu cầu">
                                         {selectedRefund.refundInfo.requestedAt
                                             ? new Date(
                                                   selectedRefund.refundInfo.requestedAt
                                               ).toLocaleString('vi-VN')
-                                            : 'N/A'}
+                                            : 'Chưa có'}
                                     </Descriptions.Item>
                                     <Descriptions.Item label="Ngày xử lý">
                                         {selectedRefund.refundInfo.processedAt
                                             ? new Date(
                                                   selectedRefund.refundInfo.processedAt
                                               ).toLocaleString('vi-VN')
-                                            : 'N/A'}
+                                            : 'Chưa xử lý'}
                                     </Descriptions.Item>
                                 </Descriptions>
                             </>
+                        ) : (
+                            <Alert
+                                message="Chưa có thông tin hoàn tiền"
+                                description="Qúa trình hoàn tiền cho đơn hàng này chưa được bắt đầu hoặc không áp dụng."
+                                type="info"
+                                showIcon
+                                style={{ marginTop: 16 }}
+                            />
                         )}
 
                         {logs.length > 0 && (

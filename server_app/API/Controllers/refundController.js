@@ -6,7 +6,7 @@ const OrderAudit = require('../Models/OrderAudit')
 // @route   GET /api/refunds
 // @access  Private (Admin only)
 const getRefundRequests = asyncHandler(async (req, res) => {
-    const { status, paymentStatus, search } = req.query
+    const { status, paymentStatus, search, page = 1, limit = 10 } = req.query
 
     let query = {
         status: 'cancelled',
@@ -29,15 +29,24 @@ const getRefundRequests = asyncHandler(async (req, res) => {
         ]
     }
 
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const total = await Order.countDocuments(query)
+
     const refundRequests = await Order.find(query)
+        .select('orderNumber user totalAmount paymentMethod paymentStatus refundInfo cancelledAt cancelReason createdAt')
         .populate('user', 'name email phone')
-        .populate('restaurant', 'name')
         .sort('-cancelledAt')
-        .limit(100)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean() // Convert to plain JS objects for better performance
 
     res.json({
         success: true,
         count: refundRequests.length,
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
         data: refundRequests,
     })
 })
@@ -117,22 +126,17 @@ const processManualRefund = asyncHandler(async (req, res) => {
 const getRefundStats = asyncHandler(async (req, res) => {
     const totalRefunds = await Order.countDocuments({
         status: 'cancelled',
-        paymentStatus: { $in: ['refunded', 'refund_pending', 'refund_failed'] },
+        paymentStatus: { $in: ['refunded', 'refund_pending'] },
     })
 
     const pendingRefunds = await Order.countDocuments({
         status: 'cancelled',
-        paymentStatus: { $in: ['refund_pending', 'refund_failed'] },
+        paymentStatus: 'refund_pending',
     })
 
     const completedRefunds = await Order.countDocuments({
         status: 'cancelled',
         paymentStatus: 'refunded',
-    })
-
-    const failedRefunds = await Order.countDocuments({
-        status: 'cancelled',
-        paymentStatus: 'refund_failed',
     })
 
     // Calculate total refund amount
@@ -159,7 +163,6 @@ const getRefundStats = asyncHandler(async (req, res) => {
             total: totalRefunds,
             pending: pendingRefunds,
             completed: completedRefunds,
-            failed: failedRefunds,
             totalRefundAmount,
         },
     })
