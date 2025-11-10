@@ -20,7 +20,15 @@ exports.getPendingOrders = async(req, res) => {
             .sort({ createdAt: -1 });
 
         const ordersWithDistance = orders.map(order => {
-            if (order.restaurant?.location?.coordinates && order.deliveryInfo?.location?.coordinates) {
+            if (
+                order &&
+                order.restaurant &&
+                order.restaurant.location &&
+                order.restaurant.location.coordinates &&
+                order.deliveryInfo &&
+                order.deliveryInfo.location &&
+                order.deliveryInfo.location.coordinates
+            ) {
                 const [restLon, restLat] = order.restaurant.location.coordinates;
                 const [userLon, userLat] = order.deliveryInfo.location.coordinates;
 

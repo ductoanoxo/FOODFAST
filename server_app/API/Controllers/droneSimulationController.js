@@ -347,8 +347,118 @@ const getActiveSimulations = asyncHandler(async(req, res) => {
     });
 });
 
+/**
+ * @desc    Giả lập drone đã đến địa điểm giao hàng (cho timeout testing)
+ * @route   POST /api/drone-sim/arrive/:orderId
+ * @access  Public (for testing)
+ */
+const simulateDroneArrival = asyncHandler(async(req, res) => {
+    const { orderId } = req.params;
+    const {
+        handleDroneArrived
+    } = require('../services/droneDeliveryTimeoutService');
+
+    const order = await Order.findById(orderId)
+        .populate('drone')
+        .populate('user', 'name phone');
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+
+    if (order.status !== 'delivering') {
+        res.status(400);
+        throw new Error(`Order must be in 'delivering' status. Current: ${order.status}`);
+    }
+
+    const result = await handleDroneArrived(
+        orderId,
+        order.drone._id,
+        order.deliveryInfo.location
+    );
+
+    res.status(200).json({
+        success: true,
+        message: '🚁 Drone arrived! Waiting for customer...',
+        data: result
+    });
+});
+
+/**
+ * @desc    Giả lập khách hàng nhận hàng
+ * @route   POST /api/drone-sim/confirm/:orderId
+ * @access  Public (for testing)
+ */
+const simulateCustomerConfirmation = asyncHandler(async(req, res) => {
+    const { orderId } = req.params;
+    const {
+        confirmDeliveryReceived
+    } = require('../services/droneDeliveryTimeoutService');
+
+    const result = await confirmDeliveryReceived(orderId);
+
+    res.status(200).json({
+        success: true,
+        message: '✅ Delivery confirmed!',
+        data: result
+    });
+});
+
+/**
+ * @desc    Xem status delivery process
+ * @route   GET /api/drone-sim/status/:orderId
+ * @access  Public (for testing)
+ */
+const getDeliveryStatus = asyncHandler(async(req, res) => {
+    const { orderId } = req.params;
+    const {
+        getWaitingStatus,
+        WAITING_TIMEOUT
+    } = require('../services/droneDeliveryTimeoutService');
+
+    const order = await Order.findById(orderId)
+        .populate('drone', 'name status')
+        .populate('user', 'name phone');
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+
+    const waitingStatus = getWaitingStatus(orderId);
+
+    let timeRemaining = null;
+    if (order.status === 'waiting_for_customer' && order.waitingStartedAt) {
+        const elapsed = Date.now() - new Date(order.waitingStartedAt).getTime();
+        timeRemaining = Math.max(0, Math.round((WAITING_TIMEOUT - elapsed) / 1000));
+    }
+
+    res.status(200).json({
+        success: true,
+        data: {
+            order: {
+                id: order._id,
+                orderNumber: order.orderNumber,
+                status: order.status,
+                arrivedAt: order.arrivedAt,
+                waitingStartedAt: order.waitingStartedAt,
+                deliveredAt: order.deliveredAt,
+                deliveryFailedAt: order.deliveryFailedAt
+            },
+            waiting: {
+                isActive: waitingStatus.isWaiting,
+                timeRemaining: timeRemaining ? `${timeRemaining}s` : null
+            }
+        }
+    });
+});
+
 module.exports = {
     startDeliverySimulation,
     stopDeliverySimulation,
     getActiveSimulations,
+    simulateDroneArrival,
+    simulateCustomerConfirmation,
+    getDeliveryStatus
 };
