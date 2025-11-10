@@ -352,12 +352,12 @@ const getActiveSimulations = asyncHandler(async(req, res) => {
  * @route   POST /api/drone-sim/arrive/:orderId
  * @access  Public (for testing)
  */
-const simulateDroneArrival = asyncHandler(async (req, res) => {
+const simulateDroneArrival = asyncHandler(async(req, res) => {
     const { orderId } = req.params;
     const {
         handleDroneArrived
     } = require('../services/droneDeliveryTimeoutService');
-    
+
     const order = await Order.findById(orderId)
         .populate('drone')
         .populate('user', 'name phone');
@@ -390,7 +390,7 @@ const simulateDroneArrival = asyncHandler(async (req, res) => {
  * @route   POST /api/drone-sim/confirm/:orderId
  * @access  Public (for testing)
  */
-const simulateCustomerConfirmation = asyncHandler(async (req, res) => {
+const simulateCustomerConfirmation = asyncHandler(async(req, res) => {
     const { orderId } = req.params;
     const {
         confirmDeliveryReceived
@@ -410,7 +410,7 @@ const simulateCustomerConfirmation = asyncHandler(async (req, res) => {
  * @route   GET /api/drone-sim/status/:orderId
  * @access  Public (for testing)
  */
-const getDeliveryStatus = asyncHandler(async (req, res) => {
+const getDeliveryStatus = asyncHandler(async(req, res) => {
     const { orderId } = req.params;
     const {
         getWaitingStatus,
@@ -427,7 +427,7 @@ const getDeliveryStatus = asyncHandler(async (req, res) => {
     }
 
     const waitingStatus = getWaitingStatus(orderId);
-    
+
     let timeRemaining = null;
     if (order.status === 'waiting_for_customer' && order.waitingStartedAt) {
         const elapsed = Date.now() - new Date(order.waitingStartedAt).getTime();

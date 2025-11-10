@@ -24,12 +24,12 @@ const activeTimers = new Map();
  * Drone đã đến địa điểm giao hàng
  * Bắt đầu chờ khách và set timeout
  */
-const handleDroneArrived = async (orderId, droneId, location) => {
+const handleDroneArrived = async(orderId, droneId, location) => {
     try {
         const order = await Order.findById(orderId)
             .populate('user', 'name phone fcmToken')
             .populate('restaurant', 'name phone');
-        
+
         if (!order) {
             throw new Error('Order not found');
         }
@@ -43,7 +43,7 @@ const handleDroneArrived = async (orderId, droneId, location) => {
         await notifyCustomer(order, 'arrived');
 
         // Chờ 2 giây rồi chuyển sang waiting_for_customer
-        setTimeout(async () => {
+        setTimeout(async() => {
             await startWaitingForCustomer(orderId, droneId);
         }, 2000);
 
@@ -62,11 +62,11 @@ const handleDroneArrived = async (orderId, droneId, location) => {
  * Bắt đầu đợi khách nhận hàng
  * Set timeout 5 phút
  */
-const startWaitingForCustomer = async (orderId, droneId) => {
+const startWaitingForCustomer = async(orderId, droneId) => {
     try {
         const order = await Order.findById(orderId)
             .populate('user', 'name phone fcmToken');
-        
+
         if (!order) {
             throw new Error('Order not found');
         }
@@ -81,7 +81,7 @@ const startWaitingForCustomer = async (orderId, droneId) => {
         await notifyCustomer(order, 'waiting');
 
         // Set timeout 5 phút
-        const timeoutId = setTimeout(async () => {
+        const timeoutId = setTimeout(async() => {
             console.log(`⏰ Timeout for order ${orderId} - Customer not present`);
             await handleDeliveryTimeout(orderId, droneId);
         }, WAITING_TIMEOUT);
@@ -106,11 +106,11 @@ const startWaitingForCustomer = async (orderId, droneId) => {
  * Khách hàng nhận hàng thành công
  * Cancel timeout và cập nhật status
  */
-const confirmDeliveryReceived = async (orderId, confirmationCode) => {
+const confirmDeliveryReceived = async(orderId, confirmationCode) => {
     try {
         const order = await Order.findById(orderId)
             .populate('drone');
-        
+
         if (!order) {
             throw new Error('Order not found');
         }
@@ -165,12 +165,12 @@ const confirmDeliveryReceived = async (orderId, confirmationCode) => {
  * Timeout - Không gặp khách
  * Drone quay lại nhà hàng
  */
-const handleDeliveryTimeout = async (orderId, droneId) => {
+const handleDeliveryTimeout = async(orderId, droneId) => {
     try {
         const order = await Order.findById(orderId)
             .populate('user', 'name phone fcmToken')
             .populate('restaurant', 'name phone');
-        
+
         if (!order) {
             throw new Error('Order not found');
         }
@@ -210,11 +210,11 @@ const handleDeliveryTimeout = async (orderId, droneId) => {
 /**
  * Drone quay lại nhà hàng
  */
-const startReturningToRestaurant = async (orderId, droneId) => {
+const startReturningToRestaurant = async(orderId, droneId) => {
     try {
         const order = await Order.findById(orderId)
             .populate('restaurant', 'location');
-        
+
         if (!order) {
             throw new Error('Order not found');
         }
@@ -235,8 +235,8 @@ const startReturningToRestaurant = async (orderId, droneId) => {
         // Simulate return trip (giả lập bay về)
         // Thời gian bay về = thời gian bay đi
         const returnTime = order.estimatedDuration || 10; // minutes
-        
-        setTimeout(async () => {
+
+        setTimeout(async() => {
             await handleDroneReturned(orderId, droneId);
         }, returnTime * 60 * 1000); // Convert to milliseconds
 
@@ -256,7 +256,7 @@ const startReturningToRestaurant = async (orderId, droneId) => {
 /**
  * Drone đã quay lại nhà hàng
  */
-const handleDroneReturned = async (orderId, droneId) => {
+const handleDroneReturned = async(orderId, droneId) => {
     try {
         const order = await Order.findById(orderId);
         if (!order) {
@@ -299,7 +299,7 @@ const handleDroneReturned = async (orderId, droneId) => {
 /**
  * Gửi thông báo cho khách hàng
  */
-const notifyCustomer = async (order, type) => {
+const notifyCustomer = async(order, type) => {
     try {
         const user = order.user;
         if (!user) return;
@@ -311,17 +311,17 @@ const notifyCustomer = async (order, type) => {
                 title = '🚁 Drone đã đến!';
                 message = `Đơn hàng #${order.orderNumber} đã đến địa điểm giao hàng. Vui lòng ra nhận hàng.`;
                 break;
-            
+
             case 'waiting':
                 title = '⏳ Đang chờ bạn nhận hàng';
                 message = `Drone sẽ đợi 5 phút. Vui lòng ra nhận hàng ngay để tránh bị hủy.`;
                 break;
-            
+
             case 'delivered':
                 title = '✅ Giao hàng thành công!';
                 message = `Cảm ơn bạn đã sử dụng dịch vụ. Đánh giá đơn hàng #${order.orderNumber} nhé!`;
                 break;
-            
+
             case 'failed':
                 title = '❌ Giao hàng thất bại';
                 message = `Không gặp bạn tại địa điểm giao hàng. Đơn #${order.orderNumber} sẽ được hoàn trả. Vui lòng liên hệ hotline.`;

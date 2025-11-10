@@ -35,39 +35,39 @@ async function setup() {
         console.log('✅ Connected to MongoDB\n');
 
         // Tìm hoặc tạo test data
-        const user = await User.findOne({ email: 'test@example.com' }) || 
-                      await User.create({
-                          name: 'Test User',
-                          email: 'test@example.com',
-                          phone: '0901234567',
-                          password: 'password123'
-                      });
+        const user = await User.findOne({ email: 'test@example.com' }) ||
+            await User.create({
+                name: 'Test User',
+                email: 'test@example.com',
+                phone: '0901234567',
+                password: 'password123'
+            });
 
-        const restaurant = await Restaurant.findOne() || 
-                          await Restaurant.create({
-                              name: 'Test Restaurant',
-                              address: '123 Test St',
-                              phone: '0987654321',
-                              email: 'restaurant@test.com',
-                              owner: user._id,
-                              location: {
-                                  type: 'Point',
-                                  coordinates: [106.6297, 10.8231] // HCMC
-                              }
-                          });
+        const restaurant = await Restaurant.findOne() ||
+            await Restaurant.create({
+                name: 'Test Restaurant',
+                address: '123 Test St',
+                phone: '0987654321',
+                email: 'restaurant@test.com',
+                owner: user._id,
+                location: {
+                    type: 'Point',
+                    coordinates: [106.6297, 10.8231] // HCMC
+                }
+            });
 
-        const drone = await Drone.findOne({ status: 'idle' }) || 
-                      await Drone.create({
-                          name: 'Test Drone 1',
-                          model: 'DJI Phantom',
-                          serialNumber: 'TD001',
-                          status: 'idle',
-                          batteryLevel: 80,
-                          currentLocation: {
-                              type: 'Point',
-                              coordinates: [106.6297, 10.8231]
-                          }
-                      });
+        const drone = await Drone.findOne({ status: 'idle' }) ||
+            await Drone.create({
+                name: 'Test Drone 1',
+                model: 'DJI Phantom',
+                serialNumber: 'TD001',
+                status: 'idle',
+                batteryLevel: 80,
+                currentLocation: {
+                    type: 'Point',
+                    coordinates: [106.6297, 10.8231]
+                }
+            });
 
         testDroneId = drone._id;
 
@@ -122,8 +122,7 @@ async function testScenario1_CustomerReceives() {
         console.log('Step 1: Drone arriving at location...');
         const arrivalResult = await handleDroneArrived(
             testOrderId,
-            testDroneId,
-            { coordinates: [106.6500, 10.8500] }
+            testDroneId, { coordinates: [106.6500, 10.8500] }
         );
         console.log(`✅ Status: ${arrivalResult.order.status}`);
         console.log(`   Arrived at: ${arrivalResult.order.arrivedAt}\n`);
@@ -144,9 +143,9 @@ async function testScenario1_CustomerReceives() {
         const confirmResult = await confirmDeliveryReceived(testOrderId);
         console.log(`✅ Status: ${confirmResult.order.status}`);
         console.log(`   Delivered at: ${confirmResult.order.deliveredAt}`);
-        
-        const waitingDuration = (new Date(confirmResult.order.waitingEndedAt) - 
-                                new Date(confirmResult.order.waitingStartedAt)) / 1000;
+
+        const waitingDuration = (new Date(confirmResult.order.waitingEndedAt) -
+            new Date(confirmResult.order.waitingStartedAt)) / 1000;
         console.log(`   Waiting duration: ${waitingDuration}s\n`);
 
         console.log('✅ TEST PASSED: Customer received delivery successfully!\n');
@@ -172,8 +171,7 @@ async function testScenario2_Timeout() {
         console.log('Step 1: Drone arriving at location...');
         await handleDroneArrived(
             testOrderId,
-            testDroneId,
-            { coordinates: [106.6500, 10.8500] }
+            testDroneId, { coordinates: [106.6500, 10.8500] }
         );
 
         // Wait for auto transition
@@ -197,7 +195,7 @@ async function testScenario2_Timeout() {
 
         const order2 = await Order.findById(testOrderId);
         console.log(`\nCurrent status after 10s: ${order2.status}`);
-        
+
         if (order2.status === 'delivery_failed') {
             console.log('✅ TEST PASSED: Timeout triggered, delivery failed!\n');
             console.log(`   Failed at: ${order2.deliveryFailedAt}`);
