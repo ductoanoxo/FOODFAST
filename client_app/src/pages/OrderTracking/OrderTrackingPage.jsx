@@ -362,7 +362,7 @@ const OrderTrackingPage = () => {
               <DeliveryTimeout order={order} />
               
               <div className="action-buttons-re">
-                {order.status === 'delivering' && (
+                {(order.status === 'delivering' || order.status === 'waiting_for_customer') && (
                   <Button type="primary" size="large" icon={<CheckOutlined />} onClick={() => setConfirmModalVisible(true)}>
                     Tôi đã nhận được hàng
                   </Button>

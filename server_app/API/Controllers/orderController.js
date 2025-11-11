@@ -38,14 +38,17 @@ const processRefund = async(order, cancelledBy, cancelReason) => {
             })
 
             // Lưu thông tin để admin xác nhận sau
-            const userPhone = order.user ? .phone || 'đã đăng ký'
+            const userPhone = (order.user && order.user.phone) ? order.user.phone : 'đã đăng ký';
+
             refundInfo = {
                 status: 'pending',
-                method: order.paymentInfo ? .method || 'manual', // Lưu phương thức thanh toán ban đầu
+                method: (order.paymentInfo && order.paymentInfo.method) ?
+                    order.paymentInfo.method : 'manual', // Lưu phương thức thanh toán ban đầu
                 amount: order.totalAmount,
                 requestedAt: now,
                 message: `Yêu cầu hoàn tiền đang được xử lý. Admin sẽ xác nhận và hoàn tiền trong vòng 24h. Chúng tôi sẽ liên hệ với bạn qua số điện thoại ${userPhone}`
-            }
+            };
+
             order.refundInfo = refundInfo
         } catch (e) {
             console.error('Error processing refund:', e)
@@ -367,15 +370,17 @@ const createOrder = asyncHandler(async(req, res) => {
         distanceExplanation,
         routingMethod,
         estimatedDuration,
-        routeGeometry: routingInfo.route ? .geometry, // Lưu route geometry từ OSRM
+        routeGeometry: (routingInfo && routingInfo.route && routingInfo.route.geometry) ?
+            routingInfo.route.geometry : null, // Lưu route geometry từ OSRM
         discount: discountAmount,
         appliedPromo: appliedVoucher ? null : null, // Keep for backward compatibility but deprecated
         appliedPromotions: appliedPromotionsList,
         appliedVoucher: appliedVoucher, // Store voucher info in dedicated field
         totalAmount,
         paymentMethod: paymentMethod || 'COD',
-        estimatedDeliveryTime: new Date(Date.now() + (estimatedDuration || 30) * 60000), // Dùng estimated duration từ routing
-    })
+        estimatedDeliveryTime: new Date(Date.now() + ((estimatedDuration || 30) * 60000)), // Dùng estimated duration từ routing
+    });
+
 
     // Debug logs: show voucher application details
     try {
@@ -865,8 +870,8 @@ const confirmDelivery = asyncHandler(async(req, res) => {
         throw new Error('Bạn không có quyền xác nhận đơn hàng này');
     }
 
-    // Check if order is in delivering status
-    if (order.status !== 'delivering') {
+    // Check if order is in delivering or waiting_for_customer status
+    if (order.status !== 'delivering' && order.status !== 'waiting_for_customer') {
         res.status(400);
         throw new Error('Đơn hàng chưa ở trạng thái đang giao');
     }
@@ -1172,11 +1177,13 @@ const calculateFee = asyncHandler(async(req, res) => {
         deliveryFee: fee,
         distance: distance.toFixed(2), // km (routing distance)
         estimatedDuration: estimatedDuration, // phút
-        routingMethod: routingInfo.method,
-        routeGeometry: routingInfo.route ? .geometry, // GeoJSON geometry cho map
+        routingMethod: routingInfo && routingInfo.method ? routingInfo.method : null,
+        routeGeometry: routingInfo && routingInfo.route && routingInfo.route.geometry ?
+            routingInfo.route.geometry : null, // GeoJSON geometry cho map
         restaurantLocation: restaurant.location,
         userLocation: { type: 'Point', coordinates: userCoordinates }
     });
+
 });
 
 module.exports = {
