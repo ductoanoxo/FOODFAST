@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { Layout, Menu, Button, Dropdown, Avatar, Typography, Space } from 'antd';
+import { Layout, Menu, Dropdown, Avatar, Typography, Space } from 'antd';
 import {
   DashboardOutlined,
   ShoppingOutlined,

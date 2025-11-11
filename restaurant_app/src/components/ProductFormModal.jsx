@@ -1,5 +1,5 @@
 import { Modal, Form, Input, InputNumber, Select, Upload, Button, message } from 'antd';
-import { UploadOutlined, PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import { getCategories } from '../api/productAPI';
 

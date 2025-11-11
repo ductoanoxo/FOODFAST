@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
     Card,
     Table,
@@ -11,7 +11,6 @@ import {
     Select,
     Input,
     Form,
-    Popconfirm,
     Typography,
     Skeleton,
     Empty,
@@ -36,11 +35,7 @@ const OrdersPage = () => {
     const [cancelingOrderId, setCancelingOrderId] = useState(null)
     const [canceling, setCanceling] = useState(false)
 
-    useEffect(() => {
-        fetchOrders()
-    }, [statusFilter])
-
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         try {
             setLoading(true)
             const filters = statusFilter !== 'all' ? { status: statusFilter } : {}
@@ -65,7 +60,11 @@ const OrdersPage = () => {
         } finally {
             setLoading(false)
         }
-    }
+    }, [setLoading, setOrders, statusFilter, message]);
+
+    useEffect(() => {
+        fetchOrders()
+    }, [fetchOrders])
 
     const showDetails = (order) => {
         setSelectedOrder(order)

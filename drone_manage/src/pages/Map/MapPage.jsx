@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { MapContainer, TileLayer } from 'react-leaflet'
 import { Card, Row, Col, Statistic, Select, Space, Button } from 'antd'
@@ -6,7 +6,7 @@ import { ReloadOutlined, EnvironmentOutlined, RocketOutlined } from '@ant-design
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import '../../components/Map/Map.css'
-import { DroneMarker, LocationMarker, RoutePolyline, MapController } from '../../components/Map'
+import { DroneMarker, RoutePolyline, MapController } from '../../components/Map'
 import { MAP_CONFIG, TILE_LAYER } from '../../utils/mapHelpers'
 import { getAllDrones } from '../../api/droneAPI'
 import { setDrones, selectDrone } from '../../redux/slices/droneSlice'
@@ -28,7 +28,7 @@ const MapPage = () => {
     const [mapZoom, setMapZoom] = useState(MAP_CONFIG.defaultZoom)
 
     // Fetch drones
-    const fetchDrones = async () => {
+    const fetchDrones = useCallback(async () => {
         setLoading(true)
         try {
             const response = await getAllDrones()
@@ -39,7 +39,7 @@ const MapPage = () => {
         } finally {
             setLoading(false)
         }
-    }
+    }, [dispatch])
 
     useEffect(() => {
         fetchDrones()
@@ -50,7 +50,7 @@ const MapPage = () => {
         }, 30000)
 
         return () => clearInterval(interval)
-    }, [])
+    }, [fetchDrones])
 
     // Handle drone selection
     const handleDroneSelect = (droneId) => {
