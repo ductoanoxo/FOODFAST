@@ -19,13 +19,10 @@ import {
   ShopOutlined, 
   ShoppingOutlined, 
   RobotOutlined,
-  RiseOutlined,
-  FallOutlined,
   DollarOutlined,
   ClockCircleOutlined,
   StarOutlined,
   CheckCircleOutlined,
-  SyncOutlined,
   CloseCircleOutlined,
   TagOutlined,
   GiftOutlined,
@@ -41,7 +38,6 @@ import {
   getDashboardStats,
   getRecentOrders,
   getTopRestaurants,
-  getOrderStatistics,
 } from '../../api/dashboardAPI'
 import './DashboardPage.css'
 
@@ -49,7 +45,6 @@ const DashboardPage = () => {
   const [stats, setStats] = useState(null)
   const [recentOrders, setRecentOrders] = useState([])
   const [topRestaurants, setTopRestaurants] = useState([])
-  const [orderStats, setOrderStats] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -60,7 +55,7 @@ const DashboardPage = () => {
     try {
       setLoading(true)
       
-      const [statsRes, ordersRes, restaurantsRes, orderStatsRes] = await Promise.all([
+      const [statsRes, ordersRes, restaurantsRes] = await Promise.all([
         getDashboardStats(),
         getRecentOrders(5),
         getTopRestaurants(5),
@@ -70,7 +65,6 @@ const DashboardPage = () => {
       setStats(statsRes.data)
       setRecentOrders(ordersRes.data)
       setTopRestaurants(restaurantsRes.data)
-      setOrderStats(orderStatsRes.data)
     } catch (error) {
       console.error('Dashboard error:', error)
       message.error('Không thể tải dữ liệu dashboard')

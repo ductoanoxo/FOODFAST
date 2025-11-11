@@ -1,5 +1,5 @@
     import { useState, useEffect } from 'react';
-    import { Badge, Drawer, List, Avatar, Typography, Button, Empty, Tag } from 'antd';
+    import { Badge, Drawer, List, Avatar, Typography, Button, Empty, Tag, notification as antdNotification } from 'antd';
     import {
       BellOutlined,
       ShoppingOutlined,
@@ -7,33 +7,31 @@
       CloseCircleOutlined,
       ClockCircleOutlined,
     } from '@ant-design/icons';
-  import { getSocket, onNewOrder, offNewOrder, onOrderStatusUpdate, offOrderStatusUpdate, onOrderCompleted, offOrderCompleted } from '../../utils/socket';
-    import axios from '../../api/axios';
+    import { getSocket, onNewOrder, offNewOrder, onOrderStatusUpdate, offOrderStatusUpdate, onOrderCompleted, offOrderCompleted } from '../../utils/socket';
     import dayjs from 'dayjs';
     import relativeTime from 'dayjs/plugin/relativeTime';
     import 'dayjs/locale/vi';
     import './NotificationCenter.css';
-
+    
     dayjs.extend(relativeTime);
     dayjs.locale('vi');
-
+    
     const { Text } = Typography;
-
+    
     const NotificationCenter = () => {
       const [visible, setVisible] = useState(false);
       const [notifications, setNotifications] = useState([]);
       const [unreadCount, setUnreadCount] = useState(0);
-
+    
       useEffect(() => {
         // Request notification permission
-        if ('Notification' in window && Notification.permission === 'default') {
-          Notification.requestPermission();
+        if ('Notification' in window && window.Notification.permission === 'default') {
+          window.Notification.requestPermission();
         }
-
+    
         // Helper: get current restaurant id from localStorage (auth slice stores user)
         const getCurrentRestaurantId = () => {
-          try {
-            const user = JSON.parse(localStorage.getItem('restaurant_user') || 'null');
+          try {            const user = JSON.parse(localStorage.getItem('restaurant_user') || 'null');
             return user && (user.restaurantId || user.restaurant || (user._id && user.role === 'restaurant' ? user._id : null))
               ? String(user.restaurantId || user.restaurant || user._id)
               : null;
@@ -70,13 +68,7 @@
         // Store a per-tab copy of the current restaurant id so that incoming events
         // are filtered against the tab's active restaurant. This avoids races where
         // other tabs update shared localStorage and change the global value.
-        const [tabRestaurantId, setTabRestaurantId] = (() => {
-          // Create a small local state-like getter/setter using closure so we don't
-          // need to refactor the entire component to use another useState here
-          // inside the effect. We'll store the value on the socket object instead.
-          const initial = getCurrentRestaurantId();
-          return [initial, (v) => { /* placeholder replaced below after socket init */ }];
-        })();
+        const tabRestaurantId = getCurrentRestaurantId();
 
         // Verify if notification belongs to current restaurant (uses tabRestaurantId)
         const belongsToCurrentRestaurant = (payload = {}) => {
@@ -239,10 +231,11 @@
         setUnreadCount((prev) => prev + 1);
 
         // Show browser notification
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification(notification.title, {
-            body: notification.message,
-            icon: '/logo.png',
+        if ('Notification' in window && window.Notification.permission === 'granted') {
+          antdNotification.open({
+            message: notification.title,
+            description: notification.message,
+            icon: <BellOutlined />,
           });
         }
       };
