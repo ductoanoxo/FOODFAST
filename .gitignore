@@ -4,3 +4,4 @@ node_modules/
 .pnp
 .pnp.js
 server_app/logs/
+/server_app/coverage/
