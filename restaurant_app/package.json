@@ -11,7 +11,7 @@
         "test:unit": "vitest --run --config vitest.config.js",
         "test:integration": "vitest --run --config vitest.integration.config.js",
         "test:ui": "vitest --ui",
-        "test:coverage": "vitest --coverage",
+        "test:coverage": "vitest --coverage --config vitest.coverage.config.js",
         "test:run": "vitest run"
     },
     "dependencies": {
