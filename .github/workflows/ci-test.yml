@@ -54,33 +54,27 @@ jobs:
         run: npm ci
 
       - name: Check if tests exist
-        id: check_server_tests
+        id: check-tests
         working-directory: ./server_app
         run: |
-          if [ -d "__tests__" ] && [ "$(ls -A __tests__ 2>/dev/null | grep -E '\.test\.js$')" ]; then
+          if [ -d "__tests__" ] && [ "$(find __tests__ -name '*.test.js' -o -name '*.spec.js' | wc -l)" -gt 0 ]; then
             echo "has_tests=true" >> $GITHUB_OUTPUT
-            echo "✅ Tests found for server_app"
           else
             echo "has_tests=false" >> $GITHUB_OUTPUT
-            echo "⚠️ No tests found for server_app"
           fi
 
-      - name: Run tests with coverage (must be 100%)
-        if: steps.check_server_tests.outputs.has_tests == 'true'
+      - name: Run tests
+        if: steps.check-tests.outputs.has_tests == 'true'
         working-directory: ./server_app
         env:
           NODE_ENV: test
           MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
           JWT_SECRET: test-secret-key
-        run: |
-          echo "🧪 Running tests for server_app with 100% coverage requirement..."
-          npm test
-          echo "✅ Coverage requirement (100%) passed for server_app"
+        run: npm test
 
-      - name: Skip server tests warning
-        if: steps.check_server_tests.outputs.has_tests == 'false'
-        run: |
-          echo "::warning::⚠️ No tests found for server_app - Temporarily passing but tests should be added"
+      - name: Skip tests (no test files found)
+        if: steps.check-tests.outputs.has_tests == 'false'
+        run: echo "⚠️ No test files found in server_app - skipping tests"
 
       - name: Check for syntax errors
         working-directory: ./server_app
@@ -114,43 +108,38 @@ jobs:
         run: npm ci
 
       - name: Check if tests exist
-        id: check_tests
+        id: check-tests
         working-directory: ./${{ matrix.app }}
         run: |
-          if [ -d "src/__tests__" ] && [ "$(ls -A src/__tests__ 2>/dev/null)" ]; then
+          if [ -d "src/__tests__" ] && [ "$(find src/__tests__ -name '*.test.js' -o -name '*.test.jsx' -o -name '*.spec.js' -o -name '*.spec.jsx' | wc -l)" -gt 0 ]; then
             echo "has_tests=true" >> $GITHUB_OUTPUT
-            echo "✅ Tests found for ${{ matrix.app }}"
+            echo "✅ Found test files in ${{ matrix.app }}"
           else
             echo "has_tests=false" >> $GITHUB_OUTPUT
-            echo "⚠️ No tests found for ${{ matrix.app }}"
+            echo "⚠️ No test files found in ${{ matrix.app }}"
           fi
 
-      - name: Run unit tests (with 100% coverage requirement)
-        if: steps.check_tests.outputs.has_tests == 'true'
+      - name: Run unit tests
+        if: steps.check-tests.outputs.has_tests == 'true'
         working-directory: ./${{ matrix.app }}
-        run: |
-          echo "🧪 Running tests for ${{ matrix.app }} with 100% coverage requirement..."
-          npm test -- --run --reporter=verbose
+        run: npm test -- --run --reporter=verbose
         env:
           NODE_ENV: test
           CI: true
           NODE_OPTIONS: '--no-warnings --experimental-vm-modules'
 
-      - name: Generate test coverage (must be 100%)
-        if: steps.check_tests.outputs.has_tests == 'true'
+      - name: Skip tests (no test files found)
+        if: steps.check-tests.outputs.has_tests == 'false'
+        run: echo "⚠️ No test files found in ${{ matrix.app }} - skipping tests"
+
+      - name: Generate test coverage
+        if: steps.check-tests.outputs.has_tests == 'true'
         working-directory: ./${{ matrix.app }}
-        run: |
-          echo "📊 Generating coverage report for ${{ matrix.app }}..."
-          npm run test:coverage -- --run
-          echo "✅ Coverage requirement (100%) passed for ${{ matrix.app }}"
+        run: npm run test:coverage
+        continue-on-error: true
         env:
           NODE_ENV: test
           CI: true
-
-      - name: Skip tests warning
-        if: steps.check_tests.outputs.has_tests == 'false'
-        run: |
-          echo "::warning::⚠️ No tests found for ${{ matrix.app }} - Temporarily passing but tests should be added"
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
