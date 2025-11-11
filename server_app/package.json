@@ -7,6 +7,7 @@
         "start": "node index.js",
         "dev": "nodemon index.js",
         "seed": "node seed.js",
+        "lint": "eslint .",
         "test": "jest --verbose --coverage",
         "test:unit": "jest --verbose --testPathPatterns=__tests__/unit",
         "test:integration": "jest --verbose --testPathPatterns=__tests__/integration",
@@ -46,6 +47,7 @@
     },
     "devDependencies": {
         "@types/jest": "^30.0.0",
+        "eslint": "^8.57.0",
         "jest": "^30.2.0",
         "mongodb-memory-server": "^10.1.2",
         "nodemon": "^3.0.3",
