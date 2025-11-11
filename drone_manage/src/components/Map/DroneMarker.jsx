@@ -1,6 +1,5 @@
 import { Marker, Popup, Tooltip } from 'react-leaflet'
 import { divIcon } from 'leaflet'
-import PropTypes from 'prop-types'
 import { DRONE_STATUS_COLORS } from '../../utils/mapHelpers'
 
 const DroneMarker = ({ drone, onClick }) => {
@@ -73,22 +72,6 @@ const DroneMarker = ({ drone, onClick }) => {
             </Popup>
         </Marker>
     )
-}
-
-DroneMarker.propTypes = {
-    drone: PropTypes.shape({
-        _id: PropTypes.string.isRequired,
-        name: PropTypes.string,
-        droneId: PropTypes.string,
-        model: PropTypes.string,
-        status: PropTypes.string,
-        batteryLevel: PropTypes.number,
-        currentLocation: PropTypes.shape({
-            coordinates: PropTypes.arrayOf(PropTypes.number),
-        }),
-        currentMission: PropTypes.string,
-    }).isRequired,
-    onClick: PropTypes.func,
 }
 
 export default DroneMarker

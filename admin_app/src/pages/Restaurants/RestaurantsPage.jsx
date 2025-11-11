@@ -11,6 +11,7 @@ import {
     Switch,
     Form,
     Input,
+    InputNumber,
     Statistic,
     Row,
     Col,
@@ -18,6 +19,7 @@ import {
 } from 'antd'
 import { 
     EyeOutlined, 
+    EditOutlined, 
     PlusOutlined,
     StarOutlined,
     CommentOutlined,

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     formatPrice,
     formatCurrency,
+    parsePrice,
     calculateDiscount,
     calculateFinalPrice,
     formatNumber,

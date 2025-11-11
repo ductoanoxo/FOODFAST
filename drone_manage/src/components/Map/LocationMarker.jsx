@@ -1,6 +1,5 @@
 import { Marker, Popup } from 'react-leaflet'
 import { divIcon } from 'leaflet'
-import PropTypes from 'prop-types'
 
 const LocationMarker = ({ position, label, color = '#1890ff', type = 'default' }) => {
     if (!position || !Array.isArray(position) || position.length < 2) {
@@ -81,13 +80,6 @@ const LocationMarker = ({ position, label, color = '#1890ff', type = 'default' }
             )}
         </Marker>
     )
-}
-
-LocationMarker.propTypes = {
-    position: PropTypes.arrayOf(PropTypes.number).isRequired,
-    label: PropTypes.string,
-    color: PropTypes.string,
-    type: PropTypes.string,
 }
 
 export default LocationMarker
