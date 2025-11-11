@@ -1,18 +1,18 @@
 
-name: CI - Test and Lint (Deploy Branch - Testing Conflict)
+name: CI - Test and Lint
 
 on:
-    push:
-      branches:
+  push:
+    branches:
       - main
       - develop
       - DUCTOAN
       - kiet
       - deploy
-    pull_request:
-      branches:
-        - main
-        - develop
+  pull_request:
+    branches:
+      - main
+      - develop
 
 # Grant minimal permissions required for uploading SARIF/code-scanning results
 permissions:
@@ -26,7 +26,6 @@ jobs:
     
     services:
       mongodb:
-        # Use the official MongoDB 7.0 image (alpine variant '7.0-alpine' does not exist)
         image: mongo:7.0
         ports:
           - 27017:27017
@@ -38,6 +37,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,15 +53,38 @@ jobs:
         working-directory: ./server_app
         run: npm ci
 
-      - name: Run tests
+      - name: Run Unit Tests
         working-directory: ./server_app
         env:
           NODE_ENV: test
           MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
-          JWT_SECRET: test-secret-key
-        run: npm test || echo "No tests found"
+          JWT_SECRET: test-secret-key-for-ci
+          CLOUDINARY_CLOUD_NAME: test-cloud
+          CLOUDINARY_API_KEY: test-key
+          CLOUDINARY_API_SECRET: test-secret
+        run: npm test -- --testPathPattern=unit --coverage --coverageDirectory=coverage/unit
 
-      - name: Check for syntax errors
+      - name: Run Integration Tests
+        working-directory: ./server_app
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
+          JWT_SECRET: test-secret-key-for-ci
+          CLOUDINARY_CLOUD_NAME: test-cloud
+          CLOUDINARY_API_KEY: test-key
+          CLOUDINARY_API_SECRET: test-secret
+        run: npm test -- --testPathPattern=integration --coverage --coverageDirectory=coverage/integration
+
+      - name: Upload Server Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./server_app/coverage/coverage-final.json
+          flags: server
+          name: server-coverage
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: Validate Server Syntax
         working-directory: ./server_app
         run: node -c index.js
 
@@ -92,23 +115,42 @@ jobs:
         working-directory: ./${{ matrix.app }}
         run: npm ci
 
-      - name: Run unit tests
+      - name: Run Linting
         working-directory: ./${{ matrix.app }}
-        run: npm test -- --run --reporter=verbose || echo "No tests found for ${{ matrix.app }}"
-        env:
-          NODE_ENV: test
-          CI: true
-          NODE_OPTIONS: '--no-warnings --experimental-vm-modules'
-
-      - name: Generate test coverage
-        working-directory: ./${{ matrix.app }}
-        run: npm run test:coverage || echo "Coverage not configured for ${{ matrix.app }}"
+        run: npm run lint || echo "Linting not configured for ${{ matrix.app }}"
         continue-on-error: true
+
+      - name: Run Unit Tests
+        working-directory: ./${{ matrix.app }}
+        if: matrix.app == 'client_app' || matrix.app == 'restaurant_app' || matrix.app == 'admin_app'
+        run: npm run test:unit || npm test -- --run --reporter=verbose
         env:
           NODE_ENV: test
           CI: true
+          VITE_API_URL: http://localhost:5000/api
+        continue-on-error: false
 
-      - name: Upload coverage reports
+      - name: Run Integration Tests
+        working-directory: ./${{ matrix.app }}
+        if: matrix.app == 'client_app' || matrix.app == 'restaurant_app'
+        run: npm run test:integration
+        env:
+          NODE_ENV: test
+          CI: true
+          VITE_API_URL: http://localhost:5000/api
+        continue-on-error: true
+
+      - name: Generate Coverage Report
+        working-directory: ./${{ matrix.app }}
+        if: matrix.app == 'client_app' || matrix.app == 'restaurant_app' || matrix.app == 'admin_app'
+        run: npm run test:coverage
+        env:
+          NODE_ENV: test
+          CI: true
+          VITE_API_URL: http://localhost:5000/api
+        continue-on-error: true
+
+      - name: Upload Coverage
         uses: codecov/codecov-action@v4
         if: success() && (matrix.app == 'client_app' || matrix.app == 'restaurant_app' || matrix.app == 'admin_app')
         with:
@@ -118,15 +160,14 @@ jobs:
           fail_ci_if_error: false
         continue-on-error: true
 
-      - name: Run linting
-        working-directory: ./${{ matrix.app }}
-        run: npm run lint || echo "No linting configured"
-
-      - name: Build application
+      - name: Build Application
         working-directory: ./${{ matrix.app }}
         run: npm run build
+        env:
+          NODE_ENV: production
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:5000/api' }}
 
-      - name: Upload build artifacts
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.app }}-build
@@ -148,13 +189,39 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        # Only attempt upload when workflow runs in the repository (not a fork),
-        # otherwise the runner's token may not have permission and you'll see
-        # 'Resource not accessible by integration'. Keep 'always()' to allow
-        # the step to be evaluated for post-job/cleanup semantics.
         if: always() && github.repository == github.event.repository.full_name
         with:
           sarif_file: 'trivy-results.sarif'
+
+  validate-build:
+    name: Validate Complete Build
+    runs-on: ubuntu-latest
+    needs: [test-server, test-client-apps]
+    if: always()
+    
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.test-server.result }}" != "success" ]; then
+            echo "❌ Server tests failed"
+            exit 1
+          fi
+          if [ "${{ needs.test-client-apps.result }}" != "success" ]; then
+            echo "❌ Client tests failed"
+            exit 1
+          fi
+          echo "✅ All tests passed successfully"
+
+      - name: Summary
+        run: |
+          echo "### Test Summary 📊" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Server Tests: ${{ needs.test-server.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend Tests: ${{ needs.test-client-apps.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Security Scan: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All checks completed!" >> $GITHUB_STEP_SUMMARY
