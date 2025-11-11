@@ -1,66 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<<<<<<< HEAD
-<coverage generated="1762844836347" clover="3.2.0">
-  <project timestamp="1762844836347" name="All files">
-    <metrics statements="1462" coveredstatements="273" conditionals="701" coveredconditionals="93" methods="94" coveredmethods="27" elements="2257" coveredelements="393" complexity="0" loc="1462" ncloc="1462" packages="4" files="20" classes="20"/>
-    <package name="Controllers">
-      <metrics statements="1294" coveredstatements="227" conditionals="673" coveredconditionals="71" methods="85" coveredmethods="20"/>
-      <file name="authController.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Controllers\authController.js">
-        <metrics statements="47" coveredstatements="27" conditionals="28" coveredconditionals="10" methods="6" coveredmethods="3"/>
-        <line num="1" count="1" type="stmt"/>
-        <line num="2" count="1" type="stmt"/>
-        <line num="3" count="1" type="stmt"/>
-        <line num="6" count="1" type="stmt"/>
-        <line num="7" count="2" type="stmt"/>
-        <line num="15" count="1" type="stmt"/>
-        <line num="16" count="3" type="stmt"/>
-        <line num="19" count="3" type="stmt"/>
-        <line num="20" count="3" type="cond" truecount="2" falsecount="0"/>
-        <line num="21" count="1" type="stmt"/>
-        <line num="22" count="1" type="stmt"/>
-        <line num="26" count="2" type="stmt"/>
-        <line num="33" count="2" type="cond" truecount="2" falsecount="0"/>
-        <line num="34" count="1" type="stmt"/>
-        <line num="48" count="1" type="stmt"/>
-        <line num="49" count="1" type="stmt"/>
-        <line num="56" count="1" type="stmt"/>
-        <line num="57" count="3" type="stmt"/>
-        <line num="60" count="3" type="stmt"/>
-        <line num="62" count="3" type="cond" truecount="4" falsecount="0"/>
-        <line num="63" count="1" type="stmt"/>
-        <line num="78" count="2" type="stmt"/>
-        <line num="79" count="2" type="stmt"/>
-        <line num="86" count="1" type="stmt"/>
-        <line num="87" count="0" type="stmt"/>
-        <line num="90" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="91" count="0" type="stmt"/>
-        <line num="92" count="0" type="stmt"/>
-        <line num="95" count="0" type="stmt"/>
-        <line num="97" count="0" type="stmt"/>
-        <line num="109" count="1" type="stmt"/>
-        <line num="110" count="0" type="stmt"/>
-        <line num="112" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="113" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="114" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="115" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="116" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="117" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="119" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="120" count="0" type="stmt"/>
-        <line num="123" count="0" type="stmt"/>
-        <line num="125" count="0" type="stmt"/>
-        <line num="138" count="0" type="stmt"/>
-        <line num="139" count="0" type="stmt"/>
-        <line num="146" count="1" type="stmt"/>
-        <line num="147" count="0" type="stmt"/>
-        <line num="154" count="1" type="stmt"/>
-      </file>
-      <file name="droneController.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Controllers\droneController.js">
-        <metrics statements="128" coveredstatements="0" conditionals="49" coveredconditionals="0" methods="11" coveredmethods="0"/>
-        <line num="1" count="0" type="stmt"/>
-        <line num="2" count="0" type="stmt"/>
-        <line num="7" count="0" type="stmt"/>
-=======
 <coverage generated="1762875395538" clover="3.2.0">
   <project timestamp="1762875395538" name="All files">
     <metrics statements="827" coveredstatements="280" conditionals="435" coveredconditionals="94" methods="52" coveredmethods="23" elements="1314" coveredelements="397" complexity="0" loc="827" ncloc="827" packages="3" files="10" classes="10"/>
@@ -71,7 +9,6 @@
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="7" count="1" type="stmt"/>
->>>>>>> origin/main
         <line num="8" count="0" type="stmt"/>
         <line num="10" count="0" type="stmt"/>
         <line num="13" count="0" type="cond" truecount="0" falsecount="2"/>
@@ -80,21 +17,17 @@
         <line num="19" count="0" type="stmt"/>
         <line num="22" count="0" type="stmt"/>
         <line num="24" count="0" type="stmt"/>
-<<<<<<< HEAD
-        <line num="34" count="0" type="stmt"/>
-=======
         <line num="34" count="1" type="stmt"/>
->>>>>>> origin/main
         <line num="35" count="0" type="stmt"/>
         <line num="37" count="0" type="cond" truecount="0" falsecount="2"/>
         <line num="38" count="0" type="stmt"/>
         <line num="39" count="0" type="stmt"/>
         <line num="42" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="51" count="0" type="stmt"/>
-=======
         <line num="51" count="1" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="51" count="0" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="53" count="0" type="cond" truecount="0" falsecount="4"/>
         <line num="54" count="0" type="stmt"/>
         <line num="60" count="0" type="stmt"/>
@@ -103,10 +36,10 @@
         <line num="65" count="0" type="stmt"/>
         <line num="71" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="80" count="0" type="stmt"/>
-=======
         <line num="80" count="1" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="80" count="0" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="81" count="0" type="stmt"/>
         <line num="83" count="0" type="cond" truecount="0" falsecount="2"/>
         <line num="84" count="0" type="stmt"/>
@@ -117,10 +50,10 @@
         <line num="96" count="0" type="stmt"/>
         <line num="102" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="111" count="0" type="stmt"/>
-=======
         <line num="111" count="1" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="111" count="0" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="112" count="0" type="stmt"/>
         <line num="114" count="0" type="cond" truecount="0" falsecount="2"/>
         <line num="115" count="0" type="stmt"/>
@@ -135,10 +68,10 @@
         <line num="132" count="0" type="stmt"/>
         <line num="139" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="149" count="0" type="stmt"/>
-=======
         <line num="149" count="1" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="149" count="0" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="150" count="0" type="stmt"/>
         <line num="152" count="0" type="stmt"/>
         <line num="154" count="0" type="cond" truecount="0" falsecount="2"/>
@@ -150,10 +83,10 @@
         <line num="168" count="0" type="stmt"/>
         <line num="174" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="183" count="0" type="stmt"/>
-=======
         <line num="183" count="1" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="183" count="0" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="184" count="0" type="stmt"/>
         <line num="186" count="0" type="stmt"/>
         <line num="188" count="0" type="cond" truecount="0" falsecount="2"/>
@@ -163,10 +96,10 @@
         <line num="194" count="0" type="stmt"/>
         <line num="196" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="205" count="0" type="stmt"/>
-=======
         <line num="205" count="1" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="205" count="0" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="206" count="0" type="stmt"/>
         <line num="208" count="0" type="stmt"/>
         <line num="210" count="0" type="cond" truecount="0" falsecount="2"/>
@@ -178,10 +111,10 @@
         <line num="222" count="0" type="stmt"/>
         <line num="224" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="233" count="0" type="stmt"/>
-=======
         <line num="233" count="1" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="233" count="0" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="234" count="0" type="stmt"/>
         <line num="235" count="0" type="stmt"/>
         <line num="237" count="0" type="stmt"/>
@@ -212,15 +145,6 @@
         <line num="305" count="0" type="stmt"/>
         <line num="308" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="320" count="0" type="stmt"/>
-        <line num="321" count="0" type="cond" truecount="0" falsecount="1"/>
-        <line num="323" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="324" count="0" type="stmt"/>
-        <line num="325" count="0" type="stmt"/>
-        <line num="328" count="0" type="stmt"/>
-        <line num="342" count="0" type="stmt"/>
-        <line num="352" count="0" type="stmt"/>
-=======
         <line num="320" count="1" type="stmt"/>
         <line num="321" count="2" type="cond" truecount="1" falsecount="0"/>
         <line num="323" count="2" type="cond" truecount="4" falsecount="0"/>
@@ -229,7 +153,16 @@
         <line num="328" count="1" type="stmt"/>
         <line num="342" count="0" type="stmt"/>
         <line num="352" count="1" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="320" count="0" type="stmt"/>
+        <line num="321" count="0" type="cond" truecount="0" falsecount="1"/>
+        <line num="323" count="0" type="cond" truecount="0" falsecount="4"/>
+        <line num="324" count="0" type="stmt"/>
+        <line num="325" count="0" type="stmt"/>
+        <line num="328" count="0" type="stmt"/>
+        <line num="342" count="0" type="stmt"/>
+        <line num="352" count="0" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="353" count="0" type="stmt"/>
         <line num="355" count="0" type="stmt"/>
         <line num="357" count="0" type="cond" truecount="0" falsecount="2"/>
@@ -240,30 +173,14 @@
         <line num="375" count="0" type="cond" truecount="0" falsecount="2"/>
         <line num="377" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="390" count="0" type="stmt"/>
-=======
         <line num="390" count="1" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="390" count="0" type="stmt"/>
+>>>>>>> origin/kiet
       </file>
 <<<<<<< HEAD
       <file name="orderController.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Controllers\orderController.js">
 <<<<<<< HEAD
-        <metrics statements="405" coveredstatements="0" conditionals="250" coveredconditionals="0" methods="16" coveredmethods="0"/>
-        <line num="1" count="0" type="stmt"/>
-        <line num="2" count="0" type="stmt"/>
-        <line num="3" count="0" type="stmt"/>
-        <line num="4" count="0" type="stmt"/>
-        <line num="5" count="0" type="stmt"/>
-        <line num="6" count="0" type="stmt"/>
-        <line num="7" count="0" type="stmt"/>
-        <line num="8" count="0" type="stmt"/>
-        <line num="9" count="0" type="stmt"/>
-        <line num="10" count="0" type="stmt"/>
-        <line num="11" count="0" type="stmt"/>
-        <line num="12" count="0" type="stmt"/>
-        <line num="13" count="0" type="stmt"/>
-        <line num="18" count="0" type="stmt"/>
-=======
         <metrics statements="405" coveredstatements="109" conditionals="250" coveredconditionals="46" methods="16" coveredmethods="2"/>
         <line num="1" count="3" type="stmt"/>
         <line num="2" count="3" type="stmt"/>
@@ -297,7 +214,23 @@
         <line num="13" count="1" type="stmt"/>
         <line num="18" count="1" type="stmt"/>
 >>>>>>> deploy
->>>>>>> origin/main
+=======
+        <metrics statements="405" coveredstatements="0" conditionals="250" coveredconditionals="0" methods="16" coveredmethods="0"/>
+        <line num="1" count="0" type="stmt"/>
+        <line num="2" count="0" type="stmt"/>
+        <line num="3" count="0" type="stmt"/>
+        <line num="4" count="0" type="stmt"/>
+        <line num="5" count="0" type="stmt"/>
+        <line num="6" count="0" type="stmt"/>
+        <line num="7" count="0" type="stmt"/>
+        <line num="8" count="0" type="stmt"/>
+        <line num="9" count="0" type="stmt"/>
+        <line num="10" count="0" type="stmt"/>
+        <line num="11" count="0" type="stmt"/>
+        <line num="12" count="0" type="stmt"/>
+        <line num="13" count="0" type="stmt"/>
+        <line num="18" count="0" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="19" count="0" type="stmt"/>
         <line num="20" count="0" type="stmt"/>
         <line num="22" count="0" type="cond" truecount="0" falsecount="2"/>
@@ -1425,12 +1358,12 @@
         <line num="78" count="0" type="stmt"/>
         <line num="85" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="88" count="3" type="stmt"/>
-        <line num="91" count="4" type="stmt"/>
-=======
         <line num="88" count="1" type="stmt"/>
         <line num="91" count="5" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="88" count="3" type="stmt"/>
+        <line num="91" count="4" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="101" count="1" type="stmt"/>
         <line num="102" count="2" type="stmt"/>
         <line num="106" count="2" type="cond" truecount="2" falsecount="0"/>
@@ -1448,17 +1381,6 @@
         <line num="138" count="1" type="stmt"/>
         <line num="147" count="1" type="stmt"/>
 <<<<<<< HEAD
-        <line num="149" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="150" count="0" type="stmt"/>
-        <line num="151" count="0" type="stmt"/>
-        <line num="154" count="3" type="stmt"/>
-        <line num="160" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="161" count="0" type="stmt"/>
-        <line num="164" count="3" type="stmt"/>
-        <line num="167" count="1" type="stmt"/>
-        <line num="168" count="1" type="stmt"/>
-        <line num="170" count="1" type="stmt"/>
-=======
         <line num="149" count="3" type="cond" truecount="2" falsecount="0"/>
         <line num="150" count="1" type="stmt"/>
         <line num="151" count="1" type="stmt"/>
@@ -1469,7 +1391,18 @@
         <line num="167" count="2" type="stmt"/>
         <line num="168" count="2" type="stmt"/>
         <line num="170" count="2" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="149" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="150" count="0" type="stmt"/>
+        <line num="151" count="0" type="stmt"/>
+        <line num="154" count="3" type="stmt"/>
+        <line num="160" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="161" count="0" type="stmt"/>
+        <line num="164" count="3" type="stmt"/>
+        <line num="167" count="1" type="stmt"/>
+        <line num="168" count="1" type="stmt"/>
+        <line num="170" count="1" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="179" count="1" type="stmt"/>
         <line num="180" count="2" type="stmt"/>
         <line num="182" count="2" type="cond" truecount="2" falsecount="0"/>
@@ -1506,11 +1439,11 @@
         <line num="275" count="0" type="stmt"/>
         <line num="278" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="284" count="1" type="stmt"/>
-=======
 <<<<<<< HEAD
         <line num="284" count="4" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="284" count="1" type="stmt"/>
+>>>>>>> origin/kiet
       </file>
       <file name="promotionController.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Controllers\promotionController.js">
         <metrics statements="100" coveredstatements="38" conditionals="38" coveredconditionals="3" methods="9" coveredmethods="5"/>
@@ -1912,17 +1845,6 @@
         <line num="142" count="0" type="stmt"/>
         <line num="143" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="146" count="0" type="stmt"/>
-        <line num="151" count="0" type="stmt"/>
-        <line num="161" count="0" type="stmt"/>
-        <line num="162" count="0" type="stmt"/>
-        <line num="164" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="165" count="0" type="stmt"/>
-        <line num="166" count="0" type="stmt"/>
-        <line num="169" count="0" type="stmt"/>
-        <line num="171" count="0" type="stmt"/>
-        <line num="177" count="0" type="stmt"/>
-=======
         <line num="146" count="1" type="stmt"/>
         <line num="151" count="1" type="stmt"/>
         <line num="161" count="1" type="stmt"/>
@@ -1933,7 +1855,18 @@
         <line num="169" count="2" type="stmt"/>
         <line num="171" count="2" type="stmt"/>
         <line num="177" count="1" type="stmt"/>
->>>>>>> origin/main
+=======
+        <line num="146" count="0" type="stmt"/>
+        <line num="151" count="0" type="stmt"/>
+        <line num="161" count="0" type="stmt"/>
+        <line num="162" count="0" type="stmt"/>
+        <line num="164" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="165" count="0" type="stmt"/>
+        <line num="166" count="0" type="stmt"/>
+        <line num="169" count="0" type="stmt"/>
+        <line num="171" count="0" type="stmt"/>
+        <line num="177" count="0" type="stmt"/>
+>>>>>>> origin/kiet
       </file>
     </package>
     <package name="Middleware">
@@ -1948,7 +1881,6 @@
       <file name="authMiddleware.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Middleware\authMiddleware.js">
         <metrics statements="31" coveredstatements="27" conditionals="14" coveredconditionals="10" methods="4" coveredmethods="3"/>
 <<<<<<< HEAD
-=======
         <line num="1" count="4" type="stmt"/>
         <line num="2" count="4" type="stmt"/>
         <line num="3" count="4" type="stmt"/>
@@ -1968,7 +1900,8 @@
       </file>
       <file name="authMiddleware.js" path="D:\TESTFOOD\FOODFAST\server_app\API\Middleware\authMiddleware.js">
         <metrics statements="31" coveredstatements="27" conditionals="14" coveredconditionals="10" methods="4" coveredmethods="3"/>
->>>>>>> origin/main
+=======
+>>>>>>> origin/kiet
         <line num="1" count="1" type="stmt"/>
         <line num="2" count="1" type="stmt"/>
         <line num="3" count="1" type="stmt"/>
@@ -1980,9 +1913,9 @@
         <line num="17" count="2" type="stmt"/>
         <line num="19" count="2" type="cond" truecount="2" falsecount="0"/>
 <<<<<<< HEAD
-=======
 >>>>>>> deploy
->>>>>>> origin/main
+=======
+>>>>>>> origin/kiet
         <line num="20" count="1" type="stmt"/>
         <line num="21" count="1" type="stmt"/>
         <line num="24" count="1" type="stmt"/>
@@ -1999,27 +1932,27 @@
         <line num="42" count="1" type="stmt"/>
         <line num="44" count="1" type="stmt"/>
 <<<<<<< HEAD
-        <line num="49" count="1" type="stmt"/>
-=======
 <<<<<<< HEAD
         <line num="49" count="4" type="stmt"/>
 =======
         <line num="49" count="1" type="stmt"/>
 >>>>>>> deploy
->>>>>>> origin/main
+=======
+        <line num="49" count="1" type="stmt"/>
+>>>>>>> origin/kiet
         <line num="50" count="0" type="cond" truecount="0" falsecount="4"/>
         <line num="51" count="0" type="stmt"/>
         <line num="53" count="0" type="stmt"/>
         <line num="54" count="0" type="stmt"/>
 <<<<<<< HEAD
-        <line num="58" count="1" type="stmt"/>
-=======
 <<<<<<< HEAD
         <line num="58" count="4" type="stmt"/>
 =======
         <line num="58" count="1" type="stmt"/>
 >>>>>>> deploy
->>>>>>> origin/main
+=======
+        <line num="58" count="1" type="stmt"/>
+>>>>>>> origin/kiet
       </file>
       <file name="errorMiddleware.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Middleware\errorMiddleware.js">
         <metrics statements="16" coveredstatements="16" conditionals="12" coveredconditionals="12" methods="2" coveredmethods="2"/>
@@ -2043,11 +1976,11 @@
     </package>
     <package name="Routers">
 <<<<<<< HEAD
-      <metrics statements="113" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
-=======
 <<<<<<< HEAD
       <metrics statements="113" coveredstatements="113" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
->>>>>>> origin/main
+=======
+      <metrics statements="113" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
+>>>>>>> origin/kiet
       <file name="authRouter.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Routers\authRouter.js">
         <metrics statements="11" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="1" count="0" type="stmt"/>
@@ -2064,28 +1997,6 @@
       </file>
       <file name="droneRouter.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Routers\droneRouter.js">
 <<<<<<< HEAD
-        <metrics statements="20" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-        <line num="1" count="0" type="stmt"/>
-        <line num="2" count="0" type="stmt"/>
-        <line num="15" count="0" type="stmt"/>
-        <line num="20" count="0" type="stmt"/>
-        <line num="21" count="0" type="stmt"/>
-        <line num="23" count="0" type="stmt"/>
-        <line num="24" count="0" type="stmt"/>
-        <line num="25" count="0" type="stmt"/>
-        <line num="26" count="0" type="stmt"/>
-        <line num="27" count="0" type="stmt"/>
-        <line num="28" count="0" type="stmt"/>
-        <line num="29" count="0" type="stmt"/>
-        <line num="30" count="0" type="stmt"/>
-        <line num="31" count="0" type="stmt"/>
-        <line num="32" count="0" type="stmt"/>
-        <line num="33" count="0" type="stmt"/>
-        <line num="34" count="0" type="stmt"/>
-        <line num="35" count="0" type="stmt"/>
-        <line num="36" count="0" type="stmt"/>
-        <line num="38" count="0" type="stmt"/>
-=======
 =======
       <metrics statements="45" coveredstatements="45" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
       <file name="droneRouter.js" path="D:\TESTFOOD\FOODFAST\server_app\API\Routers\droneRouter.js">
@@ -2111,7 +2022,29 @@
         <line num="35" count="1" type="stmt"/>
         <line num="36" count="1" type="stmt"/>
         <line num="38" count="1" type="stmt"/>
->>>>>>> origin/main
+=======
+        <metrics statements="20" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="1" count="0" type="stmt"/>
+        <line num="2" count="0" type="stmt"/>
+        <line num="15" count="0" type="stmt"/>
+        <line num="20" count="0" type="stmt"/>
+        <line num="21" count="0" type="stmt"/>
+        <line num="23" count="0" type="stmt"/>
+        <line num="24" count="0" type="stmt"/>
+        <line num="25" count="0" type="stmt"/>
+        <line num="26" count="0" type="stmt"/>
+        <line num="27" count="0" type="stmt"/>
+        <line num="28" count="0" type="stmt"/>
+        <line num="29" count="0" type="stmt"/>
+        <line num="30" count="0" type="stmt"/>
+        <line num="31" count="0" type="stmt"/>
+        <line num="32" count="0" type="stmt"/>
+        <line num="33" count="0" type="stmt"/>
+        <line num="34" count="0" type="stmt"/>
+        <line num="35" count="0" type="stmt"/>
+        <line num="36" count="0" type="stmt"/>
+        <line num="38" count="0" type="stmt"/>
+>>>>>>> origin/kiet
       </file>
 <<<<<<< HEAD
       <file name="orderRouter.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Routers\orderRouter.js">
@@ -2134,36 +2067,6 @@
       </file>
       <file name="paymentRouter.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Routers\paymentRouter.js">
 <<<<<<< HEAD
-        <metrics statements="15" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
-        <line num="1" count="0" type="stmt"/>
-        <line num="2" count="0" type="stmt"/>
-        <line num="12" count="0" type="stmt"/>
-        <line num="13" count="0" type="stmt"/>
-        <line num="16" count="0" type="stmt"/>
-        <line num="17" count="0" type="stmt"/>
-        <line num="18" count="0" type="stmt"/>
-        <line num="19" count="0" type="stmt"/>
-        <line num="20" count="0" type="stmt"/>
-        <line num="23" count="0" type="stmt"/>
-        <line num="24" count="0" type="stmt"/>
-        <line num="28" count="0" type="stmt"/>
-        <line num="29" count="0" type="stmt"/>
-        <line num="40" count="0" type="stmt"/>
-        <line num="42" count="0" type="stmt"/>
-      </file>
-      <file name="productRouter.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Routers\productRouter.js">
-        <metrics statements="10" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
-        <line num="1" count="0" type="stmt"/>
-        <line num="2" count="0" type="stmt"/>
-        <line num="3" count="0" type="stmt"/>
-        <line num="11" count="0" type="stmt"/>
-        <line num="12" count="0" type="stmt"/>
-        <line num="14" count="0" type="stmt"/>
-        <line num="15" count="0" type="stmt"/>
-        <line num="17" count="0" type="stmt"/>
-        <line num="21" count="0" type="stmt"/>
-        <line num="26" count="0" type="stmt"/>
-=======
         <metrics statements="15" coveredstatements="15" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
         <line num="1" count="3" type="stmt"/>
         <line num="2" count="3" type="stmt"/>
@@ -2210,7 +2113,37 @@
         <line num="17" count="3" type="stmt"/>
         <line num="21" count="3" type="stmt"/>
         <line num="26" count="3" type="stmt"/>
->>>>>>> origin/main
+=======
+        <metrics statements="15" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
+        <line num="1" count="0" type="stmt"/>
+        <line num="2" count="0" type="stmt"/>
+        <line num="12" count="0" type="stmt"/>
+        <line num="13" count="0" type="stmt"/>
+        <line num="16" count="0" type="stmt"/>
+        <line num="17" count="0" type="stmt"/>
+        <line num="18" count="0" type="stmt"/>
+        <line num="19" count="0" type="stmt"/>
+        <line num="20" count="0" type="stmt"/>
+        <line num="23" count="0" type="stmt"/>
+        <line num="24" count="0" type="stmt"/>
+        <line num="28" count="0" type="stmt"/>
+        <line num="29" count="0" type="stmt"/>
+        <line num="40" count="0" type="stmt"/>
+        <line num="42" count="0" type="stmt"/>
+      </file>
+      <file name="productRouter.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Routers\productRouter.js">
+        <metrics statements="10" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="1" count="0" type="stmt"/>
+        <line num="2" count="0" type="stmt"/>
+        <line num="3" count="0" type="stmt"/>
+        <line num="11" count="0" type="stmt"/>
+        <line num="12" count="0" type="stmt"/>
+        <line num="14" count="0" type="stmt"/>
+        <line num="15" count="0" type="stmt"/>
+        <line num="17" count="0" type="stmt"/>
+        <line num="21" count="0" type="stmt"/>
+        <line num="26" count="0" type="stmt"/>
+>>>>>>> origin/kiet
       </file>
       <file name="promotionRouter.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Routers\promotionRouter.js">
         <metrics statements="13" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
@@ -2268,13 +2201,6 @@
       <metrics statements="5" coveredstatements="0" conditionals="2" coveredconditionals="0" methods="0" coveredmethods="0"/>
       <file name="logger.js" path="C:\Users\ADMIN\Desktop\FOODFAST\server_app\API\Utils\logger.js">
 <<<<<<< HEAD
-        <metrics statements="5" coveredstatements="0" conditionals="2" coveredconditionals="0" methods="0" coveredmethods="0"/>
-        <line num="1" count="0" type="stmt"/>
-        <line num="3" count="0" type="stmt"/>
-        <line num="15" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="16" count="0" type="stmt"/>
-        <line num="21" count="0" type="stmt"/>
-=======
         <metrics statements="5" coveredstatements="5" conditionals="2" coveredconditionals="1" methods="0" coveredmethods="0"/>
         <line num="1" count="3" type="stmt"/>
         <line num="3" count="3" type="stmt"/>
@@ -2293,7 +2219,14 @@
         <line num="21" count="1" type="stmt"/>
         <line num="26" count="1" type="stmt"/>
 >>>>>>> deploy
->>>>>>> origin/main
+=======
+        <metrics statements="5" coveredstatements="0" conditionals="2" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="1" count="0" type="stmt"/>
+        <line num="3" count="0" type="stmt"/>
+        <line num="15" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="16" count="0" type="stmt"/>
+        <line num="21" count="0" type="stmt"/>
+>>>>>>> origin/kiet
       </file>
     </package>
   </project>
