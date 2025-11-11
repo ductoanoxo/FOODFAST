@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">17.64% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>17/17</span>
+                <span class='fraction'>3/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>12/12</span>
+                <span class='fraction'>0/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>0/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">18.75% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>16/16</span>
+                <span class='fraction'>3/16</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -95,65 +95,65 @@
 <a name='L30'></a><a href='#L30'>30</a>
 <a name='L31'></a><a href='#L31'>31</a>
 <a name='L32'></a><a href='#L32'>32</a>
-<a name='L33'></a><a href='#L33'>33</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<a name='L33'></a><a href='#L33'>33</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span></td><td class="text"><pre class="prettyprint lang-js">const logger = require('../Utils/logger')
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span></td><td class="text"><pre class="prettyprint lang-js">const logger = require('../Utils/logger')
 &nbsp;
-const errorHandler = (err, req, res) =&gt; {
-    logger.error(err.message, { stack: err.stack })
+const errorHandler = <span class="fstat-no" title="function not covered" >(e</span>rr, req, res) =&gt; {
+<span class="cstat-no" title="statement not covered" >    logger.error(err.message, { stack: err.stack })</span>
 &nbsp;
-    let error = {...err }
-    error.message = err.message
+    let error = <span class="cstat-no" title="statement not covered" >{...err }</span>
+<span class="cstat-no" title="statement not covered" >    error.message = err.message</span>
 &nbsp;
     // Mongoose bad ObjectId
-    if (err.name === 'CastError') {
-        const message = 'Resource not found'
-        error = { message, statusCode: 404 }
+<span class="cstat-no" title="statement not covered" >    if (err.name === 'CastError') {</span>
+        const message = <span class="cstat-no" title="statement not covered" >'Resource not found'</span>
+<span class="cstat-no" title="statement not covered" >        error = { message, statusCode: 404 }</span>
     }
 &nbsp;
     // Mongoose duplicate key
-    if (err.code === 11000) {
-        const message = 'Duplicate field value entered'
-        error = { message, statusCode: 400 }
+<span class="cstat-no" title="statement not covered" >    if (err.code === 11000) {</span>
+        const message = <span class="cstat-no" title="statement not covered" >'Duplicate field value entered'</span>
+<span class="cstat-no" title="statement not covered" >        error = { message, statusCode: 400 }</span>
     }
 &nbsp;
     // Mongoose validation error
-    if (err.name === 'ValidationError') {
-        const message = Object.values(err.errors).map(val =&gt; val.message)
-        error = { message, statusCode: 400 }
+<span class="cstat-no" title="statement not covered" >    if (err.name === 'ValidationError') {</span>
+        const message = <span class="cstat-no" title="statement not covered" >Object.values(err.errors).map(<span class="fstat-no" title="function not covered" >va</span>l =&gt; <span class="cstat-no" title="statement not covered" >val.message)</span></span>
+<span class="cstat-no" title="statement not covered" >        error = { message, statusCode: 400 }</span>
     }
 &nbsp;
-    res.status(error.statusCode || err.statusCode || 500).json({
+<span class="cstat-no" title="statement not covered" >    res.status(error.statusCode || err.statusCode || 500).json({</span>
         success: false,
         error: error.message || err.message || 'Server Error',
     })
@@ -166,7 +166,7 @@ module.exports = { errorHandler }</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-11T10:59:27.650Z
+                at 2025-11-11T11:05:07.232Z
             </div>
         <script src="../prettify.js"></script>
         <script>
