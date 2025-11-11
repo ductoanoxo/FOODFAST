@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
-import PropTypes from 'prop-types'
 
 const MapController = ({ center, zoom }) => {
     const map = useMap()
@@ -12,11 +11,6 @@ const MapController = ({ center, zoom }) => {
     }, [center, zoom, map])
 
     return null
-}
-
-MapController.propTypes = {
-    center: PropTypes.arrayOf(PropTypes.number),
-    zoom: PropTypes.number,
 }
 
 export default MapController

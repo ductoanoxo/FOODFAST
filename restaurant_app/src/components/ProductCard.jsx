@@ -1,5 +1,5 @@
 import { Card, Tag, Typography, Space, Button, Popconfirm, Avatar } from 'antd';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import './ProductCard.css';
 
 const { Text, Paragraph } = Typography;
@@ -41,16 +41,14 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
         </div>
       }
       actions={[
-        <Button
-          key="edit"
-          type="text"
-          icon={<EditOutlined />}
+        <Button 
+          type="text" 
+          icon={<EditOutlined />} 
           onClick={() => onEdit(product)}
         >
           Sửa
         </Button>,
         <Popconfirm
-          key="delete"
           title="Xóa món ăn"
           description="Bạn có chắc muốn xóa món ăn này?"
           onConfirm={() => onDelete(product._id)}
