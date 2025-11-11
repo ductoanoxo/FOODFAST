@@ -26,7 +26,8 @@ export default defineConfig({
         silent: false,
         coverage: {
             provider: 'v8',
-            reporter: ['text', 'json', 'html'],
+            reporter: ['text', 'json', 'html', 'clover'],
+            reportsDirectory: './coverage',
             exclude: [
                 'node_modules/',
                 'src/main.jsx',
@@ -35,6 +36,8 @@ export default defineConfig({
                 '**/*.test.{js,jsx}',
                 'src/__tests__/**',
             ],
+            include: ['src/**/*.{js,jsx}'],
+            all: true,
             thresholds: {
                 lines: 70,
                 functions: 70,

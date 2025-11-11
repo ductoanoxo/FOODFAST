@@ -53,7 +53,7 @@ jobs:
         working-directory: ./server_app
         run: npm ci
 
-      - name: Run Unit Tests
+      - name: Run Unit Tests (Must Pass)
         working-directory: ./server_app
         env:
           NODE_ENV: test
@@ -62,9 +62,9 @@ jobs:
           CLOUDINARY_CLOUD_NAME: test-cloud
           CLOUDINARY_API_KEY: test-key
           CLOUDINARY_API_SECRET: test-secret
-        run: npm test -- --testPathPattern=unit --coverage --coverageDirectory=coverage/unit
+        run: npm test -- --testPathPattern=unit --ci --bail
 
-      - name: Run Integration Tests
+      - name: Run Integration Tests (Must Pass)
         working-directory: ./server_app
         env:
           NODE_ENV: test
@@ -73,10 +73,22 @@ jobs:
           CLOUDINARY_CLOUD_NAME: test-cloud
           CLOUDINARY_API_KEY: test-key
           CLOUDINARY_API_SECRET: test-secret
-        run: npm test -- --testPathPattern=integration --coverage --coverageDirectory=coverage/integration
+        run: npm test -- --testPathPattern=integration --ci --bail
+
+      - name: Generate Coverage Report
+        working-directory: ./server_app
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
+          JWT_SECRET: test-secret-key-for-ci
+          CLOUDINARY_CLOUD_NAME: test-cloud
+          CLOUDINARY_API_KEY: test-key
+          CLOUDINARY_API_SECRET: test-secret
+        run: npm test -- --coverage --coverageReporters=json --coverageReporters=text
 
       - name: Upload Server Coverage
         uses: codecov/codecov-action@v4
+        if: always()
         with:
           files: ./server_app/coverage/coverage-final.json
           flags: server
@@ -120,7 +132,7 @@ jobs:
         run: npm run lint || echo "Linting not configured for ${{ matrix.app }}"
         continue-on-error: true
 
-      - name: Run Unit Tests
+      - name: Run Unit Tests (Must Pass)
         working-directory: ./${{ matrix.app }}
         if: matrix.app == 'client_app' || matrix.app == 'restaurant_app' || matrix.app == 'admin_app'
         run: npm run test:unit || npm test -- --run --reporter=verbose
@@ -128,9 +140,8 @@ jobs:
           NODE_ENV: test
           CI: true
           VITE_API_URL: http://localhost:5000/api
-        continue-on-error: false
 
-      - name: Run Integration Tests
+      - name: Run Integration Tests (Must Pass)
         working-directory: ./${{ matrix.app }}
         if: matrix.app == 'client_app' || matrix.app == 'restaurant_app'
         run: npm run test:integration
@@ -138,7 +149,6 @@ jobs:
           NODE_ENV: test
           CI: true
           VITE_API_URL: http://localhost:5000/api
-        continue-on-error: true
 
       - name: Generate Coverage Report
         working-directory: ./${{ matrix.app }}
@@ -152,9 +162,9 @@ jobs:
 
       - name: Upload Coverage
         uses: codecov/codecov-action@v4
-        if: success() && (matrix.app == 'client_app' || matrix.app == 'restaurant_app' || matrix.app == 'admin_app')
+        if: always() && (matrix.app == 'client_app' || matrix.app == 'restaurant_app' || matrix.app == 'admin_app')
         with:
-          files: ./${{ matrix.app }}/coverage/coverage-final.json
+          files: ./${{ matrix.app }}/coverage/clover.xml,./${{ matrix.app }}/coverage/coverage-final.json
           flags: ${{ matrix.app }}
           name: ${{ matrix.app }}-coverage
           fail_ci_if_error: false
