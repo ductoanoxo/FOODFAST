@@ -163,10 +163,10 @@ jobs:
             if npm run test:unit 2>&1 | tee test-output.log; then
               # Kiểm tra xem có tests bị skip không
               if grep -q "skipped" test-output.log; then
-                echo "⚠️  Some unit tests are skipped for ${{ matrix.app }}"
-                echo "⚠️  Please remove .skip or implement the tests"
+                echo "❌ Some unit tests are skipped for ${{ matrix.app }}"
+                echo "❌ Please remove .skip or implement the tests"
                 grep "skipped" test-output.log
-                exit 0
+                exit 1
               elif grep -q "No test files found" test-output.log || grep -q "Test Files.*0" test-output.log || grep -q "no tests" test-output.log; then
                 echo "⚠️  No unit tests found for ${{ matrix.app }} - will add later"
                 exit 0
@@ -199,10 +199,10 @@ jobs:
             if npm run test:integration 2>&1 | tee integration-output.log; then
               # Kiểm tra xem có tests bị skip không
               if grep -q "skipped" integration-output.log; then
-                echo "⚠️  Some integration tests are skipped for ${{ matrix.app }}"
-                echo "⚠️  Please remove .skip or implement the tests"
+                echo "❌ Some integration tests are skipped for ${{ matrix.app }}"
+                echo "❌ Please remove .skip or implement the tests"
                 grep "skipped" integration-output.log
-                exit 0
+                exit 1
               # Kiểm tra xem có lỗi không
               elif grep -q "Test Files.*no tests" integration-output.log && grep -q "Errors.*1 error" integration-output.log; then
                 echo "❌ Integration tests have errors for ${{ matrix.app }}"
