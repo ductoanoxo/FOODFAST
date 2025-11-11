@@ -53,28 +53,66 @@ jobs:
         working-directory: ./server_app
         run: npm ci
 
-      - name: Run all tests with coverage
+      - name: Run Unit Tests (Must Pass 100%)
         working-directory: ./server_app
         env:
           NODE_ENV: test
           MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
           JWT_SECRET: test-secret-key
-        run: npm test || echo "No tests found"
-
-      - name: Display test coverage summary
-        working-directory: ./server_app
         run: |
-          echo "📊 Server App - Test Coverage Summary:"
-          if [ -f coverage/coverage-summary.json ]; then
-            node -e "const c=require('./coverage/coverage-summary.json').total; console.log('Lines:', c.lines.pct + '%', '| Statements:', c.statements.pct + '%', '| Functions:', c.functions.pct + '%', '| Branches:', c.branches.pct + '%')"
+          echo "=========================================="
+          echo "🧪 Running Server Unit Tests"
+          echo "=========================================="
+          if npm test 2>&1 | tee test-output.log; then
+            echo "✅ Unit tests passed"
           else
-            echo "Coverage not available"
+            if grep -q "No tests found" test-output.log; then
+              echo "⚠️  No unit tests found - will add later"
+              exit 0
+            else
+              echo "❌ Unit tests failed"
+              exit 1
+            fi
           fi
-        continue-on-error: true
 
-      - name: Check for syntax errors
+      - name: Run Integration Tests (Must Pass 100%)
         working-directory: ./server_app
-        run: node -c index.js
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
+          JWT_SECRET: test-secret-key
+        run: |
+          echo "=========================================="
+          echo "🧪 Running Server Integration Tests"
+          echo "=========================================="
+          if [ -f "package.json" ] && grep -q "test:integration" package.json; then
+            npm run test:integration
+            echo "✅ Integration tests passed"
+          else
+            echo "⚠️  No integration tests configured - will add later"
+          fi
+
+      - name: Generate Coverage Report
+        working-directory: ./server_app
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
+          JWT_SECRET: test-secret-key
+        run: |
+          echo "=========================================="
+          echo "📊 Generating Coverage Report for Server"
+          echo "=========================================="
+          npm test -- --coverage || echo "⚠️  Coverage generation skipped"
+
+      - name: Upload Server Coverage
+        uses: codecov/codecov-action@v4
+        if: success()
+        with:
+          files: ./server_app/coverage/coverage-final.json
+          flags: server_app
+          name: server_app-coverage
+          fail_ci_if_error: false
+        continue-on-error: true
 
   test-client-apps:
     name: Test Frontend Apps
@@ -103,47 +141,74 @@ jobs:
         working-directory: ./${{ matrix.app }}
         run: npm ci
 
-      - name: Run unit tests with coverage
+      - name: Run Unit Tests (Must Pass 100%)
         working-directory: ./${{ matrix.app }}
-        run: npm run test:unit -- --coverage --reporter=verbose || echo "No tests found for ${{ matrix.app }}"
         env:
           NODE_ENV: test
           CI: true
-          NODE_OPTIONS: '--no-warnings --experimental-vm-modules'
-
-      - name: Display unit test coverage
-        working-directory: ./${{ matrix.app }}
         run: |
-          echo "📊 ${{ matrix.app }} - Unit Test Coverage:"
-          if [ -f coverage/coverage-summary.json ]; then
-            node -e "const c=require('./coverage/coverage-summary.json').total; console.log('Lines:', c.lines.pct + '%', '| Statements:', c.statements.pct + '%', '| Functions:', c.functions.pct + '%', '| Branches:', c.branches.pct + '%')"
+          echo "=========================================="
+          echo "🧪 Running Unit Tests for ${{ matrix.app }}"
+          echo "=========================================="
+          if [ -f "package.json" ] && grep -q "test:unit" package.json; then
+            if npm run test:unit 2>&1 | tee test-output.log; then
+              echo "✅ Unit tests passed for ${{ matrix.app }}"
+            else
+              if grep -q "No test files found" test-output.log || grep -q "0 passed" test-output.log; then
+                echo "⚠️  No unit tests found for ${{ matrix.app }} - will add later"
+                exit 0
+              else
+                echo "❌ Unit tests failed for ${{ matrix.app }}"
+                exit 1
+              fi
+            fi
           else
-            echo "Unit test coverage not available"
+            echo "⚠️  No unit tests configured for ${{ matrix.app }} - will add later"
           fi
-        continue-on-error: true
 
-      - name: Run integration tests with coverage
+      - name: Run Integration Tests (Must Pass 100%)
         working-directory: ./${{ matrix.app }}
-        run: npm run test:integration -- --coverage --reporter=verbose || echo "No integration tests found for ${{ matrix.app }}"
         env:
           NODE_ENV: test
           CI: true
-          NODE_OPTIONS: '--no-warnings --experimental-vm-modules'
-
-      - name: Display integration test coverage
-        working-directory: ./${{ matrix.app }}
         run: |
-          echo "📊 ${{ matrix.app }} - Integration Test Coverage:"
-          if [ -f coverage/coverage-summary.json ]; then
-            node -e "const c=require('./coverage/coverage-summary.json').total; console.log('Lines:', c.lines.pct + '%', '| Statements:', c.statements.pct + '%', '| Functions:', c.functions.pct + '%', '| Branches:', c.branches.pct + '%')"
+          echo "=========================================="
+          echo "🧪 Running Integration Tests for ${{ matrix.app }}"
+          echo "=========================================="
+          if [ -f "package.json" ] && grep -q "test:integration" package.json; then
+            if npm run test:integration 2>&1 | tee integration-output.log; then
+              echo "✅ Integration tests passed for ${{ matrix.app }}"
+            else
+              if grep -q "No test files found" integration-output.log || grep -q "0 passed" integration-output.log; then
+                echo "⚠️  No integration tests found for ${{ matrix.app }} - will add later"
+                exit 0
+              else
+                echo "❌ Integration tests failed for ${{ matrix.app }}"
+                exit 1
+              fi
+            fi
           else
-            echo "Integration test coverage not available"
+            echo "⚠️  No integration tests configured for ${{ matrix.app }} - will add later"
           fi
-        continue-on-error: true
 
-      - name: Upload coverage reports
+      - name: Generate Coverage Report
+        working-directory: ./${{ matrix.app }}
+        env:
+          NODE_ENV: test
+          CI: true
+        run: |
+          echo "=========================================="
+          echo "📊 Generating Coverage Report for ${{ matrix.app }}"
+          echo "=========================================="
+          if [ -f "package.json" ] && grep -q "test:coverage" package.json; then
+            npm run test:coverage || echo "⚠️  Coverage generation skipped for ${{ matrix.app }}"
+          else
+            echo "⚠️  Coverage not configured for ${{ matrix.app }}"
+          fi
+
+      - name: Upload Coverage Reports
         uses: codecov/codecov-action@v4
-        if: success() && (matrix.app == 'client_app' || matrix.app == 'restaurant_app' || matrix.app == 'admin_app')
+        if: success()
         with:
           files: ./${{ matrix.app }}/coverage/coverage-final.json
           flags: ${{ matrix.app }}
@@ -153,7 +218,7 @@ jobs:
 
       - name: Run linting
         working-directory: ./${{ matrix.app }}
-        run: npm run lint || echo "No linting configured"
+        run: npm run lint || echo "⚠️  No linting configured for ${{ matrix.app }}"
 
       - name: Build application
         working-directory: ./${{ matrix.app }}
