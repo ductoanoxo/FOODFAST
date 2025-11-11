@@ -149,6 +149,77 @@ const startDeliverySimulation = asyncHandler(async(req, res) => {
         throw new Error('Socket service not available');
     }
 
+    // 🎯 DEMO LOGIC: Sau 5 giây → waiting_for_customer, sau 40 giây → timeout
+    setTimeout(async() => {
+        try {
+            // Sau 5 giây: Drone "đã đến" nơi giao hàng
+            const updatedOrder = await Order.findById(orderId);
+            if (!updatedOrder || updatedOrder.status !== 'delivering') {
+                console.log(`⚠️ Order ${orderId} status changed, skipping timeout logic`);
+                return;
+            }
+
+            updatedOrder.status = 'waiting_for_customer';
+            updatedOrder.arrivedAt = new Date();
+            await updatedOrder.save();
+
+            console.log(`⏰ Order ${orderId} → waiting_for_customer (40s countdown started)`);
+
+            // Emit socket event
+            if (socketService && socketService.io) {
+                socketService.io.emit('order:status-updated', {
+                    orderId: updatedOrder._id,
+                    status: 'waiting_for_customer',
+                    arrivedAt: updatedOrder.arrivedAt,
+                    message: 'Drone đã đến - Vui lòng nhận hàng trong 40 giây!'
+                });
+            }
+
+            // Set timeout 40 giây
+            setTimeout(async() => {
+                try {
+                    const finalOrder = await Order.findById(orderId).populate('drone');
+                    if (!finalOrder || finalOrder.status !== 'waiting_for_customer') {
+                        console.log(`✅ Order ${orderId} đã được nhận hoặc đã xử lý`);
+                        return;
+                    }
+
+                    // Timeout: Chuyển drone về available
+                    console.log(`❌ Order ${orderId} TIMEOUT! Drone về trạng thái sẵn sàng`);
+
+                    finalOrder.status = 'delivery_failed';
+                    finalOrder.cancelReason = 'Không gặp người nhận sau 40 giây';
+                    await finalOrder.save();
+
+                    // Drone về available
+                    if (finalOrder.drone) {
+                        const droneToFree = await Drone.findById(finalOrder.drone._id);
+                        if (droneToFree) {
+                            droneToFree.status = 'available';
+                            droneToFree.currentOrder = null;
+                            await droneToFree.save();
+                            console.log(`🚁 Drone ${droneToFree.name} → available`);
+                        }
+                    }
+
+                    // Emit socket event
+                    if (socketService && socketService.io) {
+                        socketService.io.emit('order:status-updated', {
+                            orderId: finalOrder._id,
+                            status: 'delivery_failed',
+                            message: 'Giao hàng thất bại - Không gặp người nhận'
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ Error in timeout handler:', error);
+                }
+            }, 40000); // 40 giây
+
+        } catch (error) {
+            console.error('❌ Error in arrival handler:', error);
+        }
+    }, 5000); // 5 giây
+
     // Simulation parameters
     const updateInterval = 2000; // Update every 2 seconds
     const totalSteps = Math.ceil((estimatedTimeMinutes * 60 * 1000) / updateInterval); // Total number of updates
@@ -347,8 +418,147 @@ const getActiveSimulations = asyncHandler(async(req, res) => {
     });
 });
 
+/**
+ * @desc    Giả lập drone đã đến địa điểm giao hàng (cho timeout testing)
+ * @route   POST /api/drone-sim/arrive/:orderId
+ * @access  Public (for testing)
+ */
+const simulateDroneArrival = asyncHandler(async(req, res) => {
+    const { orderId } = req.params;
+    const {
+        handleDroneArrived
+    } = require('../services/droneDeliveryTimeoutService');
+
+    // Support both orderId formats: ObjectId or custom "ORD..." string
+    let order;
+    if (orderId.startsWith('ORD')) {
+        order = await Order.findOne({ orderId: orderId })
+            .populate('drone')
+            .populate('user', 'name phone');
+    } else {
+        order = await Order.findById(orderId)
+            .populate('drone')
+            .populate('user', 'name phone');
+    }
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+
+    if (order.status !== 'delivering') {
+        res.status(400);
+        throw new Error(`Order must be in 'delivering' status. Current: ${order.status}`);
+    }
+
+    const result = await handleDroneArrived(
+        order._id, // Use MongoDB ObjectId
+        order.drone._id,
+        order.deliveryInfo.location
+    );
+
+    res.status(200).json({
+        success: true,
+        message: '🚁 Drone arrived! Waiting for customer...',
+        data: result
+    });
+});
+
+/**
+ * @desc    Giả lập khách hàng nhận hàng
+ * @route   POST /api/drone-sim/confirm/:orderId
+ * @access  Public (for testing)
+ */
+const simulateCustomerConfirmation = asyncHandler(async(req, res) => {
+    const { orderId } = req.params;
+    const {
+        confirmDeliveryReceived
+    } = require('../services/droneDeliveryTimeoutService');
+
+    // Support both orderId formats: ObjectId or custom "ORD..." string
+    let order;
+    if (orderId.startsWith('ORD')) {
+        order = await Order.findOne({ orderId: orderId });
+    } else {
+        order = await Order.findById(orderId);
+    }
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+
+    const result = await confirmDeliveryReceived(order._id);
+
+    res.status(200).json({
+        success: true,
+        message: '✅ Delivery confirmed!',
+        data: result
+    });
+});
+
+/**
+ * @desc    Xem status delivery process
+ * @route   GET /api/drone-sim/status/:orderId
+ * @access  Public (for testing)
+ */
+const getDeliveryStatus = asyncHandler(async(req, res) => {
+    const { orderId } = req.params;
+    const {
+        getWaitingStatus,
+        WAITING_TIMEOUT
+    } = require('../services/droneDeliveryTimeoutService');
+
+    // Support both orderId formats: ObjectId or custom "ORD..." string
+    let order;
+    if (orderId.startsWith('ORD')) {
+        order = await Order.findOne({ orderId: orderId })
+            .populate('drone', 'name status')
+            .populate('user', 'name phone');
+    } else {
+        order = await Order.findById(orderId)
+            .populate('drone', 'name status')
+            .populate('user', 'name phone');
+    }
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+
+    const waitingStatus = getWaitingStatus(order._id);
+
+    let timeRemaining = null;
+    if (order.status === 'waiting_for_customer' && order.waitingStartedAt) {
+        const elapsed = Date.now() - new Date(order.waitingStartedAt).getTime();
+        timeRemaining = Math.max(0, Math.round((WAITING_TIMEOUT - elapsed) / 1000));
+    }
+
+    res.status(200).json({
+        success: true,
+        data: {
+            order: {
+                id: order._id,
+                orderNumber: order.orderNumber,
+                status: order.status,
+                arrivedAt: order.arrivedAt,
+                waitingStartedAt: order.waitingStartedAt,
+                deliveredAt: order.deliveredAt,
+                deliveryFailedAt: order.deliveryFailedAt
+            },
+            waiting: {
+                isActive: waitingStatus.isWaiting,
+                timeRemaining: timeRemaining ? `${timeRemaining}s` : null
+            }
+        }
+    });
+});
+
 module.exports = {
     startDeliverySimulation,
     stopDeliverySimulation,
     getActiveSimulations,
+    simulateDroneArrival,
+    simulateCustomerConfirmation,
+    getDeliveryStatus
 };

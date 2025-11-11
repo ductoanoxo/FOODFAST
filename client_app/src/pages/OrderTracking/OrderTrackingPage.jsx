@@ -12,11 +12,15 @@ import {
   InfoCircleOutlined,
   InboxOutlined,
   FrownOutlined,
-  FieldTimeOutlined
+  FieldTimeOutlined,
+  CloseCircleOutlined,
+  RollbackOutlined,
+  ShopOutlined
 } from '@ant-design/icons';
 import { orderAPI } from '../../api/orderAPI';
 import socketService from '../../services/socketService';
 import DroneMap from './DroneMap';
+import DeliveryTimeout from '../../components/DeliveryTimeout/DeliveryTimeout';
 import './OrderTrackingPage.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -142,7 +146,11 @@ const OrderTrackingPage = () => {
       'preparing': 1,
       'ready': 2,
       'delivering': 2,
+      'waiting_for_customer': 2, // Vẫn ở step "Đang giao" nhưng đang chờ nhận
       'delivered': 3,
+      'delivery_failed': 2, // Thất bại ở step giao hàng
+      'returning_to_restaurant': 2,
+      'returned': 2,
       'cancelled': -1,
     };
     return statusMap[status] ?? 0;
@@ -155,7 +163,11 @@ const OrderTrackingPage = () => {
       'preparing': { text: 'Đang chuẩn bị', color: 'cyan', icon: <CheckCircleOutlined /> },
       'ready': { text: 'Sẵn sàng giao', color: 'purple', icon: <RocketOutlined /> },
       'delivering': { text: 'Đang giao', color: 'volcano', icon: <RocketOutlined /> },
+      'waiting_for_customer': { text: 'Đang chờ nhận hàng', color: 'gold', icon: <ClockCircleOutlined /> },
       'delivered': { text: 'Đã giao', color: 'green', icon: <HomeOutlined /> },
+      'delivery_failed': { text: 'Giao hàng thất bại', color: 'red', icon: <CloseCircleOutlined /> },
+      'returning_to_restaurant': { text: 'Đang hoàn trả', color: 'orange', icon: <RollbackOutlined /> },
+      'returned': { text: 'Đã hoàn trả', color: 'purple', icon: <ShopOutlined /> },
       'cancelled': { text: 'Đã hủy', color: 'red', icon: <FrownOutlined /> },
     };
     return info[status] || { text: status, color: 'default', icon: <InfoCircleOutlined /> };
@@ -226,6 +238,24 @@ const OrderTrackingPage = () => {
         </>
       )
     }] : []),
+    ...(order.arrivedAt ? [{
+      color: 'gold',
+      children: (
+        <>
+          <Text strong>🚁 Drone đã đến nơi - Đang chờ bạn nhận hàng</Text>
+          <br />
+          <Text type="secondary">{new Date(order.arrivedAt).toLocaleString('vi-VN')}</Text>
+          {order.status === 'waiting_for_customer' && (
+            <>
+              <br />
+              <Text type="warning" strong>
+                ⏰ Vui lòng ra ngoài nhận hàng trong 5 phút!
+              </Text>
+            </>
+          )}
+        </>
+      )
+    }] : []),
     ...(order.deliveredAt ? [{
       color: 'green',
       children: (
@@ -233,6 +263,48 @@ const OrderTrackingPage = () => {
           <Text strong>Đã giao hàng thành công</Text>
           <br />
           <Text type="secondary">{new Date(order.deliveredAt).toLocaleString('vi-VN')}</Text>
+        </>
+      )
+    }] : []),
+    ...(order.status === 'delivery_failed' ? [{
+      color: 'red',
+      children: (
+        <>
+          <Text strong type="danger">❌ Giao hàng thất bại - Không gặp người nhận</Text>
+          <br />
+          <Text type="secondary">Drone đã chờ quá thời gian qui định (5 phút)</Text>
+          {order.timeoutAt && (
+            <>
+              <br />
+              <Text type="secondary">{new Date(order.timeoutAt).toLocaleString('vi-VN')}</Text>
+            </>
+          )}
+        </>
+      )
+    }] : []),
+    ...(order.status === 'returning_to_restaurant' ? [{
+      color: 'orange',
+      children: (
+        <>
+          <Text strong type="warning">🔙 Drone đang quay lại nhà hàng</Text>
+          <br />
+          <Text type="secondary">Vui lòng liên hệ nhà hàng để sắp xếp giao hàng lại</Text>
+        </>
+      )
+    }] : []),
+    ...(order.status === 'returned' ? [{
+      color: 'purple',
+      children: (
+        <>
+          <Text strong>📦 Đơn hàng đã được hoàn trả về nhà hàng</Text>
+          <br />
+          <Text type="secondary">Vui lòng liên hệ nhà hàng để sắp xếp giao hàng lại hoặc yêu cầu hoàn tiền</Text>
+          {order.returnedAt && (
+            <>
+              <br />
+              <Text type="secondary">{new Date(order.returnedAt).toLocaleString('vi-VN')}</Text>
+            </>
+          )}
         </>
       )
     }] : []),
@@ -267,7 +339,17 @@ const OrderTrackingPage = () => {
               <Steps current={currentStep} status={order.status === 'cancelled' ? 'error' : 'process'} className="tracking-steps-re">
                 <Step title="Đặt hàng" icon={<ShoppingCartOutlined />} description="Đã nhận yêu cầu" />
                 <Step title="Chuẩn bị" icon={<CheckCircleOutlined />} description="Nhà hàng đang chuẩn bị" />
-                <Step title="Đang giao" icon={<RocketOutlined />} description="Drone đang trên đường" />
+                <Step 
+                  title="Đang giao" 
+                  icon={<RocketOutlined />} 
+                  description={
+                    order.status === 'waiting_for_customer' 
+                      ? '⏰ Drone đã đến - Chờ nhận hàng' 
+                      : order.status === 'delivery_failed'
+                      ? '❌ Giao thất bại'
+                      : 'Drone đang trên đường'
+                  } 
+                />
                 <Step title="Hoàn thành" icon={<HomeOutlined />} description="Đã giao đến bạn" />
               </Steps>
             </Card>
@@ -276,8 +358,11 @@ const OrderTrackingPage = () => {
               <Title level={4} style={{ marginTop: 0 }}>Lịch sử cập nhật</Title>
               <Timeline mode="left" items={timelineItems} className="tracking-timeline-re" />
               
+              {/* Hiển thị countdown timer khi drone đang chờ khách */}
+              <DeliveryTimeout order={order} />
+              
               <div className="action-buttons-re">
-                {order.status === 'delivering' && (
+                {(order.status === 'delivering' || order.status === 'waiting_for_customer') && (
                   <Button type="primary" size="large" icon={<CheckOutlined />} onClick={() => setConfirmModalVisible(true)}>
                     Tôi đã nhận được hàng
                   </Button>

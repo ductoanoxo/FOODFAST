@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 
@@ -15,8 +14,9 @@
         }
     </style>
 </head>
-    
+
 <body>
+<<<<<<< HEAD
 <div class='wrapper'>
     <div class='pad1'>
         <h1><a href="../index.html">All files</a> / <a href="index.html">Routers</a> productRouter.js</h1>
@@ -55,14 +55,60 @@
             Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
         </p>
         <template id="filterTemplate">
+=======
+    <div class='wrapper'>
+        <div class='pad1'>
+            <h1><a href="../index.html">All files</a> / <a href="index.html">Routers</a> productRouter.js</h1>
+            <div class='clearfix'>
+
+                <div class='fl pad1y space-right2'>
+                    <span class="strong">100% </span>
+                    <span class="quiet">Statements</span>
+                    <span class='fraction'>10/10</span>
+                </div>
+
+
+                <div class='fl pad1y space-right2'>
+                    <span class="strong">100% </span>
+                    <span class="quiet">Branches</span>
+                    <span class='fraction'>0/0</span>
+                </div>
+
+
+                <div class='fl pad1y space-right2'>
+                    <span class="strong">100% </span>
+                    <span class="quiet">Functions</span>
+                    <span class='fraction'>0/0</span>
+                </div>
+
+
+                <div class='fl pad1y space-right2'>
+                    <span class="strong">100% </span>
+                    <span class="quiet">Lines</span>
+                    <span class='fraction'>10/10</span>
+                </div>
+
+
+            </div>
+            <p class="quiet">
+                Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+            </p>
+            <template id="filterTemplate">
+>>>>>>> origin/main
             <div class="quiet">
                 Filter:
                 <input type="search" id="fileSearch">
             </div>
         </template>
+<<<<<<< HEAD
     </div>
     <div class='status-line low'></div>
     <pre><table class="coverage">
+=======
+        </div>
+        <div class='status-line high'></div>
+        <pre><table class="coverage">
+>>>>>>> origin/main
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
 <a name='L3'></a><a href='#L3'>3</a>
@@ -88,9 +134,15 @@
 <a name='L23'></a><a href='#L23'>23</a>
 <a name='L24'></a><a href='#L24'>24</a>
 <a name='L25'></a><a href='#L25'>25</a>
+<<<<<<< HEAD
 <a name='L26'></a><a href='#L26'>26</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+=======
+<a name='L26'></a><a href='#L26'>26</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+>>>>>>> origin/main
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -98,6 +150,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<<<<<<< HEAD
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -109,13 +162,32 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+=======
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+>>>>>>> origin/main
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<<<<<<< HEAD
 <span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const express = <span class="cstat-no" title="statement not covered" >require('express')</span>
 const router = <span class="cstat-no" title="statement not covered" >express.Router()</span>
 const { productUpload } = <span class="cstat-no" title="statement not covered" >require('../../config/cloudinary')</span>
+=======
+<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">const express = require('express')
+const router = express.Router()
+const { productUpload } = require('../../config/cloudinary')
+>>>>>>> origin/main
 const {
     getProducts,
     getProductById,
@@ -138,6 +210,7 @@ const { protect, authorize } = <span class="cstat-no" title="statement not cover
     .put(protect, authorize('restaurant', 'admin'), productUpload.single('image'), updateProduct)
     .delete(protect, authorize('restaurant', 'admin'), deleteProduct)
 &nbsp;
+<<<<<<< HEAD
 <span class="cstat-no" title="statement not covered" >module.exports = router</span></pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -158,3 +231,29 @@ const { protect, authorize } = <span class="cstat-no" title="statement not cover
     </body>
 </html>
     
+=======
+module.exports = router</pre></td>
+        </tr>
+        </table>
+        </pre>
+
+        <div class='push'></div>
+        <!-- for sticky footer -->
+    </div>
+    <!-- /wrapper -->
+    <div class='footer quiet pad2 space-top1 center small'>
+        Code coverage generated by
+        <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a> at 2025-11-11T15:36:35.506Z
+    </div>
+    <script src="../prettify.js"></script>
+    <script>
+        window.onload = function() {
+            prettyPrint();
+        };
+    </script>
+    <script src="../sorter.js"></script>
+    <script src="../block-navigation.js"></script>
+</body>
+
+</html>
+>>>>>>> origin/main
