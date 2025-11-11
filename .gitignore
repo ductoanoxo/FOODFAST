@@ -4,3 +4,16 @@ node_modules/
 .pnp
 .pnp.js
 server_app/logs/
+
+# Test Coverage
+coverage/
+*/coverage/
+*.lcov
+.nyc_output
+lcov-report/
+*/lcov-report/
+server_app/coverage/
+client_app/coverage/
+restaurant_app/coverage/
+admin_app/coverage/
+drone_manage/coverage/
