@@ -37,17 +37,21 @@ describe('Checkout Order Flow - Integration Test', () => {
       };
     });
 
-    // Mock geolocation
-    global.navigator.geolocation = {
-      getCurrentPosition: vi.fn((success) => {
-        success({
-          coords: {
-            latitude: 10.8231,
-            longitude: 106.6297,
-          },
-        });
-      }),
-    };
+    // Mock geolocation using Object.defineProperty
+    Object.defineProperty(global.navigator, 'geolocation', {
+      value: {
+        getCurrentPosition: vi.fn((success) => {
+          success({
+            coords: {
+              latitude: 10.8231,
+              longitude: 106.6297,
+            },
+          });
+        }),
+      },
+      writable: true,
+      configurable: true,
+    });
 
     // Mock localStorage
     Storage.prototype.getItem = vi.fn((key) => {
