@@ -1,22 +1,27 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Badge,
   Dropdown,
+  List,
   Button,
   Tag,
   Space,
   Modal,
   message,
   Empty,
+  Divider,
   Card,
 } from 'antd';
 import {
   BellOutlined,
   WarningOutlined,
   InfoCircleOutlined,
+  CheckCircleOutlined,
   CloseCircleOutlined,
-}
-from '@ant-design/icons';
+  ThunderboltOutlined,
+  ThunderboltFilled,
+  EnvironmentOutlined,
+} from '@ant-design/icons';
 import socketService from '../../services/socketService';
 import './AlertCenter.css';
 
@@ -25,30 +30,32 @@ const AlertCenter = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState(null);
-  const soundEnabled = true;
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
-  const saveAlertsToStorage = useCallback((newAlerts) => {
-    localStorage.setItem('admin_alerts', JSON.stringify(newAlerts));
+  useEffect(() => {
+    initializeSocket();
+    loadAlertsFromStorage();
+
+    return () => {
+      socketService.off('drone:emergency');
+      socketService.off('alert:low-battery');
+      socketService.off('drone:offline');
+      socketService.off('assignment:rejected');
+    };
   }, []);
 
-  const addAlert = useCallback((alert) => {
-    setAlerts(prev => {
-      const newAlerts = [{ ...alert, read: false }, ...prev];
-      // Keep only last 50 alerts
-      const limited = newAlerts.slice(0, 50);
-      saveAlertsToStorage(limited);
-      return limited;
-    });
-    setUnreadCount(prev => prev + 1);
-
-    // Show notification
-    if (alert.severity === 'critical') {
-      message.error(alert.title, 5);
-    } else if (alert.severity === 'warning') {
-      message.warning(alert.title, 3);
-    } else {
-      message.info(alert.title, 2);
+  const loadAlertsFromStorage = () => {
+    const stored = localStorage.getItem('admin_alerts');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setAlerts(parsed);
+        setUnreadCount(parsed.filter(a => !a.read).length);
+      } catch (error) {
+        console.error('Error loading alerts:', error);
+      }
     }
+<<<<<<< HEAD
   }, [setAlerts, setUnreadCount, saveAlertsToStorage]);
 
   const playAlertSound = useCallback((severity) => {
@@ -67,8 +74,15 @@ const AlertCenter = () => {
       console.log('Audio not available');
     }
   }, [soundEnabled]);
+=======
+  };
+>>>>>>> parent of c1a1dc0 (5:03)
 
-  const initializeSocket = useCallback(() => {
+  const saveAlertsToStorage = (newAlerts) => {
+    localStorage.setItem('admin_alerts', JSON.stringify(newAlerts));
+  };
+
+  const initializeSocket = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -132,6 +146,7 @@ const AlertCenter = () => {
         });
       });
     }
+<<<<<<< HEAD
   }, [addAlert, playAlertSound]);
 
   const loadAlertsFromStorage = useCallback(() => {
@@ -146,18 +161,29 @@ const AlertCenter = () => {
       }
     }
   }, [setAlerts, setUnreadCount]);
+=======
+  };
+>>>>>>> parent of c1a1dc0 (5:03)
 
-  useEffect(() => {
-    initializeSocket();
-    loadAlertsFromStorage();
+  const addAlert = (alert) => {
+    setAlerts(prev => {
+      const newAlerts = [{ ...alert, read: false }, ...prev];
+      // Keep only last 50 alerts
+      const limited = newAlerts.slice(0, 50);
+      saveAlertsToStorage(limited);
+      return limited;
+    });
+    setUnreadCount(prev => prev + 1);
 
-    return () => {
-      socketService.off('drone:emergency');
-      socketService.off('alert:low-battery');
-      socketService.off('drone:offline');
-      socketService.off('assignment:rejected');
-    };
-  }, [initializeSocket, loadAlertsFromStorage]);
+    // Show notification
+    if (alert.severity === 'critical') {
+      message.error(alert.title, 5);
+    } else if (alert.severity === 'warning') {
+      message.warning(alert.title, 3);
+    } else {
+      message.info(alert.title, 2);
+    }
+  };
 
   const markAsRead = (alertId) => {
     setAlerts(prev => {
@@ -189,6 +215,13 @@ const AlertCenter = () => {
     if (alert && !alert.read) {
       setUnreadCount(prev => Math.max(0, prev - 1));
     }
+  };
+
+  const clearAllAlerts = () => {
+    setAlerts([]);
+    setUnreadCount(0);
+    saveAlertsToStorage([]);
+    message.success('All alerts cleared');
   };
 
   const getSeverityIcon = (severity) => {

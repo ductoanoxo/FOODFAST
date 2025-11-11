@@ -10,7 +10,6 @@ import {
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import PropTypes from 'prop-types';
 import * as adminAPI from '../../api/adminAPI';
 import socketService from '../../services/socketService';
 import { MAP_CONFIG, getTileLayerConfig } from '../../config/mapConfig';
@@ -77,10 +76,6 @@ const MapUpdater = ({ drones }) => {
   return null;
 };
 
-MapUpdater.propTypes = {
-  drones: PropTypes.array.isRequired,
-};
-
 const FleetMap = () => {
   const [drones, setDrones] = useState([]);
   const [stats, setStats] = useState(null);
@@ -92,7 +87,26 @@ const FleetMap = () => {
   const tileConfig = getTileLayerConfig();
   const defaultCenter = [MAP_CONFIG.defaultCenter.lat, MAP_CONFIG.defaultCenter.lng];
 
-  const fetchData = useCallback(async () => {
+  useEffect(() => {
+    fetchData();
+    initializeSocket();
+
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+
+    return () => {
+      clearInterval(interval);
+      socketService.off('fleet:status');
+      socketService.off('fleet:location-update');
+      socketService.off('drone:online');
+      socketService.off('drone:offline');
+      socketService.off('drone:created');
+      socketService.off('drone:updated');
+      socketService.off('drone:deleted');
+    };
+  }, []);
+
+  const fetchData = async () => {
     try {
       setLoading(true);
       const [mapRes, statsRes] = await Promise.all([
@@ -107,9 +121,13 @@ const FleetMap = () => {
     } finally {
       setLoading(false);
     }
+<<<<<<< HEAD
   }, [setLoading, setDrones, setStats]);
+=======
+  };
+>>>>>>> parent of c1a1dc0 (5:03)
 
-  const initializeSocket = useCallback(() => {
+  const initializeSocket = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -188,6 +206,7 @@ const FleetMap = () => {
       message.info(`🗑️ Drone ${data.droneName} has been deleted`);
       fetchData(); // Refresh to remove deleted drone
     });
+<<<<<<< HEAD
   }, [fetchData, setDrones]);
 
   useEffect(() => {
@@ -208,6 +227,9 @@ const FleetMap = () => {
       socketService.off('drone:deleted');
     };
   }, [fetchData, initializeSocket]);
+=======
+  };
+>>>>>>> parent of c1a1dc0 (5:03)
 
   const handleDroneClick = (drone) => {
     setSelectedDrone(drone);
@@ -233,6 +255,12 @@ const FleetMap = () => {
       maintenance: 'gray',
     };
     return colors[status] || 'default';
+  };
+
+  const getBatteryColor = (level) => {
+    if (level >= 70) return 'success';
+    if (level >= 40) return 'warning';
+    return 'danger';
   };
 
   if (loading && drones.length === 0) {
