@@ -63,10 +63,10 @@ jobs:
           echo "=========================================="
           echo "🧪 Running Server Unit Tests"
           echo "=========================================="
-          if npm test 2>&1 | tee test-output.log; then
+          if npm run test:unit 2>&1 | tee test-output.log; then
             echo "✅ Unit tests passed"
           else
-            if grep -q "No tests found" test-output.log; then
+            if grep -q "No tests found" test-output.log || grep -q "0 tests" test-output.log; then
               echo "⚠️  No unit tests found - will add later"
               exit 0
             else
@@ -85,11 +85,16 @@ jobs:
           echo "=========================================="
           echo "🧪 Running Server Integration Tests"
           echo "=========================================="
-          if [ -f "package.json" ] && grep -q "test:integration" package.json; then
-            npm run test:integration
+          if npm run test:integration 2>&1 | tee integration-output.log; then
             echo "✅ Integration tests passed"
           else
-            echo "⚠️  No integration tests configured - will add later"
+            if grep -q "No tests found" integration-output.log || grep -q "0 tests" integration-output.log; then
+              echo "⚠️  No integration tests found - will add later"
+              exit 0
+            else
+              echo "❌ Integration tests failed"
+              exit 1
+            fi
           fi
 
       - name: Generate Coverage Report
@@ -102,7 +107,7 @@ jobs:
           echo "=========================================="
           echo "📊 Generating Coverage Report for Server"
           echo "=========================================="
-          npm test -- --coverage || echo "⚠️  Coverage generation skipped"
+          npm run test:coverage || echo "⚠️  Coverage generation skipped"
 
       - name: Upload Server Coverage
         uses: codecov/codecov-action@v4
@@ -177,13 +182,24 @@ jobs:
           echo "=========================================="
           if [ -f "package.json" ] && grep -q "test:integration" package.json; then
             if npm run test:integration 2>&1 | tee integration-output.log; then
-              echo "✅ Integration tests passed for ${{ matrix.app }}"
+              # Kiểm tra xem có thực sự pass không (không có lỗi và có tests chạy hoặc không có tests)
+              if grep -q "Test Files.*no tests" integration-output.log && grep -q "Errors.*1 error" integration-output.log; then
+                echo "❌ Integration tests have errors for ${{ matrix.app }}"
+                cat integration-output.log
+                exit 1
+              elif grep -q "no tests" integration-output.log; then
+                echo "⚠️  No integration tests found for ${{ matrix.app }} - will add later"
+                exit 0
+              else
+                echo "✅ Integration tests passed for ${{ matrix.app }}"
+              fi
             else
-              if grep -q "No test files found" integration-output.log || grep -q "0 passed" integration-output.log; then
+              if grep -q "No test files found" integration-output.log || grep -q "Test Files.*no tests" integration-output.log; then
                 echo "⚠️  No integration tests found for ${{ matrix.app }} - will add later"
                 exit 0
               else
                 echo "❌ Integration tests failed for ${{ matrix.app }}"
+                cat integration-output.log
                 exit 1
               fi
             fi
