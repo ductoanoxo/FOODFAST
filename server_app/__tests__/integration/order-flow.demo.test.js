@@ -143,7 +143,7 @@ describe('🚀 ORDER FLOW - INTEGRATION TEST (DEMO)', () => {
     test('✅ FLOW 2: Phí ship được TÍNH ĐÚNG dựa trên khoảng cách', async() => {
         const orderData = {
             items: [{
-                product: testProduct.      _id,
+                product: testProduct._id,
                 quantity: 1
             }],
             deliveryInfo: {

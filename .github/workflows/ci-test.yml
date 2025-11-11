@@ -67,14 +67,17 @@ jobs:
           echo "=========================================="
           echo "🧪 Running Server Unit Tests"
           echo "=========================================="
-          if npm run test:unit 2>&1 | tee test-output.log; then
+          npm run test:unit 2>&1 | tee test-output.log
+          TEST_EXIT_CODE=${PIPESTATUS[0]}
+          
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
             echo "✅ Unit tests passed"
           else
             if grep -q "No tests found" test-output.log || grep -q "0 tests" test-output.log; then
               echo "⚠️  No unit tests found - will add later"
               exit 0
             else
-              echo "❌ Unit tests failed"
+              echo "❌ Unit tests failed with exit code $TEST_EXIT_CODE"
               exit 1
             fi
           fi
@@ -89,14 +92,17 @@ jobs:
           echo "=========================================="
           echo "🧪 Running Server Integration Tests"
           echo "=========================================="
-          if npm run test:integration 2>&1 | tee integration-output.log; then
+          npm run test:integration 2>&1 | tee integration-output.log
+          TEST_EXIT_CODE=${PIPESTATUS[0]}
+          
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
             echo "✅ Integration tests passed"
           else
             if grep -q "No tests found" integration-output.log || grep -q "0 tests" integration-output.log; then
               echo "⚠️  No integration tests found - will add later"
               exit 0
             else
-              echo "❌ Integration tests failed"
+              echo "❌ Integration tests failed with exit code $TEST_EXIT_CODE"
               exit 1
             fi
           fi
@@ -160,27 +166,23 @@ jobs:
           echo "🧪 Running Unit Tests for ${{ matrix.app }}"
           echo "=========================================="
           if [ -f "package.json" ] && grep -q "test:unit" package.json; then
-            if npm run test:unit 2>&1 | tee test-output.log; then
-              # Kiểm tra xem có tests bị skip không
-              if grep -q "skipped" test-output.log; then
-                echo "⚠️  Some unit tests are skipped for ${{ matrix.app }}"
-                echo "⚠️  Please remove .skip or implement the tests"
-                grep "skipped" test-output.log
-                exit 0
-              elif grep -q "No test files found" test-output.log || grep -q "Test Files.*0" test-output.log || grep -q "no tests" test-output.log; then
-                echo "⚠️  No unit tests found for ${{ matrix.app }} - will add later"
-                exit 0
-              else
-                echo "✅ Unit tests passed for ${{ matrix.app }}"
-              fi
+            npm run test:unit 2>&1 | tee test-output.log
+            TEST_EXIT_CODE=${PIPESTATUS[0]}
+            
+            # Kiểm tra xem có tests bị skip không
+            if grep -q "skipped" test-output.log; then
+              echo "⚠️  Some unit tests are skipped for ${{ matrix.app }}"
+              echo "⚠️  Please remove .skip or implement the tests"
+              grep "skipped" test-output.log
+              exit 0
+            elif grep -q "No test files found" test-output.log || grep -q "Test Files.*0" test-output.log || grep -q "no tests" test-output.log; then
+              echo "⚠️  No unit tests found for ${{ matrix.app }} - will add later"
+              exit 0
+            elif [ $TEST_EXIT_CODE -eq 0 ]; then
+              echo "✅ Unit tests passed for ${{ matrix.app }}"
             else
-              if grep -q "No test files found" test-output.log || grep -q "0 passed" test-output.log; then
-                echo "⚠️  No unit tests found for ${{ matrix.app }} - will add later"
-                exit 0
-              else
-                echo "❌ Unit tests failed for ${{ matrix.app }}"
-                exit 1
-              fi
+              echo "❌ Unit tests failed for ${{ matrix.app }} with exit code $TEST_EXIT_CODE"
+              exit 1
             fi
           else
             echo "⚠️  No unit tests configured for ${{ matrix.app }} - will add later"
@@ -196,33 +198,29 @@ jobs:
           echo "🧪 Running Integration Tests for ${{ matrix.app }}"
           echo "=========================================="
           if [ -f "package.json" ] && grep -q "test:integration" package.json; then
-            if npm run test:integration 2>&1 | tee integration-output.log; then
-              # Kiểm tra xem có tests bị skip không
-              if grep -q "skipped" integration-output.log; then
-                echo "⚠️  Some integration tests are skipped for ${{ matrix.app }}"
-                echo "⚠️  Please remove .skip or implement the tests"
-                grep "skipped" integration-output.log
-                exit 0
-              # Kiểm tra xem có lỗi không
-              elif grep -q "Test Files.*no tests" integration-output.log && grep -q "Errors.*1 error" integration-output.log; then
-                echo "❌ Integration tests have errors for ${{ matrix.app }}"
-                cat integration-output.log
-                exit 1
-              elif grep -q "no tests" integration-output.log || grep -q "Test Files.*0" integration-output.log; then
-                echo "⚠️  No integration tests found for ${{ matrix.app }} - will add later"
-                exit 0
-              else
-                echo "✅ Integration tests passed for ${{ matrix.app }}"
-              fi
+            npm run test:integration 2>&1 | tee integration-output.log
+            TEST_EXIT_CODE=${PIPESTATUS[0]}
+            
+            # Kiểm tra xem có tests bị skip không
+            if grep -q "skipped" integration-output.log; then
+              echo "⚠️  Some integration tests are skipped for ${{ matrix.app }}"
+              echo "⚠️  Please remove .skip or implement the tests"
+              grep "skipped" integration-output.log
+              exit 0
+            # Kiểm tra xem có lỗi không
+            elif grep -q "Test Files.*no tests" integration-output.log && grep -q "Errors.*1 error" integration-output.log; then
+              echo "❌ Integration tests have errors for ${{ matrix.app }}"
+              cat integration-output.log
+              exit 1
+            elif grep -q "no tests" integration-output.log || grep -q "Test Files.*0" integration-output.log; then
+              echo "⚠️  No integration tests found for ${{ matrix.app }} - will add later"
+              exit 0
+            elif [ $TEST_EXIT_CODE -eq 0 ]; then
+              echo "✅ Integration tests passed for ${{ matrix.app }}"
             else
-              if grep -q "No test files found" integration-output.log || grep -q "Test Files.*no tests" integration-output.log; then
-                echo "⚠️  No integration tests found for ${{ matrix.app }} - will add later"
-                exit 0
-              else
-                echo "❌ Integration tests failed for ${{ matrix.app }}"
-                cat integration-output.log
-                exit 1
-              fi
+              echo "❌ Integration tests failed for ${{ matrix.app }} with exit code $TEST_EXIT_CODE"
+              cat integration-output.log
+              exit 1
             fi
           else
             echo "⚠️  No integration tests configured for ${{ matrix.app }} - will add later"

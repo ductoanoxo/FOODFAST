@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/13</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/13</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -89,8 +89,8 @@
 <a name='L24'></a><a href='#L24'>24</a>
 <a name='L25'></a><a href='#L25'>25</a>
 <a name='L26'></a><a href='#L26'>26</a>
-<a name='L27'></a><a href='#L27'>27</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L27'></a><a href='#L27'>27</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -99,24 +99,24 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const express = <span class="cstat-no" title="statement not covered" >require('express')</span>
-const router = <span class="cstat-no" title="statement not covered" >express.Router()</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const express = require('express')
+const router = express.Router()
 const {
     getPromotions,
     getActivePromotions,
@@ -125,22 +125,22 @@ const {
     deletePromotion,
     togglePromotionStatus,
     getProductsWithPromotions,
-} = <span class="cstat-no" title="statement not covered" >require('../Controllers/promotionController')</span>
-const { protect, authorize } = <span class="cstat-no" title="statement not covered" >require('../Middleware/authMiddleware')</span>
+} = require('../Controllers/promotionController')
+const { protect, authorize } = require('../Middleware/authMiddleware')
 &nbsp;
 // Public routes
-<span class="cstat-no" title="statement not covered" >router.get('/active/:restaurantId', getActivePromotions)</span>
-<span class="cstat-no" title="statement not covered" >router.get('/products/:restaurantId', getProductsWithPromotions)</span>
+router.get('/active/:restaurantId', getActivePromotions)
+router.get('/products/:restaurantId', getProductsWithPromotions)
 &nbsp;
 // Restaurant owner routes
-<span class="cstat-no" title="statement not covered" >router.use(protect, authorize('restaurant'))</span>
-<span class="cstat-no" title="statement not covered" >router.get('/', getPromotions)</span>
-<span class="cstat-no" title="statement not covered" >router.post('/', createPromotion)</span>
-<span class="cstat-no" title="statement not covered" >router.put('/:id', updatePromotion)</span>
-<span class="cstat-no" title="statement not covered" >router.delete('/:id', deletePromotion)</span>
-<span class="cstat-no" title="statement not covered" >router.patch('/:id/toggle', togglePromotionStatus)</span>
+router.use(protect, authorize('restaurant'))
+router.get('/', getPromotions)
+router.post('/', createPromotion)
+router.put('/:id', updatePromotion)
+router.delete('/:id', deletePromotion)
+router.patch('/:id/toggle', togglePromotionStatus)
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = router</span>
+module.exports = router
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -148,7 +148,7 @@ const { protect, authorize } = <span class="cstat-no" title="statement not cover
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-11T07:07:16.251Z
+                at 2025-11-11T10:59:27.650Z
             </div>
         <script src="../prettify.js"></script>
         <script>
