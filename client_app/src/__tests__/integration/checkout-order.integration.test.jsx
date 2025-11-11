@@ -2,16 +2,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders, createMockProduct, mockApiResponse } from '../testUtils';
-// import CheckoutPage from '../../pages/CheckoutPage'; // TODO: Implement CheckoutPage component
+import CheckoutPage from '../../pages/Checkout/CheckoutPage';
 import { addToCart } from '../../redux/slices/cartSlice';
 
 /**
  * INTEGRATION TEST: Complete Checkout Flow
  * Test quy trình đặt hàng hoàn chỉnh từ đầu đến cuối
  * Flow: Customer fills form → Submit order → API call → Cart clear → Navigate to success
- * 
- * NOTE: These tests are currently skipped because CheckoutPage component doesn't exist yet.
- * Uncomment when CheckoutPage is implemented.
  */
 
 vi.mock('react-router-dom', async () => {
@@ -22,7 +19,7 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-describe.skip('Checkout Order Flow - Integration Test (SKIPPED - CheckoutPage not implemented)', () => {
+describe('Checkout Order Flow - Integration Test', () => {
   let user;
   let mockNavigate;
   let store;
