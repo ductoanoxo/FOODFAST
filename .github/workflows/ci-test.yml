@@ -69,11 +69,11 @@ jobs:
           echo "=========================================="
           npm run test:unit 2>&1 | tee test-output.log
           
-          # Check for test failures
+          # Check for test failures from Jest output only
           if grep -q "No tests found" test-output.log || grep -q "0 tests" test-output.log; then
             echo "⚠️  No unit tests found - will add later"
             exit 0
-          elif grep -q "failed" test-output.log || grep -q "Test Suites:.*failed" test-output.log; then
+          elif grep -E "Test Suites:.*[0-9]+ failed" test-output.log || grep -E "Tests:.*[0-9]+ failed" test-output.log; then
             echo "❌ Unit tests failed"
             exit 1
           else
@@ -92,11 +92,11 @@ jobs:
           echo "=========================================="
           npm run test:integration 2>&1 | tee integration-output.log
           
-          # Check for test failures
+          # Check for test failures from Jest output only
           if grep -q "No tests found" integration-output.log || grep -q "0 tests" integration-output.log; then
             echo "⚠️  No integration tests found - will add later"
             exit 0
-          elif grep -q "failed" integration-output.log || grep -q "Test Suites:.*failed" integration-output.log; then
+          elif grep -E "Test Suites:.*[0-9]+ failed" integration-output.log || grep -E "Tests:.*[0-9]+ failed" integration-output.log; then
             echo "❌ Integration tests failed"
             exit 1
           else
@@ -164,11 +164,11 @@ jobs:
           if [ -f "package.json" ] && grep -q "test:unit" package.json; then
             npm run test:unit 2>&1 | tee test-output.log
             
-            # Check for test failures
+            # Check for test failures from Vitest/Jest output only
             if grep -q "No test files found" test-output.log || grep -q "Test Files.*0" test-output.log || grep -q "no tests" test-output.log; then
               echo "⚠️  No unit tests found for ${{ matrix.app }} - will add later"
               exit 0
-            elif grep -q "failed" test-output.log || grep -q "Test Suites:.*failed" test-output.log || grep -q "Tests:.*failed" test-output.log; then
+            elif grep -E "Test Suites:.*[0-9]+ failed" test-output.log || grep -E "Tests:.*[0-9]+ failed" test-output.log || grep -E "Test Files.*[0-9]+ failed" test-output.log; then
               echo "❌ Unit tests failed for ${{ matrix.app }}"
               exit 1
             elif grep -q "skipped" test-output.log; then
@@ -194,11 +194,11 @@ jobs:
           if [ -f "package.json" ] && grep -q "test:integration" package.json; then
             npm run test:integration 2>&1 | tee integration-output.log
             
-            # Check for test failures
+            # Check for test failures from Vitest/Jest output only
             if grep -q "no tests" integration-output.log || grep -q "Test Files.*0" integration-output.log || grep -q "No test files found" integration-output.log; then
               echo "⚠️  No integration tests found for ${{ matrix.app }} - will add later"
               exit 0
-            elif grep -q "failed" integration-output.log || grep -q "Test Suites:.*failed" integration-output.log || grep -q "Tests:.*failed" integration-output.log; then
+            elif grep -E "Test Suites:.*[0-9]+ failed" integration-output.log || grep -E "Tests:.*[0-9]+ failed" integration-output.log || grep -E "Test Files.*[0-9]+ failed" integration-output.log; then
               echo "❌ Integration tests failed for ${{ matrix.app }}"
               cat integration-output.log
               exit 1
