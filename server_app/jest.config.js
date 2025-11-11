@@ -44,13 +44,13 @@ module.exports = {
         '!**/node_modules/**',
     ],
 
-    // Ngưỡng coverage mục tiêu (realistic & achievable)
+    // Ngưỡng coverage yêu cầu: 100% cho tất cả metrics
     coverageThreshold: {
         global: {
-            statements: 45, // Đạt được: 47.74%
-            branches: 25, // Đạt được: 28.64%
-            functions: 35, // Đạt được: 39.53%
-            lines: 45, // Đạt được: 48.12%
+            statements: 100,
+            branches: 100,
+            functions: 100,
+            lines: 100,
         },
     },
 
