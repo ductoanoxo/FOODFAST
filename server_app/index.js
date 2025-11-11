@@ -33,15 +33,15 @@ app.use(
             'http://localhost:5174', // Restaurant App (Vite dev)
             'http://localhost:5175', // Admin App (Vite dev)
             'http://localhost:5176', // Drone App (Vite dev)
-            'http://localhost:3000',  // Client App (production)
-            'http://localhost:3001',  // Restaurant App (production)
-            'http://localhost:3002',  // Admin App (production)
-            'http://localhost:3003',  // Drone App (production)
+            'http://localhost:3000', // Client App (production)
+            'http://localhost:3001', // Restaurant App (production)
+            'http://localhost:3002', // Admin App (production)
+            'http://localhost:3003', // Drone App (production)
             // EC2 Production URLs
-            'http://3.85.205.219:3000',  // Client App on EC2
-            'http://3.85.205.219:3001',  // Admin App on EC2
-            'http://3.85.205.219:3002',  // Restaurant App on EC2
-            'http://3.85.205.219:3003',  // Drone App on EC2
+            'http://3.85.205.219:3000', // Client App on EC2
+            'http://3.85.205.219:3001', // Admin App on EC2
+            'http://3.85.205.219:3002', // Restaurant App on EC2
+            'http://3.85.205.219:3003', // Drone App on EC2
             // Env vars (fallback/override)
             process.env.CLIENT_URL,
             process.env.RESTAURANT_URL,
@@ -96,7 +96,10 @@ app.use('/api/refunds', require('./API/Routers/refundRouter')); // NEW: Refund m
 
 // Admin and dashboard routers
 app.use('/api/admin', require('./API/Routers/adminRouter'));
-app.use('/api/dashboard', require('./API/Routers/dashboardRouter'))
+app.use('/api/dashboard', require('./API/Routers/dashboardRouter'));
+
+// Drone delivery timeout simulation (testing endpoints)
+app.use('/api/drone-sim', require('./API/Routers/droneDeliveryTimeoutRouter'));
 
 // ---------------------- ERROR HANDLER ---------------------- //
 app.use(errorHandler);

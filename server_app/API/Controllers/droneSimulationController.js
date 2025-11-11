@@ -149,6 +149,77 @@ const startDeliverySimulation = asyncHandler(async(req, res) => {
         throw new Error('Socket service not available');
     }
 
+    // 🎯 DEMO LOGIC: Sau 5 giây → waiting_for_customer, sau 40 giây → timeout
+    setTimeout(async() => {
+        try {
+            // Sau 5 giây: Drone "đã đến" nơi giao hàng
+            const updatedOrder = await Order.findById(orderId);
+            if (!updatedOrder || updatedOrder.status !== 'delivering') {
+                console.log(`⚠️ Order ${orderId} status changed, skipping timeout logic`);
+                return;
+            }
+
+            updatedOrder.status = 'waiting_for_customer';
+            updatedOrder.arrivedAt = new Date();
+            await updatedOrder.save();
+
+            console.log(`⏰ Order ${orderId} → waiting_for_customer (40s countdown started)`);
+
+            // Emit socket event
+            if (socketService && socketService.io) {
+                socketService.io.emit('order:status-updated', {
+                    orderId: updatedOrder._id,
+                    status: 'waiting_for_customer',
+                    arrivedAt: updatedOrder.arrivedAt,
+                    message: 'Drone đã đến - Vui lòng nhận hàng trong 40 giây!'
+                });
+            }
+
+            // Set timeout 40 giây
+            setTimeout(async() => {
+                try {
+                    const finalOrder = await Order.findById(orderId).populate('drone');
+                    if (!finalOrder || finalOrder.status !== 'waiting_for_customer') {
+                        console.log(`✅ Order ${orderId} đã được nhận hoặc đã xử lý`);
+                        return;
+                    }
+
+                    // Timeout: Chuyển drone về available
+                    console.log(`❌ Order ${orderId} TIMEOUT! Drone về trạng thái sẵn sàng`);
+
+                    finalOrder.status = 'delivery_failed';
+                    finalOrder.cancelReason = 'Không gặp người nhận sau 40 giây';
+                    await finalOrder.save();
+
+                    // Drone về available
+                    if (finalOrder.drone) {
+                        const droneToFree = await Drone.findById(finalOrder.drone._id);
+                        if (droneToFree) {
+                            droneToFree.status = 'available';
+                            droneToFree.currentOrder = null;
+                            await droneToFree.save();
+                            console.log(`🚁 Drone ${droneToFree.name} → available`);
+                        }
+                    }
+
+                    // Emit socket event
+                    if (socketService && socketService.io) {
+                        socketService.io.emit('order:status-updated', {
+                            orderId: finalOrder._id,
+                            status: 'delivery_failed',
+                            message: 'Giao hàng thất bại - Không gặp người nhận'
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ Error in timeout handler:', error);
+                }
+            }, 40000); // 40 giây
+
+        } catch (error) {
+            console.error('❌ Error in arrival handler:', error);
+        }
+    }, 5000); // 5 giây
+
     // Simulation parameters
     const updateInterval = 2000; // Update every 2 seconds
     const totalSteps = Math.ceil((estimatedTimeMinutes * 60 * 1000) / updateInterval); // Total number of updates
@@ -358,9 +429,17 @@ const simulateDroneArrival = asyncHandler(async(req, res) => {
         handleDroneArrived
     } = require('../services/droneDeliveryTimeoutService');
 
-    const order = await Order.findById(orderId)
-        .populate('drone')
-        .populate('user', 'name phone');
+    // Support both orderId formats: ObjectId or custom "ORD..." string
+    let order;
+    if (orderId.startsWith('ORD')) {
+        order = await Order.findOne({ orderId: orderId })
+            .populate('drone')
+            .populate('user', 'name phone');
+    } else {
+        order = await Order.findById(orderId)
+            .populate('drone')
+            .populate('user', 'name phone');
+    }
 
     if (!order) {
         res.status(404);
@@ -373,7 +452,7 @@ const simulateDroneArrival = asyncHandler(async(req, res) => {
     }
 
     const result = await handleDroneArrived(
-        orderId,
+        order._id, // Use MongoDB ObjectId
         order.drone._id,
         order.deliveryInfo.location
     );
@@ -396,7 +475,20 @@ const simulateCustomerConfirmation = asyncHandler(async(req, res) => {
         confirmDeliveryReceived
     } = require('../services/droneDeliveryTimeoutService');
 
-    const result = await confirmDeliveryReceived(orderId);
+    // Support both orderId formats: ObjectId or custom "ORD..." string
+    let order;
+    if (orderId.startsWith('ORD')) {
+        order = await Order.findOne({ orderId: orderId });
+    } else {
+        order = await Order.findById(orderId);
+    }
+
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+
+    const result = await confirmDeliveryReceived(order._id);
 
     res.status(200).json({
         success: true,
@@ -417,16 +509,24 @@ const getDeliveryStatus = asyncHandler(async(req, res) => {
         WAITING_TIMEOUT
     } = require('../services/droneDeliveryTimeoutService');
 
-    const order = await Order.findById(orderId)
-        .populate('drone', 'name status')
-        .populate('user', 'name phone');
+    // Support both orderId formats: ObjectId or custom "ORD..." string
+    let order;
+    if (orderId.startsWith('ORD')) {
+        order = await Order.findOne({ orderId: orderId })
+            .populate('drone', 'name status')
+            .populate('user', 'name phone');
+    } else {
+        order = await Order.findById(orderId)
+            .populate('drone', 'name status')
+            .populate('user', 'name phone');
+    }
 
     if (!order) {
         res.status(404);
         throw new Error('Order not found');
     }
 
-    const waitingStatus = getWaitingStatus(orderId);
+    const waitingStatus = getWaitingStatus(order._id);
 
     let timeRemaining = null;
     if (order.status === 'waiting_for_customer' && order.waitingStartedAt) {
