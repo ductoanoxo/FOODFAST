@@ -53,30 +53,22 @@ jobs:
         working-directory: ./server_app
         run: npm ci
 
-      - name: Run unit tests
+      - name: Run all tests with coverage
         working-directory: ./server_app
         env:
           NODE_ENV: test
           MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
           JWT_SECRET: test-secret-key
-        run: npm test:unit || echo "No tests found"
+        run: npm test || echo "No tests found"
 
-      - name: Run integration tests
-        working-directory: ./server_app
-        env:
-          NODE_ENV: test
-          MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
-          JWT_SECRET: test-secret-key
-        run: npm run test:integration || echo "No integration tests found"
-
-      - name: Display coverage summary
+      - name: Display test coverage summary
         working-directory: ./server_app
         run: |
-          echo "📊 Server App Test Coverage Summary:"
+          echo "📊 Server App - Test Coverage Summary:"
           if [ -f coverage/coverage-summary.json ]; then
-            cat coverage/coverage-summary.json
+            node -e "const c=require('./coverage/coverage-summary.json').total; console.log('Lines:', c.lines.pct + '%', '| Statements:', c.statements.pct + '%', '| Functions:', c.functions.pct + '%', '| Branches:', c.branches.pct + '%')"
           else
-            echo "Coverage summary not found"
+            echo "Coverage not available"
           fi
         continue-on-error: true
 
@@ -111,38 +103,41 @@ jobs:
         working-directory: ./${{ matrix.app }}
         run: npm ci
 
-      - name: Run unit tests
+      - name: Run unit tests with coverage
         working-directory: ./${{ matrix.app }}
-        run: npm test -- --run --reporter=verbose || echo "No tests found for ${{ matrix.app }}"
+        run: npm run test:unit -- --coverage --reporter=verbose || echo "No tests found for ${{ matrix.app }}"
         env:
           NODE_ENV: test
           CI: true
           NODE_OPTIONS: '--no-warnings --experimental-vm-modules'
 
-      - name: Run integration tests
-        working-directory: ./${{ matrix.app }}
-        run: npm run test:integration -- --reporter=verbose || echo "No integration tests found for ${{ matrix.app }}"
-        env:
-          NODE_ENV: test
-          CI: true
-          NODE_OPTIONS: '--no-warnings --experimental-vm-modules'
-
-      - name: Generate test coverage
-        working-directory: ./${{ matrix.app }}
-        run: npm run test:coverage || echo "Coverage not configured for ${{ matrix.app }}"
-        continue-on-error: true
-        env:
-          NODE_ENV: test
-          CI: true
-
-      - name: Display coverage summary
+      - name: Display unit test coverage
         working-directory: ./${{ matrix.app }}
         run: |
-          echo "📊 ${{ matrix.app }} Test Coverage Summary:"
+          echo "📊 ${{ matrix.app }} - Unit Test Coverage:"
           if [ -f coverage/coverage-summary.json ]; then
-            cat coverage/coverage-summary.json
+            node -e "const c=require('./coverage/coverage-summary.json').total; console.log('Lines:', c.lines.pct + '%', '| Statements:', c.statements.pct + '%', '| Functions:', c.functions.pct + '%', '| Branches:', c.branches.pct + '%')"
           else
-            echo "Coverage summary not found for ${{ matrix.app }}"
+            echo "Unit test coverage not available"
+          fi
+        continue-on-error: true
+
+      - name: Run integration tests with coverage
+        working-directory: ./${{ matrix.app }}
+        run: npm run test:integration -- --coverage --reporter=verbose || echo "No integration tests found for ${{ matrix.app }}"
+        env:
+          NODE_ENV: test
+          CI: true
+          NODE_OPTIONS: '--no-warnings --experimental-vm-modules'
+
+      - name: Display integration test coverage
+        working-directory: ./${{ matrix.app }}
+        run: |
+          echo "📊 ${{ matrix.app }} - Integration Test Coverage:"
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e "const c=require('./coverage/coverage-summary.json').total; console.log('Lines:', c.lines.pct + '%', '| Statements:', c.statements.pct + '%', '| Functions:', c.functions.pct + '%', '| Branches:', c.branches.pct + '%')"
+          else
+            echo "Integration test coverage not available"
           fi
         continue-on-error: true
 
