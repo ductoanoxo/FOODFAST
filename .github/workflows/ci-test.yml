@@ -9,6 +9,7 @@ on:
       - DUCTOAN
       - kiet
       - deploy
+      - 'restore-*'
     pull_request:
       branches:
         - main
