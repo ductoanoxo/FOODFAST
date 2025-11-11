@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, Button, Typography, Tag, Rate, Divider } from 'antd'
+import { Card, Button, Typography, Tag, Divider } from 'antd'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   EnvironmentOutlined,
@@ -14,7 +14,6 @@ const { Text } = Typography
 
 const RestaurantCard = ({ restaurant }) => {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
 
   const formatDistance = (distance) => {
     if (distance < 1) {

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Row, Col, Typography, Spin, Empty, Pagination, Space, Tag } from 'antd'
+import { useState, useEffect, useCallback } from 'react'
+import { Row, Col, Typography, Spin, Empty, Pagination, Tag } from 'antd'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { productAPI, restaurantAPI } from '../../api'
 import ProductCard from '../../components/Product/ProductCard'
@@ -10,7 +10,6 @@ const { Title, Text } = Typography
 
 const MenuPage = () => {
   const [searchParams, setSearchParams] = useSearchParams()
-  const navigate = useNavigate()
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [restaurants, setRestaurants] = useState([])
@@ -26,23 +25,7 @@ const MenuPage = () => {
     sortBy: 'popular',
   })
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  // Keep filters.search and category in sync with URL params
-  useEffect(() => {
-    const urlSearch = searchParams.get('search') || ''
-    const urlCategory = searchParams.get('category') || ''
-    setFilters((prev) => ({ ...prev, search: urlSearch, category: urlCategory }))
-    setCurrentPage(1)
-  }, [searchParams])
-
-  useEffect(() => {
-    fetchProducts()
-  }, [filters, currentPage])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [categoriesRes, restaurantsRes] = await Promise.all([
         productAPI.getCategories(),
@@ -53,9 +36,9 @@ const MenuPage = () => {
     } catch (error) {
       console.error('Error fetching data:', error)
     }
-  }
+  }, [])
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true)
       const params = {
@@ -75,7 +58,23 @@ const MenuPage = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters, currentPage, pageSize])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  // Keep filters.search and category in sync with URL params
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || ''
+    const urlCategory = searchParams.get('category') || ''
+    setFilters((prev) => ({ ...prev, search: urlSearch, category: urlCategory }))
+    setCurrentPage(1)
+  }, [searchParams])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters)

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, Row, Col, Tag, Space, Spin, Statistic, List, Button, Badge, message } from 'antd';
 import {
   ThunderboltOutlined,
@@ -107,7 +107,7 @@ const FleetMap = () => {
     } finally {
       setLoading(false);
     }
-  }, [setLoading, setDrones, setStats, message]);
+  }, [setLoading, setDrones, setStats]);
 
   const initializeSocket = useCallback(() => {
     const token = localStorage.getItem('token');
@@ -188,7 +188,7 @@ const FleetMap = () => {
       message.info(`🗑️ Drone ${data.droneName} has been deleted`);
       fetchData(); // Refresh to remove deleted drone
     });
-  }, [fetchData, setDrones, message]);
+  }, [fetchData, setDrones]);
 
   useEffect(() => {
     fetchData();

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
   Row, 
@@ -37,11 +37,7 @@ const ProductDetailPage = () => {
   const [refreshReviews, setRefreshReviews] = useState(0)
   const [checking, setChecking] = useState(false)
 
-  useEffect(() => {
-    fetchProduct()
-  }, [id])
-
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     try {
       setLoading(true)
       const response = await productAPI.getProductById(id)
@@ -52,7 +48,11 @@ const ProductDetailPage = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
+
+  useEffect(() => {
+    fetchProduct()
+  }, [fetchProduct])
 
   const handleAddToCart = async () => {
     try {

@@ -1,5 +1,6 @@
 import { Card, Tag, Typography, Space, Button, Popconfirm, Avatar } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import PropTypes from 'prop-types';
 import './ProductCard.css';
 
 const { Text, Paragraph } = Typography;
@@ -91,6 +92,29 @@ const ProductCard = ({ product, onEdit, onDelete }) => {
       </Space>
     </Card>
   );
+};
+
+ProductCard.propTypes = {
+  product: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    image: PropTypes.string,
+    isAvailable: PropTypes.bool,
+    category: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({
+        _id: PropTypes.string,
+        name: PropTypes.string,
+      }),
+    ]),
+    description: PropTypes.string,
+    price: PropTypes.number,
+    promotion: PropTypes.shape({
+      originalPrice: PropTypes.number,
+    }),
+  }).isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
 };
 
 export default ProductCard;

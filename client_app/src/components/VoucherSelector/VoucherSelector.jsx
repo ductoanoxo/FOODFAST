@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Input, Button, Modal, message, Tag, Empty } from 'antd'
-import { GiftOutlined, CloseCircleOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import { GiftOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { getPublicVouchers, validateVoucher } from '../../api/voucherAPI'
 import dayjs from 'dayjs'
 import './VoucherSelector.css'
@@ -12,13 +12,7 @@ const VoucherSelector = ({ restaurantId, orderTotal, onApply, appliedVoucher }) 
   const [voucherCode, setVoucherCode] = useState('')
   const [validating, setValidating] = useState(false)
 
-  useEffect(() => {
-    if (modalVisible) {
-      loadVouchers()
-    }
-  }, [modalVisible])
-
-  const loadVouchers = async () => {
+  const loadVouchers = useCallback(async () => {
     try {
       setLoading(true)
       const response = await getPublicVouchers(restaurantId)
@@ -28,7 +22,13 @@ const VoucherSelector = ({ restaurantId, orderTotal, onApply, appliedVoucher }) 
     } finally {
       setLoading(false)
     }
-  }
+  }, [restaurantId])
+
+  useEffect(() => {
+    if (modalVisible) {
+      loadVouchers()
+    }
+  }, [modalVisible, loadVouchers])
 
   const handleValidateCode = async () => {
     if (!voucherCode.trim()) {

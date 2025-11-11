@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Card, Input, Select, Slider, Button, Space, Tag } from 'antd'
-import { SearchOutlined, FilterOutlined, ClearOutlined } from '@ant-design/icons'
+import { Card, Input, Select, Slider, Button, Space } from 'antd'
+import { SearchOutlined, ClearOutlined } from '@ant-design/icons'
 import './ProductFilter.css'
 
 const { Option } = Select

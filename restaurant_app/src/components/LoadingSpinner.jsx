@@ -1,4 +1,5 @@
 import { Spin } from 'antd';
+import PropTypes from 'prop-types';
 
 const LoadingSpinner = ({ size = 'large', tip = 'Đang tải...' }) => {
   return (
@@ -14,6 +15,11 @@ const LoadingSpinner = ({ size = 'large', tip = 'Đang tải...' }) => {
       {tip && <p style={{ color: '#8c8c8c' }}>{tip}</p>}
     </div>
   );
+};
+
+LoadingSpinner.propTypes = {
+  size: PropTypes.oneOf(['small', 'default', 'large']),
+  tip: PropTypes.string,
 };
 
 export default LoadingSpinner;

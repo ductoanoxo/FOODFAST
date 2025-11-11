@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { 
   Row, 
@@ -35,13 +35,7 @@ const RestaurantDetailPage = () => {
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState('all')
 
-  useEffect(() => {
-    if (id) {
-      fetchRestaurantData()
-    }
-  }, [id])
-
-  const fetchRestaurantData = async () => {
+  const fetchRestaurantData = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -58,7 +52,13 @@ const RestaurantDetailPage = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
+
+  useEffect(() => {
+    if (id) {
+      fetchRestaurantData()
+    }
+  }, [id, fetchRestaurantData])
 
   const formatDistance = (distance) => {
     if (!distance) return 'N/A'

@@ -219,6 +219,82 @@ const DroneMap = ({ order }) => {
   const deliveryCoords = order?.deliveryInfo?.location?.coordinates // [lng, lat]
   const droneCoords = order?.drone?.currentLocation?.coordinates // [lng, lat]
 
+  // Convert to Leaflet format [lat, lng]
+  const restaurantPos = restaurantCoords ? [restaurantCoords[1], restaurantCoords[0]] : null
+  const deliveryPos = deliveryCoords ? [deliveryCoords[1], deliveryCoords[0]] : null
+
+  useEffect(() => {
+    const setupSocketListeners = () => {
+      // Listen for delivery simulation started
+      socketService.on('delivery:simulation:started', (data) => {
+        console.log('🚀 Delivery simulation started:', data)
+        if (data.orderId === order._id) {
+          message.info(`Drone ${data.droneName} đã bắt đầu giao hàng!`, 3)
+          setEstimatedTime(data.estimatedTimeMinutes)
+        }
+      })
+
+      // Listen for real-time drone location updates
+      socketService.on('drone:location:update', (data) => {
+        console.log('📍 Drone location update:', data)
+        if (data.orderId === order._id) {
+          const [lng, lat] = data.location.coordinates
+          setDroneLocation([lat, lng])
+          setDeliveryProgress(data.progress || 0)
+          setRemainingDistance(data.remainingDistance)
+          setEstimatedTime(data.estimatedTimeRemaining)
+        }
+      })
+
+      // Listen for delivery complete
+      socketService.on('delivery:complete', (data) => {
+        console.log('✅ Delivery complete:', data)
+        if (data.orderId === order._id) {
+          message.success('Đơn hàng đã được giao đến!', 5)
+          setDeliveryProgress(100)
+          setRemainingDistance(0)
+          setEstimatedTime(0)
+        }
+      })
+    }
+
+    if (!order?.drone?._id) {
+      setLoading(false)
+      return
+    }
+
+    // Initialize drone location
+    if (droneCoords) {
+      const [lng, lat] = droneCoords
+      setDroneLocation([lat, lng])
+    } else if (restaurantPos) {
+      // Start at restaurant if no drone location
+      setDroneLocation(restaurantPos)
+    }
+
+    // Connect to socket
+    const token = localStorage.getItem('token')
+    if (token) {
+      socketService.connect(token)
+      
+      // Join order room
+      socketService.emit('join-order-room', { orderId: order._id })
+      
+      setupSocketListeners()
+    }
+
+    setLoading(false)
+
+    return () => {
+      socketService.off('drone:location:update')
+      socketService.off('delivery:simulation:started')
+      socketService.off('delivery:complete')
+      if (order?._id) {
+        socketService.emit('leave-order-room', { orderId: order._id })
+      }
+    }
+  }, [order, droneCoords, restaurantPos, setEstimatedTime, setDroneLocation, setDeliveryProgress, setRemainingDistance])
+
   // ✅ VALIDATION: Check if coordinates exist before rendering map
   if (!restaurantCoords || !deliveryCoords) {
     return (
@@ -268,84 +344,8 @@ const DroneMap = ({ order }) => {
     )
   }
 
-  // Convert to Leaflet format [lat, lng]
-  const restaurantPos = [restaurantCoords[1], restaurantCoords[0]]
-  const deliveryPos = [deliveryCoords[1], deliveryCoords[0]]
-
   // Default center
   const defaultCenter = restaurantPos || deliveryPos || [10.8231, 106.6297]
-
-  useEffect(() => {
-    if (!order?.drone?._id) {
-      setLoading(false)
-      return
-    }
-
-    // Initialize drone location
-    if (droneCoords) {
-      const [lng, lat] = droneCoords
-      setDroneLocation([lat, lng])
-    } else if (restaurantPos) {
-      // Start at restaurant if no drone location
-      setDroneLocation(restaurantPos)
-    }
-
-    // Connect to socket
-    const token = localStorage.getItem('token')
-    if (token) {
-      socketService.connect(token)
-      
-      // Join order room
-      socketService.emit('join-order-room', { orderId: order._id })
-      
-      setupSocketListeners()
-    }
-
-    setLoading(false)
-
-    return () => {
-      socketService.off('drone:location:update')
-      socketService.off('delivery:simulation:started')
-      socketService.off('delivery:complete')
-      if (order?._id) {
-        socketService.emit('leave-order-room', { orderId: order._id })
-      }
-    }
-  }, [order?.drone?._id, order?._id])
-
-  const setupSocketListeners = () => {
-    // Listen for delivery simulation started
-    socketService.on('delivery:simulation:started', (data) => {
-      console.log('🚀 Delivery simulation started:', data)
-      if (data.orderId === order._id) {
-        message.info(`Drone ${data.droneName} đã bắt đầu giao hàng!`, 3)
-        setEstimatedTime(data.estimatedTimeMinutes)
-      }
-    })
-
-    // Listen for real-time drone location updates
-    socketService.on('drone:location:update', (data) => {
-      console.log('📍 Drone location update:', data)
-      if (data.orderId === order._id) {
-        const [lng, lat] = data.location.coordinates
-        setDroneLocation([lat, lng])
-        setDeliveryProgress(data.progress || 0)
-        setRemainingDistance(data.remainingDistance)
-        setEstimatedTime(data.estimatedTimeRemaining)
-      }
-    })
-
-    // Listen for delivery complete
-    socketService.on('delivery:complete', (data) => {
-      console.log('✅ Delivery complete:', data)
-      if (data.orderId === order._id) {
-        message.success('Đơn hàng đã được giao đến!', 5)
-        setDeliveryProgress(100)
-        setRemainingDistance(0)
-        setEstimatedTime(0)
-      }
-    })
-  }
 
   if (loading) {
     return (

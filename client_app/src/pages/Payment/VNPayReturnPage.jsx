@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Result, Spin, Button } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
@@ -10,11 +10,7 @@ const VNPayReturnPage = () => {
   const [loading, setLoading] = useState(true)
   const [paymentResult, setPaymentResult] = useState(null)
 
-  useEffect(() => {
-    handleVNPayReturn()
-  }, [])
-
-  const handleVNPayReturn = async () => {
+  const handleVNPayReturn = useCallback(async () => {
     try {
       // Lấy tất cả params từ VNPay
       const params = {}
@@ -45,7 +41,11 @@ const VNPayReturnPage = () => {
       // Xóa orderId đã lưu
       localStorage.removeItem('pendingOrderId')
     }
-  }
+  }, [searchParams])
+
+  useEffect(() => {
+    handleVNPayReturn()
+  }, [handleVNPayReturn])
 
   if (loading) {
     return (

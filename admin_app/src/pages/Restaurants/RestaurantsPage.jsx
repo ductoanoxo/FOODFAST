@@ -39,7 +39,7 @@ const RestaurantsPage = () => {
     const [credentialsModalVisible, setCredentialsModalVisible] = useState(false)
     const [createdCredentials, setCreatedCredentials] = useState(null)
     const [form] = Form.useForm()
-    const [emailChecking, setEmailChecking] = useState(false)
+    const emailChecking = false;
 
     useEffect(() => {
         fetchRestaurants()
@@ -57,7 +57,7 @@ const RestaurantsPage = () => {
         }
     }
 
-    const handleToggleStatus = async (id, isOpen) => {
+    const handleToggleStatus = async (id) => {
         try {
             const token = localStorage.getItem('token')
 

@@ -98,6 +98,23 @@ export default [
         fetch: 'readonly',
         URL: 'readonly',
         URLSearchParams: 'readonly',
+        setTimeout: 'readonly',
+      },
+    },
+    plugins: {
+      react,
+      'react-hooks': reactHooks,
+    },
+    rules: {
+      ...react.configs.recommended.rules,
+      ...reactHooks.configs.recommended.rules,
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off', // prop-types are not typically used in test utilities
+      'no-unused-vars': 'warn',
+    },
+    settings: {
+      react: {
+        version: 'detect',
       },
     },
   },

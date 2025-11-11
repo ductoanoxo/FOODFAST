@@ -64,7 +64,6 @@ const MenuPage = () => {
   const [sortBy, setSortBy] = useState('name'); // 'name', 'price', 'createdAt'
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' or 'desc'
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [previewImage, setPreviewImage] = useState(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 12,

@@ -10,14 +10,12 @@ import {
   Input,
   Switch,
   Popconfirm,
-  Upload,
   Card,
 } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  UploadOutlined,
 } from '@ant-design/icons';
 import {
   getCategoriesWithProducts,

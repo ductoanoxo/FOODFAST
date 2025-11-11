@@ -59,7 +59,6 @@ const DashboardPage = () => {
         getDashboardStats(),
         getRecentOrders(5),
         getTopRestaurants(5),
-        getOrderStatistics(7),
       ])
 
       setStats(statsRes.data)
