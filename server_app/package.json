@@ -8,8 +8,8 @@
         "dev": "nodemon index.js",
         "seed": "node seed.js",
         "test": "jest --verbose --coverage",
-        "test:unit": "jest --verbose --testPathPattern=__tests__/unit",
-        "test:integration": "jest --verbose --testPathPattern=__tests__/integration",
+        "test:unit": "jest --verbose --testPathPatterns=__tests__/unit",
+        "test:integration": "jest --verbose --testPathPatterns=__tests__/integration",
         "test:coverage": "jest --verbose --coverage",
         "test:watch": "jest --watch"
     },
