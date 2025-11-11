@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>15/15</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/15</span>
+                <span class='fraction'>15/15</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -96,8 +96,8 @@
 <a name='L31'></a><a href='#L31'>31</a>
 <a name='L32'></a><a href='#L32'>32</a>
 <a name='L33'></a><a href='#L33'>33</a>
-<a name='L34'></a><a href='#L34'>34</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L34'></a><a href='#L34'>34</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -109,28 +109,28 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const express = <span class="cstat-no" title="statement not covered" >require('express')</span>
-const router = <span class="cstat-no" title="statement not covered" >express.Router()</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span></td><td class="text"><pre class="prettyprint lang-js">const express = require('express')
+const router = express.Router()
 const {
     createOrder,
     getOrders,
@@ -142,34 +142,34 @@ const {
     confirmDelivery,
     restaurantConfirmHandover,
     calculateFee,
-} = <span class="cstat-no" title="statement not covered" >require('../Controllers/orderController')</span>
-const { protect, authorize } = <span class="cstat-no" title="statement not covered" >require('../Middleware/authMiddleware')</span>
+} = require('../Controllers/orderController')
+const { protect, authorize } = require('../Middleware/authMiddleware')
 &nbsp;
-<span class="cstat-no" title="statement not covered" >router.post('/calculate-fee', protect, calculateFee)</span>
-<span class="cstat-no" title="statement not covered" >router.get('/history', protect, getOrderHistory)</span>
-<span class="cstat-no" title="statement not covered" >router.get('/restaurant', protect, authorize('restaurant', 'admin'), getOrders)</span>
+router.post('/calculate-fee', protect, calculateFee)
+router.get('/history', protect, getOrderHistory)
+router.get('/restaurant', protect, authorize('restaurant', 'admin'), getOrders)
 &nbsp;
-<span class="cstat-no" title="statement not covered" >router.route('/')</span>
+router.route('/')
     .get(protect, getOrders)
     .post(protect, createOrder)
 &nbsp;
-<span class="cstat-no" title="statement not covered" >router.route('/:id')</span>
+router.route('/:id')
     .get(protect, getOrderById)
 &nbsp;
-<span class="cstat-no" title="statement not covered" >router.patch('/:id/status', protect, authorize('restaurant', 'admin'), updateOrderStatus)</span>
-<span class="cstat-no" title="statement not covered" >router.patch('/:id/cancel', protect, cancelOrder)</span>
-<span class="cstat-no" title="statement not covered" >router.post('/:id/confirm-delivery', protect, confirmDelivery)</span>
-<span class="cstat-no" title="statement not covered" >router.post('/:id/restaurant-confirm-handover', protect, authorize('restaurant'), restaurantConfirmHandover)</span>
-<span class="cstat-no" title="statement not covered" >router.get('/:id/track', protect, trackOrder)</span>
+router.patch('/:id/status', protect, authorize('restaurant', 'admin'), updateOrderStatus)
+router.patch('/:id/cancel', protect, cancelOrder)
+router.post('/:id/confirm-delivery', protect, confirmDelivery)
+router.post('/:id/restaurant-confirm-handover', protect, authorize('restaurant'), restaurantConfirmHandover)
+router.get('/:id/track', protect, trackOrder)
 &nbsp;
-<span class="cstat-no" title="statement not covered" >module.exports = router</span></pre></td></tr></table></pre>
+module.exports = router</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-11T07:07:16.251Z
+                at 2025-11-11T15:35:04.881Z
             </div>
         <script src="../prettify.js"></script>
         <script>
