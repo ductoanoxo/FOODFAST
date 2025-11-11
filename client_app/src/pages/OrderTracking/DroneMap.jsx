@@ -219,14 +219,62 @@ const DroneMap = ({ order }) => {
   const deliveryCoords = order?.deliveryInfo?.location?.coordinates // [lng, lat]
   const droneCoords = order?.drone?.currentLocation?.coordinates // [lng, lat]
 
+  // ✅ VALIDATION: Check if coordinates exist before rendering map
+  if (!restaurantCoords || !deliveryCoords) {
+    return (
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '60px 20px',
+        background: 'linear-gradient(135deg, #f0f5ff 0%, #e6f4ff 100%)',
+        borderRadius: '16px',
+        border: '2px dashed #91caff'
+      }}>
+        <div style={{ fontSize: '72px', marginBottom: '20px' }}>🗺️</div>
+        <Text strong style={{ fontSize: '20px', color: '#1677ff', display: 'block', marginBottom: '16px' }}>
+          ⚠️ Không thể hiển thị bản đồ
+        </Text>
+        <Space direction="vertical" size="middle" style={{ marginTop: '20px' }}>
+          <div style={{ 
+            padding: '16px 24px', 
+            background: 'white', 
+            borderRadius: '8px',
+            border: '1px solid #d9d9d9'
+          }}>
+            <Space direction="vertical" size="small">
+              <Text type="secondary" style={{ fontSize: '14px' }}>
+                🏪 Nhà hàng: {restaurantCoords ? '✅ Có tọa độ' : '❌ Chưa có tọa độ'}
+              </Text>
+              <Text type="secondary" style={{ fontSize: '14px' }}>
+                📍 Điểm giao: {deliveryCoords ? '✅ Có tọa độ' : '❌ Chưa có tọa độ'}
+              </Text>
+            </Space>
+          </div>
+          <div style={{ 
+            padding: '20px', 
+            background: '#fff7e6', 
+            borderRadius: '12px',
+            border: '1px solid #ffd591',
+            maxWidth: '500px',
+            margin: '0 auto'
+          }}>
+            <Text style={{ fontSize: '14px', color: '#ad6800', lineHeight: '1.8' }}>
+              💡 <strong>Đơn hàng này được tạo trước khi có tính năng bản đồ.</strong><br/>
+              Hệ thống hiện đã tự động chuyển đổi địa chỉ thành tọa độ.<br/>
+              Vui lòng tạo đơn hàng mới để trải nghiệm tính năng theo dõi bản đồ! 🚀
+            </Text>
+          </div>
+        </Space>
+      </div>
+    )
+  }
+
   // Convert to Leaflet format [lat, lng]
-  const restaurantPos = restaurantCoords ? [restaurantCoords[1], restaurantCoords[0]] : null
-  const deliveryPos = deliveryCoords ? [deliveryCoords[1], deliveryCoords[0]] : null
+  const restaurantPos = [restaurantCoords[1], restaurantCoords[0]]
+  const deliveryPos = [deliveryCoords[1], deliveryCoords[0]]
 
   // Default center
   const defaultCenter = restaurantPos || deliveryPos || [10.8231, 106.6297]
 
-  // ✅ Setup socket listeners and effects BEFORE any early returns
   useEffect(() => {
     if (!order?.drone?._id) {
       setLoading(false)
@@ -299,7 +347,6 @@ const DroneMap = ({ order }) => {
     })
   }
 
-  // ✅ Early return for validation - AFTER all hooks
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '50px 0' }}>
@@ -308,51 +355,12 @@ const DroneMap = ({ order }) => {
     )
   }
 
-  // ✅ VALIDATION: Check if coordinates exist before rendering map
+  // Validate coordinates exist
   if (!restaurantPos || !deliveryPos) {
     return (
-      <div style={{ 
-        textAlign: 'center', 
-        padding: '60px 20px',
-        background: 'linear-gradient(135deg, #f0f5ff 0%, #e6f4ff 100%)',
-        borderRadius: '16px',
-        border: '2px dashed #91caff'
-      }}>
-        <div style={{ fontSize: '72px', marginBottom: '20px' }}>🗺️</div>
-        <Text strong style={{ fontSize: '20px', color: '#1677ff', display: 'block', marginBottom: '16px' }}>
-          ⚠️ Không thể hiển thị bản đồ
-        </Text>
-        <Space direction="vertical" size="middle" style={{ marginTop: '20px' }}>
-          <div style={{ 
-            padding: '16px 24px', 
-            background: 'white', 
-            borderRadius: '8px',
-            border: '1px solid #d9d9d9'
-          }}>
-            <Space direction="vertical" size="small">
-              <Text type="secondary" style={{ fontSize: '14px' }}>
-                🏪 Nhà hàng: {restaurantPos ? '✅ Có tọa độ' : '❌ Chưa có tọa độ'}
-              </Text>
-              <Text type="secondary" style={{ fontSize: '14px' }}>
-                📍 Điểm giao: {deliveryPos ? '✅ Có tọa độ' : '❌ Chưa có tọa độ'}
-              </Text>
-            </Space>
-          </div>
-          <div style={{ 
-            padding: '20px', 
-            background: '#fff7e6', 
-            borderRadius: '12px',
-            border: '1px solid #ffd591',
-            maxWidth: '500px',
-            margin: '0 auto'
-          }}>
-            <Text style={{ fontSize: '14px', color: '#ad6800', lineHeight: '1.8' }}>
-              💡 <strong>Đơn hàng này được tạo trước khi có tính năng bản đồ.</strong><br/>
-              Hệ thống hiện đã tự động chuyển đổi địa chỉ thành tọa độ.<br/>
-              Vui lòng tạo đơn hàng mới để trải nghiệm tính năng theo dõi bản đồ! 🚀
-            </Text>
-          </div>
-        </Space>
+      <div style={{ textAlign: 'center', padding: '50px 0', color: '#999' }}>
+        <p>⚠️ Chưa có thông tin vị trí đầy đủ</p>
+        <small>Nhà hàng: {restaurantPos ? '✅' : '❌'} | Điểm giao: {deliveryPos ? '✅' : '❌'}</small>
       </div>
     )
   }
