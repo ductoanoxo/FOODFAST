@@ -7,6 +7,7 @@ import { toast } from 'react-toastify'
 import './ProductCard.css'
 import { restaurantAPI } from '../../api/restaurantAPI'
 import { useState } from 'react'
+import PropTypes from 'prop-types'
 
 const { Meta } = Card
 
@@ -141,6 +142,28 @@ const ProductCard = ({ product }) => {
       />
     </Card>
   )
+}
+
+ProductCard.propTypes = {
+  product: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    image: PropTypes.string,
+    price: PropTypes.number.isRequired,
+    discount: PropTypes.number,
+    promotion: PropTypes.shape({
+      name: PropTypes.string,
+      discountPercent: PropTypes.number,
+      originalPrice: PropTypes.number,
+    }),
+    restaurant: PropTypes.shape({
+      _id: PropTypes.string,
+      name: PropTypes.string,
+      isOpen: PropTypes.bool,
+    }),
+    rating: PropTypes.number,
+    reviewCount: PropTypes.number,
+  }).isRequired
 }
 
 export default ProductCard

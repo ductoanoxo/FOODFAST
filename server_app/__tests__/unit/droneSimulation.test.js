@@ -3,7 +3,7 @@
  * Test các hàm logic trong drone simulation controller
  */
 
-const { describe, it, expect, beforeEach } = require('@jest/globals');
+const { describe, it, expect } = require('@jest/globals');
 
 // Mock functions from drone simulation logic
 const calculateDeliveryTime = (distance) => {
@@ -131,7 +131,6 @@ describe('Drone Simulation Logic - Unit Tests', () => {
                 batteryLevel: 80,
                 location: { lat: 10.0, lng: 106.0 }
             };
-            const destination = { lat: 10.1, lng: 106.1 };
             const distance = 5; // km
 
             // Check if drone can deliver

@@ -1,10 +1,11 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { message, Spin, Progress, Typography, Space, Button } from 'antd'
 import { EnvironmentOutlined, RocketOutlined, UserOutlined, ShopOutlined } from '@ant-design/icons'
 import socketService from '../../services/socketService'
+import PropTypes from 'prop-types'
 import './DroneMap.css'
 
 const { Text } = Typography
@@ -66,6 +67,15 @@ const MapControls = ({ mapRef, restaurantPos, deliveryPos, dronePos }) => {
       )}
     </div>
   )
+}
+
+MapControls.propTypes = {
+  mapRef: PropTypes.shape({
+    current: PropTypes.object
+  }).isRequired,
+  restaurantPos: PropTypes.arrayOf(PropTypes.number),
+  deliveryPos: PropTypes.arrayOf(PropTypes.number),
+  dronePos: PropTypes.arrayOf(PropTypes.number)
 }
 
 // Fix Leaflet default marker icon issue
@@ -206,6 +216,12 @@ const AutoFitBounds = ({ restaurantPos, deliveryPos, dronePos }) => {
   return null
 }
 
+AutoFitBounds.propTypes = {
+  restaurantPos: PropTypes.arrayOf(PropTypes.number),
+  deliveryPos: PropTypes.arrayOf(PropTypes.number),
+  dronePos: PropTypes.arrayOf(PropTypes.number)
+}
+
 const DroneMap = ({ order }) => {
   const [droneLocation, setDroneLocation] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -219,9 +235,14 @@ const DroneMap = ({ order }) => {
   const deliveryCoords = order?.deliveryInfo?.location?.coordinates // [lng, lat]
   const droneCoords = order?.drone?.currentLocation?.coordinates // [lng, lat]
 
-  // Convert to Leaflet format [lat, lng]
-  const restaurantPos = restaurantCoords ? [restaurantCoords[1], restaurantCoords[0]] : null
-  const deliveryPos = deliveryCoords ? [deliveryCoords[1], deliveryCoords[0]] : null
+  // Convert to Leaflet format [lat, lng] - memoize to prevent unnecessary recalculations
+  const restaurantPos = useMemo(() => {
+    return restaurantCoords ? [restaurantCoords[1], restaurantCoords[0]] : null
+  }, [restaurantCoords])
+  
+  const deliveryPos = useMemo(() => {
+    return deliveryCoords ? [deliveryCoords[1], deliveryCoords[0]] : null
+  }, [deliveryCoords])
 
   useEffect(() => {
     const setupSocketListeners = () => {
@@ -548,6 +569,40 @@ const DroneMap = ({ order }) => {
       </MapContainer>
     </div>
   )
+}
+
+DroneMap.propTypes = {
+  order: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    restaurant: PropTypes.shape({
+      name: PropTypes.string,
+      address: PropTypes.string,
+      location: PropTypes.shape({
+        coordinates: PropTypes.arrayOf(PropTypes.number)
+      })
+    }),
+    deliveryInfo: PropTypes.shape({
+      name: PropTypes.string,
+      address: PropTypes.string,
+      location: PropTypes.shape({
+        coordinates: PropTypes.arrayOf(PropTypes.number)
+      })
+    }),
+    drone: PropTypes.shape({
+      _id: PropTypes.string,
+      name: PropTypes.string,
+      model: PropTypes.string,
+      batteryLevel: PropTypes.number,
+      status: PropTypes.string,
+      currentLocation: PropTypes.shape({
+        coordinates: PropTypes.arrayOf(PropTypes.number)
+      })
+    }),
+    routeGeometry: PropTypes.shape({
+      coordinates: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))
+    }),
+    routingMethod: PropTypes.string
+  }).isRequired
 }
 
 export default DroneMap

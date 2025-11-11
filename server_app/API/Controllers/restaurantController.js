@@ -1,7 +1,6 @@
 const asyncHandler = require('../Middleware/asyncHandler')
 const Restaurant = require('../Models/Restaurant')
 const User = require('../Models/User')
-const bcrypt = require('bcryptjs')
 
 // @desc    Get all restaurants
 // @route   GET /api/restaurants
@@ -248,7 +247,7 @@ const updateRestaurant = asyncHandler(async(req, res) => {
 
     // Validate promo object structure if it's an object
     if (updateData.promo && typeof updateData.promo === 'object') {
-        const { text, discountPercent, validUntil, minOrder } = updateData.promo
+        const { text, discountPercent, validUntil } = updateData.promo
             // Ensure required fields
         if (!text) {
             updateData.promo.text = 'Khuyến mãi đặc biệt'

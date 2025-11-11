@@ -160,7 +160,9 @@ app.set('socketService', socketService);
 // ---------------------- UNHANDLED REJECTIONS ---------------------- //
 process.on('unhandledRejection', (err) => {
     logger.error('Unhandled Rejection:', err);
-    server.close(() => process.exit(1));
+    server.close(() => {
+        throw err;
+    });
 });
 
 module.exports = { app, io, socketService };

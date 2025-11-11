@@ -64,7 +64,7 @@ describe('💳 PAYMENT - INTEGRATION (VNPay return & IPN)', () => {
             image: 'img.jpg'
         });
 
-        const order = await Order.create({
+        await Order.create({
             user: user._id,
             items: [{ product: product._id, quantity: 1, price: 50000, originalPrice: 50000 }],
             restaurant: restaurant._id,
@@ -285,7 +285,7 @@ describe('💳 PAYMENT - INTEGRATION (VNPay return & IPN)', () => {
     test('❌ createVNPayPayment - order not found returns 404', async () => {
         const email = 'nf@example.com';
         const password = 'password1';
-        const user = await User.create({ name: 'NF', email, phone: '0901212121', password, role: 'user' });
+        await User.create({ name: 'NF', email, phone: '0901212121', password, role: 'user' });
 
         const loginRes = await request(app).post('/api/auth/login').send({ email, password });
         const token = loginRes.body.token;
@@ -355,7 +355,7 @@ describe('💳 PAYMENT - INTEGRATION (VNPay return & IPN)', () => {
         const category = await Category.create({ name: 'Food' });
         const product = await Product.create({ name: 'IPNItem', price: 50000, restaurant: restaurant._id, category: category._id, available: true, image: 'img.jpg' });
 
-        const order = await Order.create({ user: user._id, items: [{ product: product._id, quantity: 1, price: 50000, originalPrice: 50000 }], restaurant: restaurant._id, subtotal: 50000, totalAmount: 50000, paymentStatus: 'pending', paymentInfo: { transactionId: 'IPN001' } });
+        await Order.create({ user: user._id, items: [{ product: product._id, quantity: 1, price: 50000, originalPrice: 50000 }], restaurant: restaurant._id, subtotal: 50000, totalAmount: 50000, paymentStatus: 'pending', paymentInfo: { transactionId: 'IPN001' } });
 
         const vnp_Params = {
             vnp_TxnRef: 'IPN001',
@@ -411,7 +411,7 @@ describe('💳 PAYMENT - INTEGRATION (VNPay return & IPN)', () => {
     test('✅ queryVNPayTransaction - prepare query data when authenticated', async () => {
         const email = 'quser@example.com';
         const password = 'password1';
-        const user = await User.create({ name: 'QUser', email, phone: '0907070707', password, role: 'user' });
+        await User.create({ name: 'QUser', email, phone: '0907070707', password, role: 'user' });
 
         const loginRes = await request(app).post('/api/auth/login').send({ email, password });
         const token = loginRes.body.token;
@@ -430,7 +430,7 @@ describe('💳 PAYMENT - INTEGRATION (VNPay return & IPN)', () => {
     test('✅ refundVNPayTransaction - prepare refund data when authenticated', async () => {
         const email = 'ruser@example.com';
         const password = 'password1';
-        const user = await User.create({ name: 'RUser', email, phone: '0908080808', password, role: 'user' });
+        await User.create({ name: 'RUser', email, phone: '0908080808', password, role: 'user' });
 
         const loginRes = await request(app).post('/api/auth/login').send({ email, password });
         const token = loginRes.body.token;

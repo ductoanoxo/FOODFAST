@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Card, List, Rate, Typography, Button, Empty, Spin, Tag, message, Popconfirm } from 'antd'
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons'
+import { DeleteOutlined } from '@ant-design/icons'
 import { useSelector } from 'react-redux'
 import { reviewAPI } from '../../api'
 import dayjs from 'dayjs'

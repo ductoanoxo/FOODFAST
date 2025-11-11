@@ -1,6 +1,6 @@
 const logger = require('../Utils/logger')
 
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res) => {
     logger.error(err.message, { stack: err.stack })
 
     let error = {...err }

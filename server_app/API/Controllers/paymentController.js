@@ -316,10 +316,6 @@ const vnpayIPN = asyncHandler(async (req, res) => {
 
     const Order = require('../Models/Order')
 
-    let paymentStatus = '0'; // Giả sử '0' là trạng thái khởi tạo giao dịch
-    let checkOrderId = true; // Mã đơn hàng "giá trị của vnp_TxnRef" VNPAY phản hồi tồn tại trong CSDL
-    let checkAmount = true; // Kiểm tra số tiền "giá trị của vnp_Amount/100" trùng khớp với số tiền của đơn hàng
-
     if (secureHash === signed) {
         // Kiểm tra checksum
         const order = await Order.findOne({
@@ -327,11 +323,9 @@ const vnpayIPN = asyncHandler(async (req, res) => {
         })
 
         if (order) {
-            checkOrderId = true
             // Kiểm tra số tiền
             const amount = vnp_Params['vnp_Amount'] / 100
             if (amount === order.totalAmount) {
-                checkAmount = true
                 if (order.paymentStatus === 'pending') {
                     // Kiểm tra tình trạng giao dịch trước khi cập nhật
                     if (rspCode === '00') {
@@ -427,11 +421,9 @@ const vnpayIPN = asyncHandler(async (req, res) => {
                     })
                 }
             } else {
-                checkAmount = false
                 res.status(200).json({ RspCode: '04', Message: 'Amount invalid' })
             }
         } else {
-            checkOrderId = false
             res.status(200).json({ RspCode: '01', Message: 'Order not found' })
         }
     } else {

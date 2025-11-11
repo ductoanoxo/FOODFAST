@@ -420,7 +420,7 @@ class SocketService {
     }
 
     handleBatteryUpdate(socket, data) {
-        const { droneId, batteryLevel, voltage, temperature } = data;
+        const { droneId, batteryLevel } = data;
 
         // Low battery alert
         if (batteryLevel < 20) {
@@ -544,7 +544,7 @@ class SocketService {
         }
     }
 
-    async storeEmergency(droneId, orderId, issue, description, location) {
+    async storeEmergency(droneId, orderId, issue) {
         try {
             // TODO: Create Emergency model and store
             console.log('Emergency stored:', { droneId, orderId, issue });

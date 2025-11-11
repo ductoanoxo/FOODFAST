@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/vi'
 import './ReviewList.css'
+import PropTypes from 'prop-types'
 
 dayjs.extend(relativeTime)
 dayjs.locale('vi')
@@ -193,6 +194,10 @@ const ReviewList = ({ productId }) => {
             )}
         </div>
     )
+}
+
+ReviewList.propTypes = {
+  productId: PropTypes.string.isRequired
 }
 
 export default ReviewList

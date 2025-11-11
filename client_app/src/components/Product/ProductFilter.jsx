@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Card, Input, Select, Slider, Button, Space } from 'antd'
 import { SearchOutlined, ClearOutlined } from '@ant-design/icons'
 import './ProductFilter.css'
+import PropTypes from 'prop-types'
 
 const { Option } = Select
 
@@ -135,6 +136,13 @@ const ProductFilter = ({ filters, onFilterChange, categories, restaurants }) => 
       </Space>
     </Card>
   )
+}
+
+ProductFilter.propTypes = {
+  filters: PropTypes.object.isRequired,
+  onFilterChange: PropTypes.func.isRequired,
+  categories: PropTypes.array.isRequired,
+  restaurants: PropTypes.array.isRequired
 }
 
 export default ProductFilter

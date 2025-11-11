@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Row, Col, Typography, Spin, Empty, Pagination, Tag } from 'antd'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { productAPI, restaurantAPI } from '../../api'
 import ProductCard from '../../components/Product/ProductCard'
 import ProductFilter from '../../components/Product/ProductFilter'

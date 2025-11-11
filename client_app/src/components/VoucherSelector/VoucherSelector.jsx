@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Input, Button, Modal, message, Tag, Empty } from 'antd'
 import { GiftOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { getPublicVouchers, validateVoucher } from '../../api/voucherAPI'
+import PropTypes from 'prop-types'
 import dayjs from 'dayjs'
 import './VoucherSelector.css'
 
@@ -201,6 +202,18 @@ const VoucherSelector = ({ restaurantId, orderTotal, onApply, appliedVoucher }) 
       </Modal>
     </div>
   )
+}
+
+VoucherSelector.propTypes = {
+  restaurantId: PropTypes.string.isRequired,
+  orderTotal: PropTypes.number.isRequired,
+  onApply: PropTypes.func.isRequired,
+  appliedVoucher: PropTypes.shape({
+    voucher: PropTypes.shape({
+      code: PropTypes.string
+    }),
+    discountAmount: PropTypes.number
+  })
 }
 
 export default VoucherSelector

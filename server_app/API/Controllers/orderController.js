@@ -2,20 +2,16 @@ const asyncHandler = require('../Middleware/asyncHandler')
 const Order = require('../Models/Order')
 const Product = require('../Models/Product')
 const Restaurant = require('../Models/Restaurant')
-const PromoUsage = require('../Models/PromoUsage')
 const Voucher = require('../Models/Voucher')
 const VoucherUsage = require('../Models/VoucherUsage')
 const { geocodeWithFallback } = require('../../services/geocodingService')
 const { getDistanceWithFallback } = require('../../services/routingService')
 const OrderAudit = require('../Models/OrderAudit')
-const axios = require('axios')
-const crypto = require('crypto')
-const moment = require('moment')
 
 // Helper function: Process refund logic
 // Chỉ đánh dấu đơn hàng là refund_pending, không tự động hoàn tiền
 // Admin sẽ phải vào trang Refunds và bấm nút xác nhận để hoàn tiền
-const processRefund = async (order, cancelledBy, cancelReason) => {
+const processRefund = async (order, cancelledBy) => {
     const now = new Date()
     let refundInfo = null
 

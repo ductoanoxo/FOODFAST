@@ -46,13 +46,13 @@ const AssignmentDashboard = () => {
     socketService.connect(token);
 
     // Listen for new orders
-    socketService.onOrderReady((data) => {
-      message.info(`🆕 New order ready for assignment: ${data.orderId}`);
+    socketService.onOrderReady(({ orderId }) => {
+      message.info(`🆕 New order ready for assignment: ${orderId}`);
       fetchData();
     });
 
     // Listen for successful assignments
-    socketService.onAssignmentSuccess((data) => {
+    socketService.onAssignmentSuccess(() => {
       message.success(`✅ Order assigned to drone successfully!`);
       fetchData();
     });

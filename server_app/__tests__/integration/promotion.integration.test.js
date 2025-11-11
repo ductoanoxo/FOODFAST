@@ -54,7 +54,7 @@ describe('🎫 PROMOTIONS - INTEGRATION', () => {
         });
         const category = await Category.create({ name: 'Food' });
 
-        const product = await Product.create({
+        await Product.create({
             name: 'Promo Product',
             price: 200000,
             restaurant: restaurant._id,
@@ -64,7 +64,7 @@ describe('🎫 PROMOTIONS - INTEGRATION', () => {
         const now = new Date();
         const later = new Date(now.getTime() + 1000 * 60 * 60 * 24);
 
-        const promotion = await Promotion.create({
+        await Promotion.create({
             restaurant: restaurant._id,
             name: 'Test Promo',
             discountPercent: 20,
