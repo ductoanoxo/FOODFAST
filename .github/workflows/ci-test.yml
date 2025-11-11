@@ -276,7 +276,7 @@ jobs:
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         # Only attempt upload when workflow runs in the repository (not a fork),
-        # otherwise the runner's token may not have permission and you'll see
+        # otherwise the runner's token may not have permission and you'll seedssssss
         # 'Resource not accessible by integration'. Keep 'always()' to allow
         # the step to be evaluated for post-job/cleanup semantics.
         if: always() && github.repository == github.event.repository.full_name
