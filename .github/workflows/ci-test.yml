@@ -53,13 +53,21 @@ jobs:
         working-directory: ./server_app
         run: npm ci
 
-      - name: Run tests
+      - name: Run unit tests
         working-directory: ./server_app
         env:
           NODE_ENV: test
           MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
           JWT_SECRET: test-secret-key
         run: npm test || echo "No tests found"
+
+      - name: Run integration tests
+        working-directory: ./server_app
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
+          JWT_SECRET: test-secret-key
+        run: npm run test:integration || echo "No integration tests found"
 
       - name: Check for syntax errors
         working-directory: ./server_app
@@ -95,14 +103,6 @@ jobs:
       - name: Run unit tests
         working-directory: ./${{ matrix.app }}
         run: npm test -- --run --reporter=verbose || echo "No tests found for ${{ matrix.app }}"
-        env:
-          NODE_ENV: test
-          CI: true
-          NODE_OPTIONS: '--no-warnings --experimental-vm-modules'
-
-      - name: Run integration tests
-        working-directory: ./${{ matrix.app }}
-        run: npm run test:integration -- --run --reporter=verbose || echo "No integration tests found for ${{ matrix.app }}"
         env:
           NODE_ENV: test
           CI: true

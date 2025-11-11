@@ -8,6 +8,8 @@
         "dev": "nodemon index.js",
         "seed": "node seed.js",
         "test": "jest --verbose --coverage",
+        "test:unit": "jest __tests__/unit --verbose",
+        "test:integration": "jest __tests__/integration --verbose",
         "test:watch": "jest --watch"
     },
     "keywords": [
