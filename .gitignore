@@ -12,8 +12,8 @@ coverage/
 .nyc_output
 lcov-report/
 */lcov-report/
-server_app/coverage/
-client_app/coverage/
-restaurant_app/coverage/
-admin_app/coverage/
-drone_manage/coverage/
+/server_app/coverage/
+/client_app/coverage/
+/restaurant_app/coverage/
+/admin_app/coverage/
+/drone_manage/coverage/
