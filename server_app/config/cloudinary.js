@@ -83,6 +83,7 @@ function makeUploader(folder, transformation) {
         // Provide .array and .fields if needed in future
         array: (fieldName, maxCount) => {
             const m = baseMulter.array(fieldName, maxCount)
+            const u = uploadToCloudinary(folder, transformation)
             return (req, res, next) => {
                 m(req, res, function (err) {
                     if (err) return next(err)

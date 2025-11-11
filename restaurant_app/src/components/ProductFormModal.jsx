@@ -1,7 +1,6 @@
 import { Modal, Form, Input, InputNumber, Select, Upload, Button, message } from 'antd';
-import { UploadOutlined, PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import { getCategories } from '../api/productAPI';
 
 const { TextArea } = Input;
@@ -213,26 +212,6 @@ const ProductFormModal = ({ visible, product, onClose, onSubmit }) => {
       </Form>
     </Modal>
   );
-};
-
-ProductFormModal.propTypes = {
-  visible: PropTypes.bool.isRequired,
-  product: PropTypes.shape({
-    name: PropTypes.string,
-    description: PropTypes.string,
-    price: PropTypes.number,
-    category: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.shape({
-        _id: PropTypes.string,
-        name: PropTypes.string,
-      }),
-    ]),
-    isAvailable: PropTypes.bool,
-    image: PropTypes.string,
-  }),
-  onClose: PropTypes.func.isRequired,
-  onSubmit: PropTypes.func.isRequired,
 };
 
 export default ProductFormModal;

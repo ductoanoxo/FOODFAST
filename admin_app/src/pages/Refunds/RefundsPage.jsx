@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
     Card,
     Table,
@@ -17,7 +17,6 @@ import {
     Descriptions,
     Typography,
     Alert,
-    Tooltip,
 } from 'antd'
 import {
     DollarOutlined,
@@ -63,29 +62,16 @@ const RefundsPage = () => {
     const [logs, setLogs] = useState([])
     const [form] = Form.useForm()
 
-    useEffect(() => {
-        // Fetch both stats and refunds in parallel
-        Promise.all([fetchStats(), fetchRefunds(1)])
-    }, [])
-
-    useEffect(() => {
-        // Debounce search to avoid too many API calls
-        const timer = setTimeout(() => {
-            fetchRefunds(1)
-        }, 500)
-        return () => clearTimeout(timer)
-    }, [filters.search, filters.status, filters.paymentStatus])
-
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
             const response = await getRefundStats()
             setStats(response.data)
         } catch (error) {
             console.error('Error fetching refund stats:', error)
         }
-    }
+    }, [setStats]);
 
-    const fetchRefunds = async (page = pagination.current) => {
+    const fetchRefunds = useCallback(async (page = pagination.current) => {
         try {
             setLoading(true)
             const response = await getRefundRequests({
@@ -105,8 +91,7 @@ const RefundsPage = () => {
         } finally {
             setLoading(false)
         }
-<<<<<<< HEAD
-    }, [setLoading, setRefunds, setPagination, filters, pagination]);
+    }, [setLoading, setRefunds, setPagination, filters, message]);
 
     useEffect(() => {
         // Fetch both stats and refunds in parallel
@@ -120,9 +105,6 @@ const RefundsPage = () => {
         }, 500)
         return () => clearTimeout(timer)
     }, [filters.search, filters.status, filters.paymentStatus, fetchRefunds])
-=======
-    }
->>>>>>> parent of c1a1dc0 (5:03)
 
     const fetchLogs = async (orderId) => {
         try {

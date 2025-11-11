@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   Form,
@@ -18,6 +18,7 @@ import {
 import {
   UploadOutlined,
   SaveOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { getRestaurantInfo, updateRestaurantInfo } from '../../api/restaurantAPI';
@@ -30,10 +31,16 @@ const { TextArea } = Input;
 const SettingsPage = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [logoFileList, setLogoFileList] = useState([]);
   const [availableCategories, setAvailableCategories] = useState([]);
 
-  const loadCategories = useCallback(async () => {
+  useEffect(() => {
+    loadRestaurantInfo();
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
     try {
       const response = await axios.get('/categories');
       const data = response.data?.data || response.data || [];
@@ -43,10 +50,11 @@ const SettingsPage = () => {
       // Fallback categories nếu API fails
       setAvailableCategories(['Việt Nam', 'Cơm', 'Phở', 'Bún', 'Fastfood', 'Hải sản', 'Lẩu', 'Đồ uống']);
     }
-  }, []);
+  };
 
-  const loadRestaurantInfo = useCallback(async () => {
+  const loadRestaurantInfo = async () => {
     try {
+      setLoadingData(true);
       const response = await getRestaurantInfo();
       const data = response.data;
       
@@ -86,14 +94,9 @@ const SettingsPage = () => {
       message.error('Không thể tải thông tin nhà hàng: ' + error);
       console.error('Load error:', error);
     } finally {
-      // Do nothing
+      setLoadingData(false);
     }
-  }, [form]);
-
-  useEffect(() => {
-    loadRestaurantInfo();
-    loadCategories();
-  }, [loadRestaurantInfo, loadCategories]);
+  };
 
   const handleSubmit = async (values) => {
     try {

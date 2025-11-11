@@ -1,4 +1,5 @@
-import { Card, Button, Typography, Tag, Divider } from 'antd'
+import { useState } from 'react'
+import { Card, Button, Typography, Tag, Rate, Divider } from 'antd'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   EnvironmentOutlined,
@@ -7,13 +8,13 @@ import {
   ShopOutlined,
 } from '@ant-design/icons'
 import './RestaurantCard.css'
-import PropTypes from 'prop-types'
 
 const { Meta } = Card
 const { Text } = Typography
 
 const RestaurantCard = ({ restaurant }) => {
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
 
   const formatDistance = (distance) => {
     if (distance < 1) {
@@ -99,28 +100,6 @@ const RestaurantCard = ({ restaurant }) => {
       </Button>
     </Card>
   )
-}
-
-RestaurantCard.propTypes = {
-  restaurant: PropTypes.shape({
-    _id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    image: PropTypes.string,
-    isOpen: PropTypes.bool,
-    distance: PropTypes.number,
-    deliveryTime: PropTypes.string,
-    rating: PropTypes.number,
-    reviewCount: PropTypes.number,
-    categories: PropTypes.arrayOf(PropTypes.string),
-    promo: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.shape({
-        text: PropTypes.string,
-        discountPercent: PropTypes.number,
-        minOrder: PropTypes.number,
-      })
-    ])
-  }).isRequired
 }
 
 export default RestaurantCard

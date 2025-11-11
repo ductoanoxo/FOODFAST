@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Card, List, Rate, Avatar, Typography, Empty, Spin, Progress, Row, Col } from 'antd'
+import { useState, useEffect } from 'react'
+import { Card, List, Rate, Avatar, Typography, Button, Empty, Spin, Progress, Row, Col, message } from 'antd'
 import { UserOutlined, StarFilled } from '@ant-design/icons'
 import { reviewAPI } from '../../api'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/vi'
 import './ReviewList.css'
-import PropTypes from 'prop-types'
 
 dayjs.extend(relativeTime)
 dayjs.locale('vi')
@@ -22,7 +21,34 @@ const ReviewList = ({ productId }) => {
         distribution: [0, 0, 0, 0, 0]
     })
 
-    const calculateStats = useCallback((reviewsData) => {
+    useEffect(() => {
+        if (productId) {
+            loadReviews()
+        }
+    }, [productId])
+
+    const loadReviews = async () => {
+        try {
+            setLoading(true)
+            const response = await reviewAPI.getProductReviews(productId)
+            
+            // Response từ axios interceptor đã extract data
+            if (response.success) {
+                const reviewsData = response.data || []
+                setReviews(reviewsData)
+                calculateStats(reviewsData)
+            }
+        } catch (error) {
+            console.error('Lỗi khi tải đánh giá:', error)
+            // Không hiển thị error message nếu chưa có đánh giá
+            setReviews([])
+            calculateStats([])
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const calculateStats = (reviewsData) => {
         const total = reviewsData.length
         if (total === 0) {
             setStats({
@@ -46,34 +72,7 @@ const ReviewList = ({ productId }) => {
             totalReviews: total,
             distribution
         })
-    }, [])
-
-    const loadReviews = useCallback(async () => {
-        try {
-            setLoading(true)
-            const response = await reviewAPI.getProductReviews(productId)
-            
-            // Response from axios interceptor has extracted data
-            if (response.success) {
-                const reviewsData = response.data || []
-                setReviews(reviewsData)
-                calculateStats(reviewsData)
-            }
-        } catch (error) {
-            console.error('Error loading reviews:', error)
-            // Do not show error message if there are no reviews
-            setReviews([])
-            calculateStats([])
-        } finally {
-            setLoading(false)
-        }
-    }, [productId, calculateStats])
-
-    useEffect(() => {
-        if (productId) {
-            loadReviews()
-        }
-    }, [productId, loadReviews])
+    }
 
     const renderStatsCard = () => (
         <Card className="review-stats-card">
@@ -194,10 +193,6 @@ const ReviewList = ({ productId }) => {
             )}
         </div>
     )
-}
-
-ReviewList.propTypes = {
-  productId: PropTypes.string.isRequired
 }
 
 export default ReviewList

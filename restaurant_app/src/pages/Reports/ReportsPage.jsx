@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -12,7 +12,6 @@ import {
   Empty,
   message,
 } from 'antd';
-import PropTypes from 'prop-types';
 import {
   DollarOutlined,
   ShoppingOutlined,
@@ -20,6 +19,7 @@ import {
   FallOutlined,
 } from '@ant-design/icons';
 import {
+  LineChart,
   Line,
   BarChart,
   Bar,
@@ -33,6 +33,7 @@ import {
   Legend,
   ResponsiveContainer,
   Area,
+  AreaChart,
   ComposedChart,
 } from 'recharts';
 import dayjs from 'dayjs';
@@ -43,38 +44,6 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
-
-// Custom tooltip for revenue chart
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="custom-tooltip">
-        <p className="label" style={{ fontWeight: 600, marginBottom: 8 }}>
-          {label}
-        </p>
-        {payload.map((entry, index) => (
-          <p key={index} style={{ color: entry.color, margin: '4px 0' }}>
-            <strong>{entry.name}:</strong>{' '}
-            {entry.name.includes('Doanh thu') || entry.name.includes('Giá trị')
-              ? `${entry.value.toLocaleString('vi-VN')}₫`
-              : entry.value.toLocaleString('vi-VN')}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
-CustomTooltip.propTypes = {
-  active: PropTypes.bool,
-  payload: PropTypes.arrayOf(PropTypes.shape({
-    color: PropTypes.string,
-    name: PropTypes.string,
-    value: PropTypes.number,
-  })),
-  label: PropTypes.string,
-};
 
 const ReportsPage = () => {
   const [loading, setLoading] = useState(false);
@@ -95,7 +64,11 @@ const ReportsPage = () => {
   const [topProducts, setTopProducts] = useState([]);
   const [ordersByStatus, setOrdersByStatus] = useState([]);
 
-  const loadData = useCallback(async () => {
+  useEffect(() => {
+    loadData();
+  }, [dateRange, period]);
+
+  const loadData = async () => {
     try {
       setLoading(true);
       
@@ -151,11 +124,7 @@ const ReportsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [dateRange, period]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  };
   
   const getStatusLabel = (status) => {
     const labels = {
@@ -168,6 +137,28 @@ const ReportsPage = () => {
       cancelled: 'Đã hủy',
     };
     return labels[status] || status;
+  };
+
+  // Custom tooltip for revenue chart
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="custom-tooltip">
+          <p className="label" style={{ fontWeight: 600, marginBottom: 8 }}>
+            {label}
+          </p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color, margin: '4px 0' }}>
+              <strong>{entry.name}:</strong>{' '}
+              {entry.name.includes('Doanh thu') || entry.name.includes('Giá trị')
+                ? `${entry.value.toLocaleString('vi-VN')}₫`
+                : entry.value.toLocaleString('vi-VN')}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
   };
 
   const handleDateChange = (dates) => {

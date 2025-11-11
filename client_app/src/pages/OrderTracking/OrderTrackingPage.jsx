@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, Steps, Timeline, Typography, Tag, Spin, Row, Col, Divider, Button, Modal, message, Alert } from 'antd';
 import {
@@ -31,18 +31,6 @@ const OrderTrackingPage = () => {
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [refundInfo, setRefundInfo] = useState(null);
-
-  const fetchOrderTracking = useCallback(async () => {
-    try {
-      const response = await orderAPI.trackOrder(orderId);
-      setOrder(response.data);
-    } catch (error) {
-      console.error('Error fetching order:', error);
-      setOrder(null); // Set order to null on error to show 'not found' message
-    } finally {
-      setLoading(false);
-    }
-  }, [orderId]);
 
   useEffect(() => {
     fetchOrderTracking();
@@ -87,7 +75,19 @@ const OrderTrackingPage = () => {
       socketService.off('order:drone-assigned', handleDroneAssigned);
       socketService.off('delivery:complete', handleDeliveryComplete);
     };
-  }, [orderId, fetchOrderTracking]);
+  }, [orderId]);
+
+  const fetchOrderTracking = async () => {
+    try {
+      const response = await orderAPI.trackOrder(orderId);
+      setOrder(response.data);
+    } catch (error) {
+      console.error('Error fetching order:', error);
+      setOrder(null); // Set order to null on error to show 'not found' message
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleConfirmDelivery = async () => {
     try {

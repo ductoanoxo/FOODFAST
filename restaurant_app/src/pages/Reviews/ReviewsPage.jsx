@@ -43,6 +43,7 @@ const ReviewsPage = () => {
   const [replyModalVisible, setReplyModalVisible] = useState(false);
   const [selectedReview, setSelectedReview] = useState(null);
   const [replyText, setReplyText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadReviews();
@@ -86,6 +87,7 @@ const ReviewsPage = () => {
     }
     
     try {
+      setSubmitting(true);
       
       // Cập nhật review với restaurantReply
       await updateReview(selectedReview._id, {
@@ -104,7 +106,7 @@ const ReviewsPage = () => {
       console.error('Submit reply error:', error);
       message.error('Không thể gửi phản hồi: ' + (error.message || 'Lỗi không xác định'));
     } finally {
-      // Do nothing
+      setSubmitting(false);
     }
   };
 

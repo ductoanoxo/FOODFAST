@@ -11,7 +11,6 @@ import {
     Switch,
     Form,
     Input,
-    InputNumber,
     Statistic,
     Row,
     Col,
@@ -19,7 +18,6 @@ import {
 } from 'antd'
 import { 
     EyeOutlined, 
-    EditOutlined, 
     PlusOutlined,
     StarOutlined,
     CommentOutlined,
@@ -41,7 +39,7 @@ const RestaurantsPage = () => {
     const [credentialsModalVisible, setCredentialsModalVisible] = useState(false)
     const [createdCredentials, setCreatedCredentials] = useState(null)
     const [form] = Form.useForm()
-    const emailChecking = false;
+    const [emailChecking, setEmailChecking] = useState(false)
 
     useEffect(() => {
         fetchRestaurants()
@@ -59,7 +57,7 @@ const RestaurantsPage = () => {
         }
     }
 
-    const handleToggleStatus = async (id) => {
+    const handleToggleStatus = async (id, isOpen) => {
         try {
             const token = localStorage.getItem('token')
 

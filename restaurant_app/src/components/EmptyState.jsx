@@ -1,6 +1,5 @@
 import { Empty as AntEmpty, Button } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
-import PropTypes from 'prop-types';
 
 const EmptyState = ({ 
   description = 'Không có dữ liệu', 
@@ -29,13 +28,6 @@ const EmptyState = ({
       </AntEmpty>
     </div>
   );
-};
-
-EmptyState.propTypes = {
-  description: PropTypes.string,
-  actionText: PropTypes.string,
-  onAction: PropTypes.func,
-  icon: PropTypes.node,
 };
 
 export default EmptyState;

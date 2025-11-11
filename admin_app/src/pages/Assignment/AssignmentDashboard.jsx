@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Row, Col, Card, List, Button, Modal, message, Tag, Space, Spin, Empty, Divider } from 'antd';
 import {
   ThunderboltOutlined,
@@ -7,7 +7,6 @@ import {
   ClockCircleOutlined,
   ThunderboltFilled,
   WarningOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import * as adminAPI from '../../api/adminAPI';
@@ -23,17 +22,7 @@ const AssignmentDashboard = () => {
   const [selectedDrone, setSelectedDrone] = useState(null);
   const [assigning, setAssigning] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-    initializeSocket();
-
-    return () => {
-      socketService.off('order:ready-for-assignment');
-      socketService.off('assignment:success');
-    };
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [ordersRes, dronesRes] = await Promise.all([
@@ -48,31 +37,26 @@ const AssignmentDashboard = () => {
     } finally {
       setLoading(false);
     }
-<<<<<<< HEAD
-  }, [setLoading, setPendingOrders, setAvailableDrones]);
-=======
-  };
->>>>>>> parent of c1a1dc0 (5:03)
+  }, [setLoading, setPendingOrders, setAvailableDrones, message]);
 
-  const initializeSocket = () => {
+  const initializeSocket = useCallback(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
     socketService.connect(token);
 
     // Listen for new orders
-    socketService.onOrderReady(({ orderId }) => {
-      message.info(`🆕 New order ready for assignment: ${orderId}`);
+    socketService.onOrderReady((data) => {
+      message.info(`🆕 New order ready for assignment: ${data.orderId}`);
       fetchData();
     });
 
     // Listen for successful assignments
-    socketService.onAssignmentSuccess(() => {
+    socketService.onAssignmentSuccess((data) => {
       message.success(`✅ Order assigned to drone successfully!`);
       fetchData();
     });
-<<<<<<< HEAD
-  }, [fetchData]);
+  }, [fetchData, message]);
 
   useEffect(() => {
     fetchData();
@@ -83,9 +67,6 @@ const AssignmentDashboard = () => {
       socketService.off('assignment:success');
     };
   }, [fetchData, initializeSocket]);
-=======
-  };
->>>>>>> parent of c1a1dc0 (5:03)
 
   const handleDragEnd = (result) => {
     const { source, destination, draggableId } = result;

@@ -1,11 +1,10 @@
-import { useEffect, useState, useRef, useMemo } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { message, Spin, Progress, Typography, Space, Button } from 'antd'
 import { EnvironmentOutlined, RocketOutlined, UserOutlined, ShopOutlined } from '@ant-design/icons'
 import socketService from '../../services/socketService'
-import PropTypes from 'prop-types'
 import './DroneMap.css'
 
 const { Text } = Typography
@@ -67,15 +66,6 @@ const MapControls = ({ mapRef, restaurantPos, deliveryPos, dronePos }) => {
       )}
     </div>
   )
-}
-
-MapControls.propTypes = {
-  mapRef: PropTypes.shape({
-    current: PropTypes.object
-  }).isRequired,
-  restaurantPos: PropTypes.arrayOf(PropTypes.number),
-  deliveryPos: PropTypes.arrayOf(PropTypes.number),
-  dronePos: PropTypes.arrayOf(PropTypes.number)
 }
 
 // Fix Leaflet default marker icon issue
@@ -216,12 +206,6 @@ const AutoFitBounds = ({ restaurantPos, deliveryPos, dronePos }) => {
   return null
 }
 
-AutoFitBounds.propTypes = {
-  restaurantPos: PropTypes.arrayOf(PropTypes.number),
-  deliveryPos: PropTypes.arrayOf(PropTypes.number),
-  dronePos: PropTypes.arrayOf(PropTypes.number)
-}
-
 const DroneMap = ({ order }) => {
   const [droneLocation, setDroneLocation] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -234,87 +218,6 @@ const DroneMap = ({ order }) => {
   const restaurantCoords = order?.restaurant?.location?.coordinates // [lng, lat]
   const deliveryCoords = order?.deliveryInfo?.location?.coordinates // [lng, lat]
   const droneCoords = order?.drone?.currentLocation?.coordinates // [lng, lat]
-
-  // Convert to Leaflet format [lat, lng] - memoize to prevent unnecessary recalculations
-  const restaurantPos = useMemo(() => {
-    return restaurantCoords ? [restaurantCoords[1], restaurantCoords[0]] : null
-  }, [restaurantCoords])
-  
-  const deliveryPos = useMemo(() => {
-    return deliveryCoords ? [deliveryCoords[1], deliveryCoords[0]] : null
-  }, [deliveryCoords])
-
-  useEffect(() => {
-    const setupSocketListeners = () => {
-      // Listen for delivery simulation started
-      socketService.on('delivery:simulation:started', (data) => {
-        console.log('🚀 Delivery simulation started:', data)
-        if (data.orderId === order._id) {
-          message.info(`Drone ${data.droneName} đã bắt đầu giao hàng!`, 3)
-          setEstimatedTime(data.estimatedTimeMinutes)
-        }
-      })
-
-      // Listen for real-time drone location updates
-      socketService.on('drone:location:update', (data) => {
-        console.log('📍 Drone location update:', data)
-        if (data.orderId === order._id) {
-          const [lng, lat] = data.location.coordinates
-          setDroneLocation([lat, lng])
-          setDeliveryProgress(data.progress || 0)
-          setRemainingDistance(data.remainingDistance)
-          setEstimatedTime(data.estimatedTimeRemaining)
-        }
-      })
-
-      // Listen for delivery complete
-      socketService.on('delivery:complete', (data) => {
-        console.log('✅ Delivery complete:', data)
-        if (data.orderId === order._id) {
-          message.success('Đơn hàng đã được giao đến!', 5)
-          setDeliveryProgress(100)
-          setRemainingDistance(0)
-          setEstimatedTime(0)
-        }
-      })
-    }
-
-    if (!order?.drone?._id) {
-      setLoading(false)
-      return
-    }
-
-    // Initialize drone location
-    if (droneCoords) {
-      const [lng, lat] = droneCoords
-      setDroneLocation([lat, lng])
-    } else if (restaurantPos) {
-      // Start at restaurant if no drone location
-      setDroneLocation(restaurantPos)
-    }
-
-    // Connect to socket
-    const token = localStorage.getItem('token')
-    if (token) {
-      socketService.connect(token)
-      
-      // Join order room
-      socketService.emit('join-order-room', { orderId: order._id })
-      
-      setupSocketListeners()
-    }
-
-    setLoading(false)
-
-    return () => {
-      socketService.off('drone:location:update')
-      socketService.off('delivery:simulation:started')
-      socketService.off('delivery:complete')
-      if (order?._id) {
-        socketService.emit('leave-order-room', { orderId: order._id })
-      }
-    }
-  }, [order, droneCoords, restaurantPos, setEstimatedTime, setDroneLocation, setDeliveryProgress, setRemainingDistance])
 
   // ✅ VALIDATION: Check if coordinates exist before rendering map
   if (!restaurantCoords || !deliveryCoords) {
@@ -365,8 +268,84 @@ const DroneMap = ({ order }) => {
     )
   }
 
+  // Convert to Leaflet format [lat, lng]
+  const restaurantPos = [restaurantCoords[1], restaurantCoords[0]]
+  const deliveryPos = [deliveryCoords[1], deliveryCoords[0]]
+
   // Default center
   const defaultCenter = restaurantPos || deliveryPos || [10.8231, 106.6297]
+
+  useEffect(() => {
+    if (!order?.drone?._id) {
+      setLoading(false)
+      return
+    }
+
+    // Initialize drone location
+    if (droneCoords) {
+      const [lng, lat] = droneCoords
+      setDroneLocation([lat, lng])
+    } else if (restaurantPos) {
+      // Start at restaurant if no drone location
+      setDroneLocation(restaurantPos)
+    }
+
+    // Connect to socket
+    const token = localStorage.getItem('token')
+    if (token) {
+      socketService.connect(token)
+      
+      // Join order room
+      socketService.emit('join-order-room', { orderId: order._id })
+      
+      setupSocketListeners()
+    }
+
+    setLoading(false)
+
+    return () => {
+      socketService.off('drone:location:update')
+      socketService.off('delivery:simulation:started')
+      socketService.off('delivery:complete')
+      if (order?._id) {
+        socketService.emit('leave-order-room', { orderId: order._id })
+      }
+    }
+  }, [order?.drone?._id, order?._id])
+
+  const setupSocketListeners = () => {
+    // Listen for delivery simulation started
+    socketService.on('delivery:simulation:started', (data) => {
+      console.log('🚀 Delivery simulation started:', data)
+      if (data.orderId === order._id) {
+        message.info(`Drone ${data.droneName} đã bắt đầu giao hàng!`, 3)
+        setEstimatedTime(data.estimatedTimeMinutes)
+      }
+    })
+
+    // Listen for real-time drone location updates
+    socketService.on('drone:location:update', (data) => {
+      console.log('📍 Drone location update:', data)
+      if (data.orderId === order._id) {
+        const [lng, lat] = data.location.coordinates
+        setDroneLocation([lat, lng])
+        setDeliveryProgress(data.progress || 0)
+        setRemainingDistance(data.remainingDistance)
+        setEstimatedTime(data.estimatedTimeRemaining)
+      }
+    })
+
+    // Listen for delivery complete
+    socketService.on('delivery:complete', (data) => {
+      console.log('✅ Delivery complete:', data)
+      if (data.orderId === order._id) {
+        message.success('Đơn hàng đã được giao đến!', 5)
+        setDeliveryProgress(100)
+        setRemainingDistance(0)
+        setEstimatedTime(0)
+      }
+    })
+  }
 
   if (loading) {
     return (
@@ -569,40 +548,6 @@ const DroneMap = ({ order }) => {
       </MapContainer>
     </div>
   )
-}
-
-DroneMap.propTypes = {
-  order: PropTypes.shape({
-    _id: PropTypes.string.isRequired,
-    restaurant: PropTypes.shape({
-      name: PropTypes.string,
-      address: PropTypes.string,
-      location: PropTypes.shape({
-        coordinates: PropTypes.arrayOf(PropTypes.number)
-      })
-    }),
-    deliveryInfo: PropTypes.shape({
-      name: PropTypes.string,
-      address: PropTypes.string,
-      location: PropTypes.shape({
-        coordinates: PropTypes.arrayOf(PropTypes.number)
-      })
-    }),
-    drone: PropTypes.shape({
-      _id: PropTypes.string,
-      name: PropTypes.string,
-      model: PropTypes.string,
-      batteryLevel: PropTypes.number,
-      status: PropTypes.string,
-      currentLocation: PropTypes.shape({
-        coordinates: PropTypes.arrayOf(PropTypes.number)
-      })
-    }),
-    routeGeometry: PropTypes.shape({
-      coordinates: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))
-    }),
-    routingMethod: PropTypes.string
-  }).isRequired
 }
 
 export default DroneMap

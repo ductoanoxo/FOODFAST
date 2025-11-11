@@ -13,8 +13,12 @@ const Product = require('../../API/Models/Product');
 const Restaurant = require('../../API/Models/Restaurant');
 
 const {
+    getPromotions,
     getActivePromotions,
     createPromotion,
+    updatePromotion,
+    deletePromotion,
+    togglePromotionStatus,
     getProductsWithPromotions,
 } = require('../../API/Controllers/promotionController');
 
@@ -84,6 +88,8 @@ describe('🎯 PROMOTION CONTROLLER - Unit Tests', () => {
     test('✅ getProductsWithPromotions applies promotion to matching category products', async () => {
         const restaurantId = 'rest1';
         req.params.restaurantId = restaurantId;
+
+        const now = new Date();
 
         const promo = {
             _id: 'promo1',

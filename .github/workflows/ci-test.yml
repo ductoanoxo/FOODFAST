@@ -53,6 +53,10 @@ jobs:
         working-directory: ./server_app
         run: npm ci
 
+      - name: Run linting
+        working-directory: ./server_app
+        run: npm run lint || echo "⚠️  Linting warnings found but continuing"
+
       - name: Run Unit Tests (Must Pass 100%)
         working-directory: ./server_app
         env:

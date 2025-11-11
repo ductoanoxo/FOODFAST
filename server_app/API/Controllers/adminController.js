@@ -1,5 +1,6 @@
 const Order = require('../Models/Order');
 const Drone = require('../Models/Drone');
+const User = require('../Models/User');
 const { getDistanceFromLatLonInKm } = require('../Utils/locationUtils'); // Import distance utility (case-sensitive path)
 
 // @desc    Get all pending orders (waiting for drone assignment)
