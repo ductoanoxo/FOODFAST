@@ -59,7 +59,7 @@ jobs:
           NODE_ENV: test
           MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
           JWT_SECRET: test-secret-key
-        run: npm test || echo "No tests found"
+        run: npm test:unit || echo "No tests found"
 
       - name: Run integration tests
         working-directory: ./server_app
@@ -68,6 +68,17 @@ jobs:
           MONGO_URI: mongodb://admin:admin123@localhost:27017/foodfast_test?authSource=admin
           JWT_SECRET: test-secret-key
         run: npm run test:integration || echo "No integration tests found"
+
+      - name: Display coverage summary
+        working-directory: ./server_app
+        run: |
+          echo "📊 Server App Test Coverage Summary:"
+          if [ -f coverage/coverage-summary.json ]; then
+            cat coverage/coverage-summary.json
+          else
+            echo "Coverage summary not found"
+          fi
+        continue-on-error: true
 
       - name: Check for syntax errors
         working-directory: ./server_app
@@ -108,6 +119,14 @@ jobs:
           CI: true
           NODE_OPTIONS: '--no-warnings --experimental-vm-modules'
 
+      - name: Run integration tests
+        working-directory: ./${{ matrix.app }}
+        run: npm run test:integration -- --reporter=verbose || echo "No integration tests found for ${{ matrix.app }}"
+        env:
+          NODE_ENV: test
+          CI: true
+          NODE_OPTIONS: '--no-warnings --experimental-vm-modules'
+
       - name: Generate test coverage
         working-directory: ./${{ matrix.app }}
         run: npm run test:coverage || echo "Coverage not configured for ${{ matrix.app }}"
@@ -115,6 +134,17 @@ jobs:
         env:
           NODE_ENV: test
           CI: true
+
+      - name: Display coverage summary
+        working-directory: ./${{ matrix.app }}
+        run: |
+          echo "📊 ${{ matrix.app }} Test Coverage Summary:"
+          if [ -f coverage/coverage-summary.json ]; then
+            cat coverage/coverage-summary.json
+          else
+            echo "Coverage summary not found for ${{ matrix.app }}"
+          fi
+        continue-on-error: true
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
