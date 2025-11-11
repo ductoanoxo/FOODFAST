@@ -91,7 +91,7 @@ const RefundsPage = () => {
         } finally {
             setLoading(false)
         }
-    }, [setLoading, setRefunds, setPagination, filters, pagination]);
+    }, [setLoading, setRefunds, setPagination, filters, message]);
 
     useEffect(() => {
         // Fetch both stats and refunds in parallel

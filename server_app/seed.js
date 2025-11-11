@@ -25,7 +25,7 @@ const connectDB = async () => {
     console.log('MongoDB connected for seeding...');
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    throw error;
+    process.exit(1);
   }
 };
 
@@ -209,6 +209,9 @@ const seedData = async () => {
     console.log('Updated all restaurant owners with their restaurantId');
 
     // Verify
+    const verified1 = await User.findById(restaurantOwner1._id);
+    const verified2 = await User.findById(restaurantOwner2._id);
+    const verified3 = await User.findById(restaurantOwner3._id);
     console.log('✓ Owner 1 (restaurant@foodfast.com) manages:', restaurants[0].name);
     console.log('✓ Owner 2 (pho@foodfast.com) manages:', restaurants[1].name);
     console.log('✓ Owner 3 (kfc@foodfast.com) manages:', restaurants[2].name);
@@ -514,10 +517,11 @@ const seedData = async () => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     await mongoose.disconnect();
+    process.exit(0);
   } catch (error) {
     console.error('Seeding error:', error);
     await mongoose.disconnect();
-    throw error;
+    process.exit(1);
   }
 };
 

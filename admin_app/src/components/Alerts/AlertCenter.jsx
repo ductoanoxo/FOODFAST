@@ -49,24 +49,7 @@ const AlertCenter = () => {
     } else {
       message.info(alert.title, 2);
     }
-  }, [setAlerts, setUnreadCount, saveAlertsToStorage]);
-
-  const playAlertSound = useCallback((severity) => {
-    if (!soundEnabled) return;
-    
-    // Play different sounds based on severity
-    try {
-      const audio = new Audio(
-        severity === 'critical'
-          ? '/sounds/critical-alert.mp3'
-          : '/sounds/warning-alert.mp3'
-      );
-      audio.volume = 0.5;
-      audio.play().catch(e => console.log('Audio play failed:', e));
-    } catch (error) {
-      console.log('Audio not available');
-    }
-  }, [soundEnabled]);
+  }, [setAlerts, setUnreadCount, saveAlertsToStorage, message]);
 
   const initializeSocket = useCallback(() => {
     const token = localStorage.getItem('token');
@@ -132,20 +115,7 @@ const AlertCenter = () => {
         });
       });
     }
-  }, [addAlert, playAlertSound]);
-
-  const loadAlertsFromStorage = useCallback(() => {
-    const stored = localStorage.getItem('admin_alerts');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setAlerts(parsed);
-        setUnreadCount(parsed.filter(a => !a.read).length);
-      } catch (error) {
-        console.error('Error loading alerts:', error);
-      }
-    }
-  }, [setAlerts, setUnreadCount]);
+  }, [addAlert]);
 
   useEffect(() => {
     initializeSocket();
@@ -158,6 +128,23 @@ const AlertCenter = () => {
       socketService.off('assignment:rejected');
     };
   }, [initializeSocket, loadAlertsFromStorage]);
+
+  const playAlertSound = (severity) => {
+    if (!soundEnabled) return;
+    
+    // Play different sounds based on severity
+    try {
+      const audio = new Audio(
+        severity === 'critical'
+          ? '/sounds/critical-alert.mp3'
+          : '/sounds/warning-alert.mp3'
+      );
+      audio.volume = 0.5;
+      audio.play().catch(e => console.log('Audio play failed:', e));
+    } catch (error) {
+      console.log('Audio not available');
+    }
+  };
 
   const markAsRead = (alertId) => {
     setAlerts(prev => {

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import PropTypes from 'prop-types'
 import { Modal, Form, Rate, Input, Upload, Button, message } from 'antd'
 import { PlusOutlined, CameraOutlined } from '@ant-design/icons'
 import { reviewAPI } from '../../api'
@@ -162,14 +161,6 @@ const CreateReview = ({ visible, onClose, productId, orderId, onSuccess }) => {
             </Form>
         </Modal>
     )
-}
-
-CreateReview.propTypes = {
-    visible: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    productId: PropTypes.string.isRequired,
-    orderId: PropTypes.string,
-    onSuccess: PropTypes.func
 }
 
 export default CreateReview

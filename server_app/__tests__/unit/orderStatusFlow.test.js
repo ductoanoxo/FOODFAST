@@ -135,6 +135,7 @@ describe('Order Status Flow - Unit Tests', () => {
         });
 
         it('should NOT allow status change after delivered', () => {
+            const order = { id: '1', status: ORDER_STATUS.DELIVERED };
             const validTransitions = VALID_TRANSITIONS[ORDER_STATUS.DELIVERED];
 
             expect(validTransitions).toHaveLength(0);

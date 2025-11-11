@@ -1,6 +1,5 @@
 import { Result, Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import PropTypes from 'prop-types';
 
 const ErrorBoundary = ({ error, resetError }) => {
   const navigate = useNavigate();
@@ -28,13 +27,6 @@ const ErrorBoundary = ({ error, resetError }) => {
       />
     </div>
   );
-};
-
-ErrorBoundary.propTypes = {
-  error: PropTypes.shape({
-    message: PropTypes.string,
-  }),
-  resetError: PropTypes.func.isRequired,
 };
 
 export default ErrorBoundary;

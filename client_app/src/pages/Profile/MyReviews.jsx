@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Card, List, Rate, Typography, Button, Empty, Spin, Tag, message, Popconfirm } from 'antd'
-import { DeleteOutlined } from '@ant-design/icons'
+import { useState, useEffect } from 'react'
+import { Card, List, Rate, Avatar, Typography, Button, Empty, Spin, Tag, message, Popconfirm } from 'antd'
+import { UserOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import { useSelector } from 'react-redux'
 import { reviewAPI } from '../../api'
+import CreateReview from '../../components/Product/CreateReview'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/vi'
@@ -17,8 +18,16 @@ const MyReviews = () => {
     const { user } = useSelector(state => state.auth)
     const [reviews, setReviews] = useState([])
     const [loading, setLoading] = useState(false)
+    const [editingReview, setEditingReview] = useState(null)
+    const [showEditModal, setShowEditModal] = useState(false)
 
-    const loadMyReviews = useCallback(async () => {
+    useEffect(() => {
+        if (user) {
+            loadMyReviews()
+        }
+    }, [user])
+
+    const loadMyReviews = async () => {
         try {
             setLoading(true)
             const response = await reviewAPI.getUserReviews(user._id)
@@ -32,13 +41,7 @@ const MyReviews = () => {
         } finally {
             setLoading(false)
         }
-    }, [user])
-
-    useEffect(() => {
-        if (user) {
-            loadMyReviews()
-        }
-    }, [user, loadMyReviews])
+    }
 
     const handleDelete = async (reviewId) => {
         try {
@@ -51,6 +54,11 @@ const MyReviews = () => {
             console.error('Lỗi khi xóa đánh giá:', error)
             message.error('Không thể xóa đánh giá')
         }
+    }
+
+    const handleEdit = (review) => {
+        setEditingReview(review)
+        setShowEditModal(true)
     }
 
     if (loading) {
@@ -81,6 +89,13 @@ const MyReviews = () => {
                                 key={review._id}
                                 className="review-item"
                                 actions={[
+                                    <Button 
+                                        key="edit"
+                                        icon={<EditOutlined />}
+                                        onClick={() => handleEdit(review)}
+                                    >
+                                        Sửa
+                                    </Button>,
                                     <Popconfirm
                                         key="delete"
                                         title="Xóa đánh giá"

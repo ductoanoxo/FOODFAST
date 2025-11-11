@@ -11,7 +11,7 @@ mongoose.connect('mongodb+srv://toantra349:toantoan123@ktpm.dwb8wtz.mongodb.net/
     return fixStuckDrones();
 }).catch(err => {
     console.error('❌ MongoDB Connection Error:', err);
-    throw err;
+    process.exit(1);
 });
 
 async function fixStuckDrones() {
@@ -115,9 +115,9 @@ async function fixStuckDrones() {
 
     } catch (error) {
         console.error('❌ Error:', error);
-        throw error;
     } finally {
         await mongoose.connection.close();
         console.log('\n✅ Connection closed');
+        process.exit(0);
     }
 }

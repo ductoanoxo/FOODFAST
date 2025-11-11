@@ -106,6 +106,7 @@ describe('errorMiddleware.errorHandler (unit)', () => {
   const err = {}; // không có message, không có statusCode
 
   const { errorHandler } = require('../../API/Middleware/errorMiddleware');
+  const logger = require('../../API/Utils/logger');
 
   errorHandler(err, req, res, next);
 

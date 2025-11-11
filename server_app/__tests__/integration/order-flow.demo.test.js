@@ -21,7 +21,7 @@ const Drone = require('../../API/Models/Drone');
 const app = createTestApp();
 
 let mongod;
-let testUser, testRestaurant, testProduct;
+let testUser, testRestaurant, testProduct, testDrone;
 let userToken;
 
 describe('🚀 ORDER FLOW - INTEGRATION TEST (DEMO)', () => {
@@ -78,7 +78,7 @@ describe('🚀 ORDER FLOW - INTEGRATION TEST (DEMO)', () => {
             image: 'burger.jpg'
         });
 
-        await Drone.create({
+        testDrone = await Drone.create({
             name: 'Demo Drone',
             droneId: 'DRONE-DEMO-001',
             model: 'DJI Phantom',

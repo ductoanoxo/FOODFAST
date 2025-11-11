@@ -60,7 +60,7 @@ const OrdersPage = () => {
         } finally {
             setLoading(false)
         }
-    }, [setLoading, setOrders, statusFilter]);
+    }, [setLoading, setOrders, statusFilter, message]);
 
     useEffect(() => {
         fetchOrders()

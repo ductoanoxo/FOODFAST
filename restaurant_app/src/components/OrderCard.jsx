@@ -1,7 +1,6 @@
 import { Card, Tag, Typography, Space, Button, Divider } from 'antd';
 import { ClockCircleOutlined, DollarOutlined, UserOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import PropTypes from 'prop-types';
 import './OrderCard.css';
 
 const { Text, Title } = Typography;
@@ -223,50 +222,6 @@ const OrderCard = ({ order, onUpdateStatus, onConfirmHandover, onViewDetails, on
       </div>
     </Card>
   );
-};
-
-OrderCard.propTypes = {
-  order: PropTypes.shape({
-    _id: PropTypes.string.isRequired,
-    status: PropTypes.string.isRequired,
-    paymentStatus: PropTypes.string,
-    paymentMethod: PropTypes.string,
-    user: PropTypes.shape({
-      name: PropTypes.string,
-    }),
-    createdAt: PropTypes.string.isRequired,
-    drone: PropTypes.shape({
-      _id: PropTypes.string,
-      name: PropTypes.string,
-      model: PropTypes.string,
-    }),
-    items: PropTypes.arrayOf(PropTypes.shape({
-      product: PropTypes.shape({
-        name: PropTypes.string,
-        price: PropTypes.number,
-      }),
-      quantity: PropTypes.number,
-      price: PropTypes.number,
-      originalPrice: PropTypes.number,
-      appliedPromotion: PropTypes.shape({
-        discountPercent: PropTypes.number,
-      }),
-      appliedDiscount: PropTypes.shape({
-        amount: PropTypes.number,
-      }),
-    })),
-    appliedVoucher: PropTypes.shape({
-      name: PropTypes.string,
-      code: PropTypes.string,
-      discountAmount: PropTypes.number,
-    }),
-    totalAmount: PropTypes.number,
-    cancelReason: PropTypes.string,
-  }).isRequired,
-  onUpdateStatus: PropTypes.func.isRequired,
-  onConfirmHandover: PropTypes.func.isRequired,
-  onViewDetails: PropTypes.func.isRequired,
-  onCancel: PropTypes.func,
 };
 
 export default OrderCard;

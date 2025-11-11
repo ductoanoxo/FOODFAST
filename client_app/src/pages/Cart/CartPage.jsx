@@ -33,6 +33,8 @@ const CartPage = () => {
   const dispatch = useDispatch()
   const { items, totalItems, totalPrice } = useSelector((state) => state.cart)
   const [promoRemaining, setPromoRemaining] = useState(0)
+  const [restaurantPromo, setRestaurantPromo] = useState(null)
+  const [updatingPrices, setUpdatingPrices] = useState(false)
 
   // Cập nhật giá sản phẩm từ database khi load trang
   useEffect(() => {
@@ -40,6 +42,7 @@ const CartPage = () => {
       if (!items || items.length === 0) return
       
       try {
+        setUpdatingPrices(true)
         for (const item of items) {
           try {
             const response = await productAPI.getProductById(item._id)
@@ -67,11 +70,13 @@ const CartPage = () => {
         }
       } catch (err) {
         console.error('Failed to update cart prices', err)
+      } finally {
+        setUpdatingPrices(false)
       }
     }
     
     updatePrices()
-  }, [items, dispatch])
+  }, []) // Chỉ chạy 1 lần khi mount
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -102,6 +107,7 @@ const CartPage = () => {
     const loadPromo = async () => {
       try {
         setPromoRemaining(0)
+        setRestaurantPromo(null)
         if (!items || items.length === 0) return
         const first = items[0]
         const restaurantId = first.restaurant?._id || first.restaurant
@@ -109,6 +115,7 @@ const CartPage = () => {
         const resp = await restaurantAPI.getRestaurantById(restaurantId)
         const data = resp.data?.data || resp.data
         const promo = data?.promo
+        setRestaurantPromo(promo || null)
         if (promo && typeof promo === 'object') {
           const minOrder = Number(promo.minOrder) || 0
           const validUntil = promo.validUntil ? new Date(promo.validUntil) : null

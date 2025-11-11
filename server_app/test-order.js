@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Order = require('./API/Models/Order');
 const Drone = require('./API/Models/Drone');
+const Restaurant = require('./API/Models/Restaurant');
 
 // Connect to MongoDB
 mongoose.connect('mongodb+srv://toantra349:toantoan123@ktpm.dwb8wtz.mongodb.net/FOODFASTDRONEDELIVERY?retryWrites=true&w=majority&appName=KTPM', {
@@ -11,7 +12,7 @@ mongoose.connect('mongodb+srv://toantra349:toantoan123@ktpm.dwb8wtz.mongodb.net/
     return testOrder();
 }).catch(err => {
     console.error('❌ MongoDB Connection Error:', err);
-    throw err;
+    process.exit(1);
 });
 
 async function testOrder() {
@@ -61,9 +62,9 @@ async function testOrder() {
 
     } catch (error) {
         console.error('❌ Error:', error);
-        throw error;
     } finally {
         await mongoose.connection.close();
         console.log('\n✅ Connection closed');
+        process.exit(0);
     }
 }

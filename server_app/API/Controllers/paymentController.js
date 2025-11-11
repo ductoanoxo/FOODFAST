@@ -29,53 +29,6 @@ const vnpayConfig = {
     vnp_Api: process.env.VNPAY_API || 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',
 }
 
-const getVNPayErrorMessage = (responseCode) => {
-    const errorMessages = {
-        // vnp_ResponseCode - Return URL & IPN
-        '00': 'Giao dịch thành công',
-        '07': 'Trừ tiền thành công. Giao dịch bị nghi ngờ (liên quan tới lừa đảo, giao dịch bất thường).',
-        '09': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng chưa đăng ký dịch vụ InternetBanking tại ngân hàng.',
-        '10': 'Giao dịch không thành công do: Khách hàng xác thực thông tin thẻ/tài khoản không đúng quá 3 lần',
-        '11': 'Giao dịch không thành công do: Đã hết hạn chờ thanh toán. Xin quý khách vui lòng thực hiện lại giao dịch.',
-        '12': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng bị khóa.',
-        '13': 'Giao dịch không thành công do: Quý khách nhập sai mật khẩu xác thực giao dịch (OTP). Xin quý khách vui lòng thực hiện lại giao dịch.',
-        '24': 'Giao dịch không thành công do: Khách hàng hủy giao dịch',
-        '51': 'Giao dịch không thành công do: Tài khoản của quý khách không đủ số dư để thực hiện giao dịch.',
-        '65': 'Giao dịch không thành công do: Tài khoản của Quý khách đã vượt quá hạn mức giao dịch trong ngày.',
-        '75': 'Ngân hàng thanh toán đang bảo trì.',
-        '79': 'Giao dịch không thành công do: KH nhập sai mật khẩu thanh toán quá số lần quy định. Xin quý khách vui lòng thực hiện lại giao dịch',
-        '99': 'Các lỗi khác (lỗi còn lại, không có trong danh sách mã lỗi đã liệt kê)',
-        
-        // Tra cứu giao dịch (querydr)
-        '02': 'Merchant không hợp lệ (kiểm tra lại vnp_TmnCode)',
-        '03': 'Dữ liệu gửi sang không đúng định dạng',
-        '91': 'Không tìm thấy giao dịch yêu cầu',
-        '94': 'Yêu cầu bị trùng lặp trong thời gian giới hạn của API (Giới hạn trong 5 phút)',
-        '97': 'Chữ ký không hợp lệ',
-        '98': 'Timeout Exception',
-        
-        // Hoàn trả (refund)
-        '04': 'Không cho phép hoàn trả toàn phần sau khi hoàn trả một phần',
-        '93': 'Số tiền hoàn trả không hợp lệ. Số tiền hoàn trả phải nhỏ hơn hoặc bằng số tiền thanh toán.',
-        '95': 'Giao dịch này không thành công bên VNPAY. VNPAY từ chối xử lý yêu cầu.',
-    }
-    return errorMessages[responseCode] || `Lỗi không xác định (Mã lỗi: ${responseCode})`
-}
-
-const getTransactionStatusMessage = (transactionStatus) => {
-    const statusMessages = {
-        '00': 'Giao dịch thành công',
-        '01': 'Giao dịch chưa hoàn tất',
-        '02': 'Giao dịch bị lỗi',
-        '04': 'Giao dịch đảo (Khách hàng đã bị trừ tiền tại Ngân hàng nhưng GD chưa thành công ở VNPAY)',
-        '05': 'VNPAY đang xử lý giao dịch này (GD hoàn tiền)',
-        '06': 'VNPAY đã gửi yêu cầu hoàn tiền sang Ngân hàng (GD hoàn tiền)',
-        '07': 'Giao dịch bị nghi ngờ gian lận',
-        '09': 'GD Hoàn trả bị từ chối',
-    }
-    return statusMessages[transactionStatus] || null
-}
-
 // @desc    Create VNPay payment URL
 // @route   POST /api/payment/vnpay/create
 // @access  Private
@@ -177,6 +130,55 @@ const vnpayReturn = asyncHandler(async (req, res) => {
         })
 
         if (order) {
+            // Bảng mã lỗi VNPay đầy đủ
+            const getVNPayErrorMessage = (responseCode) => {
+                const errorMessages = {
+                    // vnp_ResponseCode - Return URL & IPN
+                    '00': 'Giao dịch thành công',
+                    '07': 'Trừ tiền thành công. Giao dịch bị nghi ngờ (liên quan tới lừa đảo, giao dịch bất thường).',
+                    '09': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng chưa đăng ký dịch vụ InternetBanking tại ngân hàng.',
+                    '10': 'Giao dịch không thành công do: Khách hàng xác thực thông tin thẻ/tài khoản không đúng quá 3 lần',
+                    '11': 'Giao dịch không thành công do: Đã hết hạn chờ thanh toán. Xin quý khách vui lòng thực hiện lại giao dịch.',
+                    '12': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng bị khóa.',
+                    '13': 'Giao dịch không thành công do: Quý khách nhập sai mật khẩu xác thực giao dịch (OTP). Xin quý khách vui lòng thực hiện lại giao dịch.',
+                    '24': 'Giao dịch không thành công do: Khách hàng hủy giao dịch',
+                    '51': 'Giao dịch không thành công do: Tài khoản của quý khách không đủ số dư để thực hiện giao dịch.',
+                    '65': 'Giao dịch không thành công do: Tài khoản của Quý khách đã vượt quá hạn mức giao dịch trong ngày.',
+                    '75': 'Ngân hàng thanh toán đang bảo trì.',
+                    '79': 'Giao dịch không thành công do: KH nhập sai mật khẩu thanh toán quá số lần quy định. Xin quý khách vui lòng thực hiện lại giao dịch',
+                    '99': 'Các lỗi khác (lỗi còn lại, không có trong danh sách mã lỗi đã liệt kê)',
+                    
+                    // Tra cứu giao dịch (querydr)
+                    '02': 'Merchant không hợp lệ (kiểm tra lại vnp_TmnCode)',
+                    '03': 'Dữ liệu gửi sang không đúng định dạng',
+                    '91': 'Không tìm thấy giao dịch yêu cầu',
+                    '94': 'Yêu cầu bị trùng lặp trong thời gian giới hạn của API (Giới hạn trong 5 phút)',
+                    '97': 'Chữ ký không hợp lệ',
+                    '98': 'Timeout Exception',
+                    
+                    // Hoàn trả (refund)
+                    '04': 'Không cho phép hoàn trả toàn phần sau khi hoàn trả một phần',
+                    '13': 'Chỉ cho phép hoàn trả một phần',
+                    '93': 'Số tiền hoàn trả không hợp lệ. Số tiền hoàn trả phải nhỏ hơn hoặc bằng số tiền thanh toán.',
+                    '95': 'Giao dịch này không thành công bên VNPAY. VNPAY từ chối xử lý yêu cầu.',
+                }
+                return errorMessages[responseCode] || `Lỗi không xác định (Mã lỗi: ${responseCode})`
+            }
+
+            const getTransactionStatusMessage = (transactionStatus) => {
+                const statusMessages = {
+                    '00': 'Giao dịch thành công',
+                    '01': 'Giao dịch chưa hoàn tất',
+                    '02': 'Giao dịch bị lỗi',
+                    '04': 'Giao dịch đảo (Khách hàng đã bị trừ tiền tại Ngân hàng nhưng GD chưa thành công ở VNPAY)',
+                    '05': 'VNPAY đang xử lý giao dịch này (GD hoàn tiền)',
+                    '06': 'VNPAY đã gửi yêu cầu hoàn tiền sang Ngân hàng (GD hoàn tiền)',
+                    '07': 'Giao dịch bị nghi ngờ gian lận',
+                    '09': 'GD Hoàn trả bị từ chối',
+                }
+                return statusMessages[transactionStatus] || null
+            }
+
             // Nếu là payment return (user redirected), cập nhật trạng thái đơn tương ứng
             try {
                 if (vnp_Params['vnp_ResponseCode'] === '00') {
@@ -316,6 +318,10 @@ const vnpayIPN = asyncHandler(async (req, res) => {
 
     const Order = require('../Models/Order')
 
+    let paymentStatus = '0'; // Giả sử '0' là trạng thái khởi tạo giao dịch
+    let checkOrderId = true; // Mã đơn hàng "giá trị của vnp_TxnRef" VNPAY phản hồi tồn tại trong CSDL
+    let checkAmount = true; // Kiểm tra số tiền "giá trị của vnp_Amount/100" trùng khớp với số tiền của đơn hàng
+
     if (secureHash === signed) {
         // Kiểm tra checksum
         const order = await Order.findOne({
@@ -323,9 +329,11 @@ const vnpayIPN = asyncHandler(async (req, res) => {
         })
 
         if (order) {
+            checkOrderId = true
             // Kiểm tra số tiền
             const amount = vnp_Params['vnp_Amount'] / 100
             if (amount === order.totalAmount) {
+                checkAmount = true
                 if (order.paymentStatus === 'pending') {
                     // Kiểm tra tình trạng giao dịch trước khi cập nhật
                     if (rspCode === '00') {
@@ -365,6 +373,54 @@ const vnpayIPN = asyncHandler(async (req, res) => {
                         res.status(200).json({ RspCode: '00', Message: 'Success' })
                     } else {
                         // Thanh toán thất bại: cập nhật trạng thái đơn hàng thành cancelled
+                        const getVNPayErrorMessage = (responseCode) => {
+                            const errorMessages = {
+                                // vnp_ResponseCode - Return URL & IPN
+                                '00': 'Giao dịch thành công',
+                                '07': 'Trừ tiền thành công. Giao dịch bị nghi ngờ (liên quan tới lừa đảo, giao dịch bất thường).',
+                                '09': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng chưa đăng ký dịch vụ InternetBanking tại ngân hàng.',
+                                '10': 'Giao dịch không thành công do: Khách hàng xác thực thông tin thẻ/tài khoản không đúng quá 3 lần',
+                                '11': 'Giao dịch không thành công do: Đã hết hạn chờ thanh toán. Xin quý khách vui lòng thực hiện lại giao dịch.',
+                                '12': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng bị khóa.',
+                                '13': 'Giao dịch không thành công do: Quý khách nhập sai mật khẩu xác thực giao dịch (OTP). Xin quý khách vui lòng thực hiện lại giao dịch.',
+                                '24': 'Giao dịch không thành công do: Khách hàng hủy giao dịch',
+                                '51': 'Giao dịch không thành công do: Tài khoản của quý khách không đủ số dư để thực hiện giao dịch.',
+                                '65': 'Giao dịch không thành công do: Tài khoản của Quý khách đã vượt quá hạn mức giao dịch trong ngày.',
+                                '75': 'Ngân hàng thanh toán đang bảo trì.',
+                                '79': 'Giao dịch không thành công do: KH nhập sai mật khẩu thanh toán quá số lần quy định. Xin quý khách vui lòng thực hiện lại giao dịch',
+                                '99': 'Các lỗi khác (lỗi còn lại, không có trong danh sách mã lỗi đã liệt kê)',
+                                
+                                // Tra cứu giao dịch (querydr)
+                                '02': 'Merchant không hợp lệ (kiểm tra lại vnp_TmnCode)',
+                                '03': 'Dữ liệu gửi sang không đúng định dạng',
+                                '91': 'Không tìm thấy giao dịch yêu cầu',
+                                '94': 'Yêu cầu bị trùng lặp trong thời gian giới hạn của API (Giới hạn trong 5 phút)',
+                                '97': 'Chữ ký không hợp lệ',
+                                '98': 'Timeout Exception',
+                                
+                                // Hoàn trả (refund)
+                                '04': 'Không cho phép hoàn trả toàn phần sau khi hoàn trả một phần',
+                                '13': 'Chỉ cho phép hoàn trả một phần',
+                                '93': 'Số tiền hoàn trả không hợp lệ. Số tiền hoàn trả phải nhỏ hơn hoặc bằng số tiền thanh toán.',
+                                '95': 'Giao dịch này không thành công bên VNPAY. VNPAY từ chối xử lý yêu cầu.',
+                            }
+                            return errorMessages[responseCode] || `Lỗi không xác định (Mã lỗi: ${responseCode})`
+                        }
+
+                        const getTransactionStatusMessage = (transactionStatus) => {
+                            const statusMessages = {
+                                '00': 'Giao dịch thành công',
+                                '01': 'Giao dịch chưa hoàn tất',
+                                '02': 'Giao dịch bị lỗi',
+                                '04': 'Giao dịch đảo (Khách hàng đã bị trừ tiền tại Ngân hàng nhưng GD chưa thành công ở VNPAY)',
+                                '05': 'VNPAY đang xử lý giao dịch này (GD hoàn tiền)',
+                                '06': 'VNPAY đã gửi yêu cầu hoàn tiền sang Ngân hàng (GD hoàn tiền)',
+                                '07': 'Giao dịch bị nghi ngờ gian lận',
+                                '09': 'GD Hoàn trả bị từ chối',
+                            }
+                            return statusMessages[transactionStatus] || null
+                        }
+                        
                         const errorMessage = getVNPayErrorMessage(rspCode)
                         const transactionStatus = vnp_Params['vnp_TransactionStatus']
                         const transactionStatusMessage = getTransactionStatusMessage(transactionStatus)
@@ -421,9 +477,11 @@ const vnpayIPN = asyncHandler(async (req, res) => {
                     })
                 }
             } else {
+                checkAmount = false
                 res.status(200).json({ RspCode: '04', Message: 'Amount invalid' })
             }
         } else {
+            checkOrderId = false
             res.status(200).json({ RspCode: '01', Message: 'Order not found' })
         }
     } else {
@@ -644,7 +702,7 @@ function sortObject(obj) {
     let str = [];
     let key;
     for (key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        if (obj.hasOwnProperty(key)) {
             str.push(encodeURIComponent(key));
         }
     }

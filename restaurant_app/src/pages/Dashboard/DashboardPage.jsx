@@ -1,6 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Row, Col, Card, Statistic, Typography, Spin, Empty, Table, Select, Space, message, Tag, Progress } from 'antd';
-import PropTypes from 'prop-types';
 import {
   ShoppingOutlined,
   ClockCircleOutlined,
@@ -17,6 +16,7 @@ import {
   RobotOutlined,
 } from '@ant-design/icons';
 import { 
+  BarChart, 
   Bar, 
   XAxis, 
   YAxis, 
@@ -27,8 +27,10 @@ import {
   PieChart, 
   Pie, 
   Cell,
+  LineChart,
   Line,
   Area,
+  AreaChart,
   ComposedChart
 } from 'recharts';
 import dayjs from 'dayjs';
@@ -37,33 +39,6 @@ import './DashboardPage.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-
-// Custom tooltip for charts
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="custom-tooltip">
-        <p className="label">{`Ngày: ${label}`}</p>
-        {payload.map((entry, index) => (
-          <p key={index} style={{ color: entry.color }}>
-            {`${entry.name}: ${entry.value.toLocaleString('vi-VN')}${entry.name.includes('Doanh thu') || entry.name.includes('Giá trị') ? '₫' : ''}`}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
-CustomTooltip.propTypes = {
-  active: PropTypes.bool,
-  payload: PropTypes.arrayOf(PropTypes.shape({
-    color: PropTypes.string,
-    name: PropTypes.string,
-    value: PropTypes.number,
-  })),
-  label: PropTypes.string,
-};
 
 const DashboardPage = () => {
   const [loading, setLoading] = useState(false);
@@ -87,7 +62,11 @@ const DashboardPage = () => {
   const [revenueGrowth, setRevenueGrowth] = useState(0);
   const [yesterdayRevenue, setYesterdayRevenue] = useState(0);
 
-  const loadDashboardData = useCallback(async () => {
+  useEffect(() => {
+    loadDashboardData();
+  }, [timeRange, recentOrdersLimit]);
+
+  const loadDashboardData = async () => {
     try {
       setLoading(true);
 
@@ -106,7 +85,7 @@ const DashboardPage = () => {
 
       // Get stats from backend - parallel calls
       const statsParams = { startDate, endDate };
-      const [statsRes, ordersRes, , yesterdayStatsRes] = await Promise.all([
+      const [statsRes, ordersRes, menuRes, yesterdayStatsRes] = await Promise.all([
         getRestaurantStats(statsParams),
         getRestaurantOrders(statsParams),
         getRestaurantMenu(),
@@ -204,11 +183,7 @@ const DashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [timeRange, recentOrdersLimit]);
-
-  useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
+  };
 
   const todayGrowth = yesterdayRevenue > 0 
     ? ((stats.todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 
@@ -247,6 +222,23 @@ const DashboardPage = () => {
       color: statusColors.completed 
     },
   ].filter(item => item.value > 0);
+
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="custom-tooltip">
+          <p className="label">{`Ngày: ${label}`}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color }}>
+              {`${entry.name}: ${entry.value.toLocaleString('vi-VN')}${entry.name.includes('Doanh thu') || entry.name.includes('Giá trị') ? '₫' : ''}`}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
   const orderColumns = [
     {

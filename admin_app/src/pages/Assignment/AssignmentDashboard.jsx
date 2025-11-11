@@ -37,7 +37,7 @@ const AssignmentDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [setLoading, setPendingOrders, setAvailableDrones]);
+  }, [setLoading, setPendingOrders, setAvailableDrones, message]);
 
   const initializeSocket = useCallback(() => {
     const token = localStorage.getItem('token');
@@ -46,17 +46,17 @@ const AssignmentDashboard = () => {
     socketService.connect(token);
 
     // Listen for new orders
-    socketService.onOrderReady(({ orderId }) => {
-      message.info(`🆕 New order ready for assignment: ${orderId}`);
+    socketService.onOrderReady((data) => {
+      message.info(`🆕 New order ready for assignment: ${data.orderId}`);
       fetchData();
     });
 
     // Listen for successful assignments
-    socketService.onAssignmentSuccess(() => {
+    socketService.onAssignmentSuccess((data) => {
       message.success(`✅ Order assigned to drone successfully!`);
       fetchData();
     });
-  }, [fetchData]);
+  }, [fetchData, message]);
 
   useEffect(() => {
     fetchData();

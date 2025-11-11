@@ -12,7 +12,6 @@ import {
   MessageOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import PropTypes from 'prop-types';
 
 const { Text, Title } = Typography;
 
@@ -349,74 +348,6 @@ const OrderDetailModal = ({ visible, order, onClose }) => {
       </Row>
     </Modal>
   );
-};
-
-OrderDetailModal.propTypes = {
-  visible: PropTypes.bool.isRequired,
-  order: PropTypes.shape({
-    _id: PropTypes.string,
-    orderNumber: PropTypes.string,
-    status: PropTypes.string,
-    items: PropTypes.arrayOf(PropTypes.shape({
-      _id: PropTypes.string,
-      product: PropTypes.shape({
-        _id: PropTypes.string,
-        name: PropTypes.string,
-        price: PropTypes.number,
-      }),
-      quantity: PropTypes.number,
-      price: PropTypes.number,
-      originalPrice: PropTypes.number,
-      appliedPromotion: PropTypes.shape({
-        name: PropTypes.string,
-        discountPercent: PropTypes.number,
-      }),
-      appliedDiscount: PropTypes.shape({
-        amount: PropTypes.number,
-      }),
-    })),
-    paymentStatus: PropTypes.string,
-    paymentMethod: PropTypes.string,
-    paymentInfo: PropTypes.shape({
-      errorCode: PropTypes.string,
-      errorMessage: PropTypes.string,
-      failedAt: PropTypes.string,
-    }),
-    subtotal: PropTypes.number,
-    deliveryFee: PropTypes.number,
-    appliedVoucher: PropTypes.shape({
-      code: PropTypes.string,
-      discountAmount: PropTypes.number,
-    }),
-    totalAmount: PropTypes.number,
-    appliedPromotions: PropTypes.arrayOf(PropTypes.shape({
-      id: PropTypes.string,
-      name: PropTypes.string,
-      discountPercent: PropTypes.number,
-    })),
-    cancelReason: PropTypes.string,
-    cancelledAt: PropTypes.string,
-    user: PropTypes.shape({
-      name: PropTypes.string,
-      phone: PropTypes.string,
-    }),
-    deliveryInfo: PropTypes.shape({
-      phone: PropTypes.string,
-      address: PropTypes.string,
-    }),
-    note: PropTypes.string,
-    distanceKm: PropTypes.number,
-    distanceExplanation: PropTypes.string,
-    drone: PropTypes.shape({
-      name: PropTypes.string,
-      model: PropTypes.string,
-      status: PropTypes.string,
-      batteryLevel: PropTypes.number,
-    }),
-    createdAt: PropTypes.string,
-    updatedAt: PropTypes.string,
-  }),
-  onClose: PropTypes.func.isRequired,
 };
 
 export default OrderDetailModal;
