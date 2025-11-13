@@ -1,0 +1,1925 @@
+{
+  "info": {
+    "name": "FOODFAST - Complete API Collection",
+    "description": "Complete API test collection covering ALL endpoints in FOODFAST system (100+ APIs)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "2.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "restaurant_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "restaurant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "category_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "voucher_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "promotion_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "review_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "drone_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "transaction_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('auth_token', response.token);",
+                  "    console.log('Token saved:', response.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@test.com\",\n  \"password\": \"Test1234!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Customer\",\n  \"email\": \"customer@test.com\",\n  \"phone\": \"0901234567\",\n  \"password\": \"Test1234!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('auth_token', response.token);",
+                  "    console.log('Admin Token saved:', response.token);",
+                  "    console.log('User Role:', response.user.role);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@foodfast.com\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login as Admin user. Default credentials:\n- Email: admin@foodfast.com\n- Password: Admin123!\n\nNote: Update credentials based on your database seeded data"
+          },
+          "response": []
+        },
+        {
+          "name": "Login Restaurant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('auth_token', response.token);",
+                  "    if (response.user && response.user.restaurantId) {",
+                  "        pm.collectionVariables.set('restaurant_id', response.user.restaurantId);",
+                  "        console.log('Restaurant ID saved:', response.user.restaurantId);",
+                  "    }",
+                  "    console.log('Restaurant Token saved:', response.token);",
+                  "    console.log('User Role:', response.user.role);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"restaurant@test.com\",\n  \"password\": \"Restaurant123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login as Restaurant user. Default credentials:\n- Email: restaurant@test.com\n- Password: Restaurant123!\n\nNote: Update credentials based on your database seeded data.\nThe restaurantId will be automatically saved to collection variables."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User Info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current logged-in user information (works for all roles: user, restaurant, admin)"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('auth_token', '');",
+                  "    console.log('Logged out successfully. Token cleared.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout current user and clear token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order - COD",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('order_id', response.data._id);",
+                  "    console.log('Order ID saved:', response.data._id);",
+                  "    console.log('Order Number:', response.data.orderNumber);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"product\": \"{{product_id}}\",\n      \"quantity\": 2\n    }\n  ],\n  \"deliveryInfo\": {\n    \"name\": \"Nguyen Van A\",\n    \"phone\": \"0901234567\",\n    \"address\": \"123 Nguyen Trai, Q1, TP.HCM\"\n  },\n  \"paymentMethod\": \"COD\",\n  \"note\": \"Giao giờ hành chính\",\n  \"clientCalculatedTotal\": 150000,\n  \"clientDiscount\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order - VNPay",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('order_id', response.data._id);",
+                  "    console.log('Order ID saved:', response.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+                        "mode": "raw",
+                        "raw": "{\n  \"items\": [\n    {\n      \"product\": \"{{product_id}}\",\n      \"quantity\": 2\n    }\n  ],\n  \"deliveryInfo\": {\n    \"name\": \"Nguyen Van A\",\n    \"phone\": \"0901234567\",\n    \"address\": \"123 Nguyen Trai, Q1, TP.HCM\"\n  },\n  \"paymentMethod\": \"VNPAY\",\n  \"note\": \"Thanh toán VNPay\",\n  \"clientCalculatedTotal\": 150000,\n  \"clientDiscount\": 0\n}"
+                      },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order with Voucher",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('order_id', response.data._id);",
+                  "    console.log('Order with voucher created:', response.data._id);",
+                  "    console.log('Discount applied:', response.data.discount);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"product\": \"{{product_id}}\",\n      \"quantity\": 2\n    }\n  ],\n  \"deliveryInfo\": {\n    \"name\": \"Nguyen Van A\",\n    \"phone\": \"0901234567\",\n    \"address\": \"123 Nguyen Trai, Q1, TP.HCM\"\n  },\n  \"paymentMethod\": \"VNPAY\",\n  \"note\": \"Order with voucher\",\n  \"voucherCode\": \"GIAM20\",\n  \"clientCalculatedTotal\": 130000,\n  \"clientDiscount\": 20000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "{{order_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Track Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}/track",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "{{order_id}}", "track"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Đổi ý không muốn đặt nữa\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "{{order_id}}", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate Delivery Fee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"restaurantId\": \"{{restaurant_id}}\",\n  \"userAddress\": \"123 Nguyen Trai, Q1, TP.HCM\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders/calculate-fee",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "calculate-fee"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/history",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "history"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status (Restaurant)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "Restaurant user token required"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "{{order_id}}", "status"]
+            },
+            "description": "Restaurant updates order status. Valid statuses: confirmed, preparing, ready, picked_up, delivering, delivered, cancelled"
+          },
+          "response": []
+        },
+        {
+          "name": "Restaurant Confirm Handover to Drone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "Restaurant user token required"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"droneId\": \"DRONE_ID_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}/restaurant-confirm-handover",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "{{order_id}}", "restaurant-confirm-handover"]
+            },
+            "description": "Restaurant confirms they handed the order to the drone. Order status must be 'ready' and drone must be assigned."
+          },
+          "response": []
+        },
+        {
+          "name": "Customer Confirm Delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "Customer token required"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}/confirm-delivery",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "{{order_id}}", "confirm-delivery"]
+            },
+            "description": "Customer confirms they received the order successfully"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order - MOMO",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('order_id', response.data._id);",
+                  "    console.log('Order ID saved:', response.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"product\": \"{{product_id}}\",\n      \"quantity\": 1\n    }\n  ],\n  \"deliveryInfo\": {\n    \"name\": \"Nguyen Van B\",\n    \"phone\": \"0909876543\",\n    \"address\": \"456 Le Loi, Q1, TP.HCM\"\n  },\n  \"paymentMethod\": \"MOMO\",\n  \"note\": \"Thanh toán MoMo\",\n  \"clientCalculatedTotal\": 100000,\n  \"clientDiscount\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order - CARD",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('order_id', response.data._id);",
+                  "    console.log('Order ID saved:', response.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"product\": \"{{product_id}}\",\n      \"quantity\": 3\n    }\n  ],\n  \"deliveryInfo\": {\n    \"name\": \"Tran Thi C\",\n    \"phone\": \"0912345678\",\n    \"address\": \"789 Tran Hung Dao, Q5, TP.HCM\"\n  },\n  \"paymentMethod\": \"CARD\",\n  \"note\": \"Thanh toán thẻ tín dụng\",\n  \"clientCalculatedTotal\": 250000,\n  \"clientDiscount\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "VNPay Payment",
+      "item": [
+        {
+          "name": "Create VNPay Payment URL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('transaction_id', response.data.transactionId);",
+                  "    console.log('Payment URL:', response.data.paymentUrl);",
+                  "    console.log('Transaction ID:', response.data.transactionId);",
+                  "    console.log('\\n⚠️ IMPORTANT: Copy payment URL and open in browser to complete payment');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"amount\": 150000,\n  \"orderInfo\": \"Thanh toan don hang #ORDER123\",\n  \"bankCode\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/vnpay/create",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "vnpay", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "VNPay Return - Success (Mock)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payment/vnpay/return?vnp_TxnRef={{transaction_id}}&vnp_Amount=15000000&vnp_ResponseCode=00&vnp_SecureHash=MOCK_HASH",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "vnpay", "return"],
+              "query": [
+                {
+                  "key": "vnp_TxnRef",
+                  "value": "{{transaction_id}}",
+                  "description": "Transaction ID from create payment"
+                },
+                {
+                  "key": "vnp_Amount",
+                  "value": "15000000",
+                  "description": "Amount * 100"
+                },
+                {
+                  "key": "vnp_ResponseCode",
+                  "value": "00",
+                  "description": "00 = Success"
+                },
+                {
+                  "key": "vnp_SecureHash",
+                  "value": "MOCK_HASH",
+                  "description": "You need to calculate this properly"
+                }
+              ]
+            },
+            "description": "⚠️ NOTE: This is a mock request. In reality, VNPay will redirect with proper signature.\nUse this to understand the return format only."
+          },
+          "response": []
+        },
+        {
+          "name": "VNPay Return - Cancelled (Mock)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payment/vnpay/return?vnp_TxnRef={{transaction_id}}&vnp_Amount=15000000&vnp_ResponseCode=24&vnp_SecureHash=MOCK_HASH",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "vnpay", "return"],
+              "query": [
+                {
+                  "key": "vnp_TxnRef",
+                  "value": "{{transaction_id}}"
+                },
+                {
+                  "key": "vnp_Amount",
+                  "value": "15000000"
+                },
+                {
+                  "key": "vnp_ResponseCode",
+                  "value": "24",
+                  "description": "24 = User cancelled"
+                },
+                {
+                  "key": "vnp_SecureHash",
+                  "value": "MOCK_HASH"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "VNPay IPN - Success (Mock)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payment/vnpay/ipn?vnp_TxnRef={{transaction_id}}&vnp_Amount=15000000&vnp_ResponseCode=00&vnp_SecureHash=MOCK_HASH",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "vnpay", "ipn"],
+              "query": [
+                {
+                  "key": "vnp_TxnRef",
+                  "value": "{{transaction_id}}"
+                },
+                {
+                  "key": "vnp_Amount",
+                  "value": "15000000"
+                },
+                {
+                  "key": "vnp_ResponseCode",
+                  "value": "00"
+                },
+                {
+                  "key": "vnp_SecureHash",
+                  "value": "MOCK_HASH"
+                }
+              ]
+            },
+            "description": "⚠️ NOTE: This is normally called by VNPay server, not client.\nUse this to test IPN handling only."
+          },
+          "response": []
+        },
+        {
+          "name": "Query VNPay Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{transaction_id}}\",\n  \"transDate\": \"20250112123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/vnpay/querydr",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "vnpay", "querydr"]
+            },
+            "description": "Prepare data to query transaction status from VNPay"
+          },
+          "response": []
+        },
+        {
+          "name": "Prepare Refund Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{transaction_id}}\",\n  \"transDate\": \"20250112123456\",\n  \"amount\": 150000,\n  \"transType\": \"02\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/vnpay/refund",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "vnpay", "refund"]
+            },
+            "description": "Prepare refund data to send to VNPay.\ntransType: 02 = Full refund, 03 = Partial refund"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment Info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payment/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "{{order_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment Methods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payment/methods",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "methods"]
+            },
+            "description": "Get list of available payment methods (COD, VNPay, Momo)"
+          },
+          "response": []
+        },
+        {
+          "name": "Process VNPay Refund (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "Admin token required"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"transactionId\": \"{{transaction_id}}\",\n  \"amount\": 150000,\n  \"reason\": \"Khách hàng hủy đơn\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/vnpay/process-refund",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "vnpay", "process-refund"]
+            },
+            "description": "Admin processes VNPay refund for cancelled orders"
+          },
+          "response": []
+        },
+        {
+          "name": "Get VNPay Transaction Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payment/vnpay/status/{{transaction_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "vnpay", "status", "{{transaction_id}}"]
+            },
+            "description": "Check VNPay transaction status by transaction ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Verify VNPay Signature",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vnp_TxnRef\": \"{{transaction_id}}\",\n  \"vnp_Amount\": \"15000000\",\n  \"vnp_ResponseCode\": \"00\",\n  \"vnp_SecureHash\": \"HASH_TO_VERIFY\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payment/vnpay/verify",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "vnpay", "verify"]
+            },
+            "description": "Verify VNPay secure hash signature"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vouchers & Promotions",
+      "item": [
+        {
+          "name": "Get Available Vouchers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vouchers?restaurant={{restaurant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["vouchers"],
+              "query": [
+                {
+                  "key": "restaurant",
+                  "value": "{{restaurant_id}}"
+                }
+              ]
+            },
+            "description": "Get all available vouchers for a restaurant"
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Voucher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"GIAM20\",\n  \"restaurantId\": \"{{restaurant_id}}\",\n  \"orderTotal\": 150000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/vouchers/validate",
+              "host": ["{{base_url}}"],
+              "path": ["vouchers", "validate"]
+            },
+            "description": "Validate if a voucher code can be applied to an order"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Promotions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/promotions?restaurant={{restaurant_id}}&active=true",
+              "host": ["{{base_url}}"],
+              "path": ["promotions"],
+              "query": [
+                {
+                  "key": "restaurant",
+                  "value": "{{restaurant_id}}"
+                },
+                {
+                  "key": "active",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Get all active promotions for a restaurant"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Voucher Usage",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vouchers/usage",
+              "host": ["{{base_url}}"],
+              "path": ["vouchers", "usage"]
+            },
+            "description": "Get user's voucher usage history"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reviews & Ratings",
+      "item": [
+        {
+          "name": "Create Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"rating\": 5,\n  \"comment\": \"Đồ ăn ngon, giao hàng nhanh!\",\n  \"productId\": \"{{product_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["reviews"]
+            },
+            "description": "Create a review after order is delivered"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Restaurant Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reviews/restaurant/{{restaurant_id}}?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "restaurant", "{{restaurant_id}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get reviews for a specific restaurant"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reviews/product/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "product", "{{product_id}}"]
+            },
+            "description": "Get reviews for a specific product"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Drone Management",
+      "item": [
+        {
+          "name": "Get Available Drones",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "Admin token required"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/drones?status=available",
+              "host": ["{{base_url}}"],
+              "path": ["drones"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "available"
+                }
+              ]
+            },
+            "description": "Get list of available drones"
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Drone to Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "Admin token required"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"droneId\": \"DRONE_ID_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/drones/assign",
+              "host": ["{{base_url}}"],
+              "path": ["drones", "assign"]
+            },
+            "description": "Assign a drone to deliver an order"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Drone Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/drones/DRONE_ID_HERE",
+              "host": ["{{base_url}}"],
+              "path": ["drones", "DRONE_ID_HERE"]
+            },
+            "description": "Get detailed information about a specific drone"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Drone Location",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 10.7769,\n  \"longitude\": 106.7009,\n  \"batteryLevel\": 85\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/drones/DRONE_ID_HERE/location",
+              "host": ["{{base_url}}"],
+              "path": ["drones", "DRONE_ID_HERE", "location"]
+            },
+            "description": "Update drone's current location and battery level"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Operations",
+      "item": [
+        {
+          "name": "Get All Orders (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "Admin token required"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/orders?status=all&page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "orders"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Admin view all orders with filtering"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Refund Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "Admin token required"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/refunds?status=pending",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "refunds"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            },
+            "description": "Get all pending refund requests"
+          },
+          "response": []
+        },
+        {
+          "name": "Process Refund (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "Admin token required"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"action\": \"approve\",\n  \"note\": \"Approved refund for cancelled order\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/refunds/process",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "refunds", "process"]
+            },
+            "description": "Admin approves or rejects refund request"
+          },
+          "response": []
+        },
+        {
+          "name": "Get System Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "Admin token required"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/stats?period=today",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "stats"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "today",
+                  "description": "today, week, month, year"
+                }
+              ]
+            },
+            "description": "Get system statistics and analytics"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "description": "Category management APIs",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        pm.collectionVariables.set('category_id', response.data[0]._id);",
+                  "        console.log('✅ Category ID saved:', response.data[0]._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{auth_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Món chính\",\n  \"description\": \"Các món ăn chính\",\n  \"restaurant\": \"{{restaurant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories"]
+            },
+            "description": "Admin/Restaurant only"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Categories with Products (Restaurant)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{restaurant_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories/restaurant/with-products",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "restaurant", "with-products"]
+            },
+            "description": "Restaurant only - Get categories with their products"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{auth_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Món chính (Updated)\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{auth_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Products by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}/products",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}", "products"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users Management",
+      "description": "User management APIs (Admin only)",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            },
+            "description": "Admin only"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Email Exists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/check-email?email=test@example.com",
+              "host": ["{{base_url}}"],
+              "path": ["users", "check-email"],
+              "query": [
+                {"key": "email", "value": "test@example.com"}
+              ]
+            },
+            "description": "Public endpoint to check if email already exists"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/stats",
+              "host": ["{{base_url}}"],
+              "path": ["users", "stats"]
+            },
+            "description": "Admin only - Get user statistics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"updated@test.com\",\n  \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{auth_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}", "orders"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Refunds",
+      "description": "Refund management APIs (Admin only)",
+      "item": [
+        {
+          "name": "Get All Refund Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/refunds",
+              "host": ["{{base_url}}"],
+              "path": ["refunds"]
+            },
+            "description": "Admin only - Get all refund requests"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Refund Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/refunds/stats",
+              "host": ["{{base_url}}"],
+              "path": ["refunds", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Process Manual Refund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"approve\",\n  \"note\": \"Refund approved by admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/refunds/{{order_id}}/process",
+              "host": ["{{base_url}}"],
+              "path": ["refunds", "{{order_id}}", "process"]
+            },
+            "description": "Admin processes refund request"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Refund Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/refunds/{{order_id}}/logs",
+              "host": ["{{base_url}}"],
+              "path": ["refunds", "{{order_id}}", "logs"]
+            },
+            "description": "Get refund processing logs for an order"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "description": "Dashboard statistics APIs (Admin only)",
+      "item": [
+        {
+          "name": "Get Dashboard Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "stats"]
+            },
+            "description": "Get overall system statistics"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recent Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/recent-orders?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "recent-orders"],
+              "query": [
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Top Restaurants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/top-restaurants?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "top-restaurants"],
+              "query": [
+                {"key": "limit", "value": "10"}
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/order-stats?period=today",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "order-stats"],
+              "query": [
+                {"key": "period", "value": "today", "description": "today, week, month, year"}
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "description": "File upload APIs",
+      "item": [
+        {
+          "name": "Upload Single Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{auth_token}}"}
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/upload/image",
+              "host": ["{{base_url}}"],
+              "path": ["upload", "image"]
+            },
+            "description": "Upload a single image to Cloudinary"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Multiple Images",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{auth_token}}"}
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/upload/images",
+              "host": ["{{base_url}}"],
+              "path": ["upload", "images"]
+            },
+            "description": "Upload multiple images (max 10)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{admin_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/upload/PUBLIC_ID_HERE",
+              "host": ["{{base_url}}"],
+              "path": ["upload", "PUBLIC_ID_HERE"]
+            },
+            "description": "Admin only - Delete image from Cloudinary"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Test Data Setup",
+      "item": [
+        {
+          "name": "Get Restaurants",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        pm.collectionVariables.set('restaurant_id', response.data[0]._id);",
+                  "        console.log('Restaurant ID saved:', response.data[0]._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/restaurants",
+              "host": ["{{base_url}}"],
+              "path": ["restaurants"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Products by Restaurant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        pm.collectionVariables.set('product_id', response.data[0]._id);",
+                  "        console.log('Product ID saved:', response.data[0]._id);",
+                  "        console.log('Product name:', response.data[0].name);",
+                  "        console.log('Product price:', response.data[0].price);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/products?restaurant={{restaurant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["products"],
+              "query": [
+                {
+                  "key": "restaurant",
+                  "value": "{{restaurant_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
