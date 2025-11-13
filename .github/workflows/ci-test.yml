@@ -117,7 +117,8 @@ jobs:
           echo "=========================================="
           echo "📊 Generating Coverage Report for Server"
           echo "=========================================="
-          npm run test:coverage || echo "⚠️  Coverage generation skipped"
+          npm run test:coverage 2>&1 | tee coverage-output.log || echo "⚠️  Coverage generation skipped"
+
 
       - name: Upload Server Coverage
         uses: codecov/codecov-action@v4
@@ -134,24 +135,57 @@ jobs:
         if: always()
         run: |
           {
-            echo "## 🧪 Server Unit Tests"
-            echo '```'
+            echo "## 🧪 Server tests (failed only + coverage)"
+
+            echo
+            echo "### ❌ Server Unit test failures"
+            echo '```text'
             if [ -f server_app/test-output.log ]; then
-              cat server_app/test-output.log
+              CLEAN=$(cat server_app/test-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+
+              # Chỉ in block quanh các dòng FAIL
+              printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed unit tests."
+
+              echo
+              # Thêm dòng summary Test Suites / Tests / Snapshots (nếu có)
+              printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
             else
               echo "No unit test log file found."
             fi
             echo '```'
+
             echo
-            echo "## 🧪 Server Integration Tests"
-            echo '```'
+            echo "### ❌ Server Integration test failures"
+            echo '```text'
             if [ -f server_app/integration-output.log ]; then
-              cat server_app/integration-output.log
+              CLEAN=$(cat server_app/integration-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+
+              printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed integration tests."
+
+              echo
+              printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
             else
               echo "No integration test log file found."
             fi
             echo '```'
+
+            echo
+            echo "### 📊 Server coverage summary"
+            echo '```text'
+            if [ -f server_app/coverage-output.log ]; then
+              CLEAN_COV=$(cat server_app/coverage-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+              # Lấy phần summary từ dòng 'All files' trở đi, nếu không có thì lấy 40 dòng cuối
+              COVERAGE=$(printf "%s\n" "$CLEAN_COV" | sed -n '/All files/,$p')
+              if [ -z "$COVERAGE" ]; then
+                COVERAGE=$(printf "%s\n" "$CLEAN_COV" | tail -n 40)
+              fi
+              printf "%s\n" "$COVERAGE"
+            else
+              echo "No coverage log file found."
+            fi
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
 
       # ⭐ CÁCH 3: đẩy log test server lên CloudWatch Logs (chỉ khi FAIL)
       - name: Push server test logs to CloudWatch (on failure)
@@ -165,7 +199,41 @@ jobs:
 
           TS=$(($(date +%s%N)/1000000))
 
-          LOG_TEXT=$(cat server_app/test-output.log server_app/integration-output.log 2>/dev/null || echo "No test logs")
+          LOG_TEXT=$(
+            {
+              echo "=== Server Unit test failures ==="
+              if [ -f server_app/test-output.log ]; then
+                CLEAN=$(cat server_app/test-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed unit tests."
+                printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+              else
+                echo "No unit test log file found."
+              fi
+
+              echo
+              echo "=== Server Integration test failures ==="
+              if [ -f server_app/integration-output.log ]; then
+                CLEAN=$(cat server_app/integration-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed integration tests."
+                printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+              else
+                echo "No integration test log file found."
+              fi
+
+              echo
+              echo "=== Server Coverage summary ==="
+              if [ -f server_app/coverage-output.log ]; then
+                CLEAN_COV=$(cat server_app/coverage-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                COVERAGE=$(printf "%s\n" "$CLEAN_COV" | sed -n '/All files/,$p')
+                if [ -z "$COVERAGE" ]; then
+                  COVERAGE=$(printf "%s\n" "$CLEAN_COV" | tail -n 40)
+                fi
+                printf "%s\n" "$COVERAGE"
+              else
+                echo "No coverage log file found."
+              fi
+            }
+          )
 
           ESCAPED=$(python -c "import json,sys; print(json.dumps(sys.stdin.read())[1:-1])" <<< "$LOG_TEXT")
 
@@ -173,6 +241,7 @@ jobs:
             --log-group-name "$LOG_GROUP" \
             --log-stream-name "$LOG_STREAM" \
             --log-events "[{\"timestamp\":$TS,\"message\":\"$ESCAPED\"}]"
+
 
   test-client-apps:
     name: Test Frontend Apps
@@ -280,10 +349,11 @@ jobs:
           echo "📊 Generating Coverage Report for ${{ matrix.app }}"
           echo "=========================================="
           if [ -f "package.json" ] && grep -q "test:coverage" package.json; then
-            npm run test:coverage || echo "⚠️  Coverage generation skipped for ${{ matrix.app }}"
+            npm run test:coverage 2>&1 | tee coverage-output.log || echo "⚠️  Coverage generation skipped for ${{ matrix.app }}"
           else
             echo "⚠️  Coverage not configured for ${{ matrix.app }}"
           fi
+
 
       - name: Upload Coverage Reports
         uses: codecov/codecov-action@v4
@@ -304,36 +374,62 @@ jobs:
         run: npm run build
 
       # CÁCH 1 cho frontend: hiện log trong Summary
+      # CÁCH 1 cho frontend: hiện log trong Summary (chỉ fail + coverage)
       - name: Add frontend test logs to job summary
         if: always()
         run: |
+          APP_DIR="${{ matrix.app }}"
           {
-            echo "## 🧪 Frontend tests for ${{ matrix.app }} - Unit"
+            echo "## 🧪 Frontend tests for ${APP_DIR} (failed only + coverage)"
+
+            echo
+            echo "### ❌ Unit test failures"
             echo '```text'
-            if [ -f "${{ matrix.app }}/test-output.log" ]; then
-              # Chuyển \r thành \n, bỏ mã màu ANSI
-              cat "${{ matrix.app }}/test-output.log" \
-                | tr '\r' '\n' \
-                | sed -r 's/\x1B\[[0-9;]*[mK]//g'
+            if [ -f "${APP_DIR}/test-output.log" ]; then
+              CLEAN=$(cat "${APP_DIR}/test-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+
+              printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed unit tests."
+              echo
+              printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
             else
               echo "No unit test log file found."
             fi
             echo '```'
+
             echo
-            echo "## 🧪 Frontend tests for ${{ matrix.app }} - Integration"
+            echo "### ❌ Integration test failures"
             echo '```text'
-            if [ -f "${{ matrix.app }}/integration-output.log" ]; then
-              cat "${{ matrix.app }}/integration-output.log" \
-                | tr '\r' '\n' \
-                | sed -r 's/\x1B\[[0-9;]*[mK]//g'
+            if [ -f "${APP_DIR}/integration-output.log" ]; then
+              CLEAN=$(cat "${APP_DIR}/integration-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+
+              printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed integration tests."
+              echo
+              printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
             else
               echo "No integration test log file found."
+            fi
+            echo '```'
+
+            echo
+            echo "### 📊 Coverage summary"
+            echo '```text'
+            if [ -f "${APP_DIR}/coverage-output.log" ]; then
+              CLEAN_COV=$(cat "${APP_DIR}/coverage-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+              COVERAGE=$(printf "%s\n" "$CLEAN_COV" | sed -n '/All files/,$p')
+              if [ -z "$COVERAGE" ]; then
+                COVERAGE=$(printf "%s\n" "$CLEAN_COV" | tail -n 40)
+              fi
+              printf "%s\n" "$COVERAGE"
+            else
+              echo "No coverage log file found."
             fi
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
 
+
       # CÁCH 3 cho frontend: đẩy log lên CloudWatch khi FAIL
+      # CÁCH 3 cho frontend: đẩy log lên CloudWatch khi FAIL (chỉ fail + coverage)
       - name: Push frontend test logs to CloudWatch (on failure)
         if: failure()
         env:
@@ -347,7 +443,41 @@ jobs:
 
           TS=$(($(date +%s%N)/1000000))
 
-          LOG_TEXT=$(cat "${APP_NAME}/test-output.log" "${APP_NAME}/integration-output.log" 2>/dev/null || echo "No test logs")
+          LOG_TEXT=$(
+            {
+              echo "=== Frontend (${APP_NAME}) Unit test failures ==="
+              if [ -f "${APP_NAME}/test-output.log" ]; then
+                CLEAN=$(cat "${APP_NAME}/test-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed unit tests."
+                printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+              else
+                echo "No unit test log file found."
+              fi
+
+              echo
+              echo "=== Frontend (${APP_NAME}) Integration test failures ==="
+              if [ -f "${APP_NAME}/integration-output.log" ]; then
+                CLEAN=$(cat "${APP_NAME}/integration-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed integration tests."
+                printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+              else
+                echo "No integration test log file found."
+              fi
+
+              echo
+              echo "=== Frontend (${APP_NAME}) Coverage summary ==="
+              if [ -f "${APP_NAME}/coverage-output.log" ]; then
+                CLEAN_COV=$(cat "${APP_NAME}/coverage-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                COVERAGE=$(printf "%s\n" "$CLEAN_COV" | sed -n '/All files/,$p')
+                if [ -z "$COVERAGE" ]; then
+                  COVERAGE=$(printf "%s\n" "$CLEAN_COV" | tail -n 40)
+                fi
+                printf "%s\n" "$COVERAGE"
+              else
+                echo "No coverage log file found."
+              fi
+            }
+          )
 
           ESCAPED=$(python -c "import json,sys; print(json.dumps(sys.stdin.read())[1:-1])" <<< "$LOG_TEXT")
 
@@ -355,6 +485,7 @@ jobs:
             --log-group-name "$LOG_GROUP" \
             --log-stream-name "$LOG_STREAM" \
             --log-events "[{\"timestamp\":$TS,\"message\":\"$ESCAPED\"}]"
+
 
   security-scan:
     name: Security Scan
