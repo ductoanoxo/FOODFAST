@@ -309,23 +309,29 @@ jobs:
         run: |
           {
             echo "## 🧪 Frontend tests for ${{ matrix.app }} - Unit"
-            echo '```'
+            echo '```text'
             if [ -f "${{ matrix.app }}/test-output.log" ]; then
-              cat "${{ matrix.app }}/test-output.log"
+              # Chuyển \r thành \n, bỏ mã màu ANSI
+              cat "${{ matrix.app }}/test-output.log" \
+                | tr '\r' '\n' \
+                | sed -r 's/\x1B\[[0-9;]*[mK]//g'
             else
               echo "No unit test log file found."
             fi
             echo '```'
             echo
             echo "## 🧪 Frontend tests for ${{ matrix.app }} - Integration"
-            echo '```'
+            echo '```text'
             if [ -f "${{ matrix.app }}/integration-output.log" ]; then
-              cat "${{ matrix.app }}/integration-output.log"
+              cat "${{ matrix.app }}/integration-output.log" \
+                | tr '\r' '\n' \
+                | sed -r 's/\x1B\[[0-9;]*[mK]//g'
             else
               echo "No integration test log file found."
             fi
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
 
       # CÁCH 3 cho frontend: đẩy log lên CloudWatch khi FAIL
       - name: Push frontend test logs to CloudWatch (on failure)
