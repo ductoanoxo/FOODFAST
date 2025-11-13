@@ -426,9 +426,6 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-
-
-      # CÁCH 3 cho frontend: đẩy log lên CloudWatch khi FAIL
       # CÁCH 3 cho frontend: đẩy log lên CloudWatch khi FAIL (chỉ fail + coverage)
       - name: Push frontend test logs to CloudWatch (on failure)
         if: failure()
