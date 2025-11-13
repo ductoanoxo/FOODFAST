@@ -28,7 +28,7 @@ Write-Host "This may take 5-16 minutes on first run..." -ForegroundColor Yellow
 Write-Host ""
 
 # Build and run all services
-docker compose up -d --build
+docker-compose -f docker-compose.local.yml up -d --build
 
 # Check if successful
 if ($LASTEXITCODE -eq 0) {
