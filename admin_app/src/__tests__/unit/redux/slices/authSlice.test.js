@@ -4,7 +4,7 @@ import authReducer, { loginSuccess, logout } from '@/redux/slices/authSlice';
 describe('Admin authSlice', () => {
     let initialState;
 
-    beforeEach123123123123123123132(() => {
+    beforeEach(() => {
         // Clear localStorage mock
         localStorage.clear();
         vi.clearAllMocks();

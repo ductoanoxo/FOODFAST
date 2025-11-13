@@ -174,12 +174,8 @@ jobs:
             echo '```text'
             if [ -f server_app/coverage-output.log ]; then
               CLEAN_COV=$(cat server_app/coverage-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
-              # Lấy phần summary từ dòng 'All files' trở đi, nếu không có thì lấy 40 dòng cuối
-              COVERAGE=$(printf "%s\n" "$CLEAN_COV" | sed -n '/All files/,$p')
-              if [ -z "$COVERAGE" ]; then
-                COVERAGE=$(printf "%s\n" "$CLEAN_COV" | tail -n 40)
-              fi
-              printf "%s\n" "$COVERAGE"
+              # IN FULL COVERAGE LOG, KHÔNG FILTER
+              printf "%s\n" "$CLEAN_COV"
             else
               echo "No coverage log file found."
             fi
@@ -224,11 +220,8 @@ jobs:
               echo "=== Server Coverage summary ==="
               if [ -f server_app/coverage-output.log ]; then
                 CLEAN_COV=$(cat server_app/coverage-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
-                COVERAGE=$(printf "%s\n" "$CLEAN_COV" | sed -n '/All files/,$p')
-                if [ -z "$COVERAGE" ]; then
-                  COVERAGE=$(printf "%s\n" "$CLEAN_COV" | tail -n 40)
-                fi
-                printf "%s\n" "$COVERAGE"
+                # IN FULL COVERAGE LOG
+                printf "%s\n" "$CLEAN_COV"
               else
                 echo "No coverage log file found."
               fi
@@ -373,7 +366,6 @@ jobs:
         working-directory: ./${{ matrix.app }}
         run: npm run build
 
-      # CÁCH 1 cho frontend: hiện log trong Summary
       # CÁCH 1 cho frontend: hiện log trong Summary (chỉ fail + coverage)
       - name: Add frontend test logs to job summary
         if: always()
@@ -415,11 +407,8 @@ jobs:
             echo '```text'
             if [ -f "${APP_DIR}/coverage-output.log" ]; then
               CLEAN_COV=$(cat "${APP_DIR}/coverage-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
-              COVERAGE=$(printf "%s\n" "$CLEAN_COV" | sed -n '/All files/,$p')
-              if [ -z "$COVERAGE" ]; then
-                COVERAGE=$(printf "%s\n" "$CLEAN_COV" | tail -n 40)
-              fi
-              printf "%s\n" "$COVERAGE"
+              # IN FULL COVERAGE LOG, KHÔNG FILTER
+              printf "%s\n" "$CLEAN_COV"
             else
               echo "No coverage log file found."
             fi
@@ -465,11 +454,8 @@ jobs:
               echo "=== Frontend (${APP_NAME}) Coverage summary ==="
               if [ -f "${APP_NAME}/coverage-output.log" ]; then
                 CLEAN_COV=$(cat "${APP_NAME}/coverage-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
-                COVERAGE=$(printf "%s\n" "$CLEAN_COV" | sed -n '/All files/,$p')
-                if [ -z "$COVERAGE" ]; then
-                  COVERAGE=$(printf "%s\n" "$CLEAN_COV" | tail -n 40)
-                fi
-                printf "%s\n" "$COVERAGE"
+                # IN FULL COVERAGE LOG
+                printf "%s\n" "$CLEAN_COV"
               else
                 echo "No coverage log file found."
               fi
