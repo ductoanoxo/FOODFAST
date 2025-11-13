@@ -40,7 +40,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Dùng cho CÁCH 3 (đẩy log lên CloudWatch)
+      # Dùng cho CÁCH 3 (đẩy log test lên CloudWatch)
       - name: Configure AWS credentials (for CloudWatch)
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -153,7 +153,7 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # ⭐ CÁCH 3: đẩy log test server lên CloudWatch Logs
+      # ⭐ CÁCH 3: đẩy log test server lên CloudWatch Logs (chỉ khi FAIL)
       - name: Push server test logs to CloudWatch (on failure)
         if: failure()
         run: |
@@ -165,32 +165,9 @@ jobs:
 
           TS=$(($(date +%s%N)/1000000))
 
-          MESSAGE="Server tests failed for run ${GITHUB_RUN_ID}
+          LOG_TEXT=$(cat server_app/test-output.log server_app/integration-output.log 2>/dev/null || echo "No test logs")
 
-=== Unit tests ===
-"
-          if [ -f server_app/test-output.log ]; then
-            MESSAGE+=$(cat server_app/test-output.log)
-          else
-            MESSAGE+="(no unit test log file)"
-          fi
-
-          MESSAGE+="
-
-=== Integration tests ===
-"
-          if [ -f server_app/integration-output.log ]; then
-            MESSAGE+=$(cat server_app/integration-output.log)
-          else
-            MESSAGE+="(no integration test log file)"
-          fi
-
-          ESCAPED=$(python - << 'PY'
-import json, sys
-text = sys.stdin.read()
-print(json.dumps(text)[1:-1])
-PY
-          <<< "$MESSAGE")
+          ESCAPED=$(python -c "import json,sys; print(json.dumps(sys.stdin.read())[1:-1])" <<< "$LOG_TEXT")
 
           aws logs put-log-events \
             --log-group-name "$LOG_GROUP" \
@@ -364,32 +341,9 @@ PY
 
           TS=$(($(date +%s%N)/1000000))
 
-          MESSAGE="Frontend tests failed for app ${APP_NAME}, run ${GITHUB_RUN_ID}
+          LOG_TEXT=$(cat "${APP_NAME}/test-output.log" "${APP_NAME}/integration-output.log" 2>/dev/null || echo "No test logs")
 
-=== Unit tests (${APP_NAME}) ===
-"
-          if [ -f "${APP_NAME}/test-output.log" ]; then
-            MESSAGE+=$(cat "${APP_NAME}/test-output.log")
-          else
-            MESSAGE+="(no unit test log file)"
-          fi
-
-          MESSAGE+="
-
-=== Integration tests (${APP_NAME}) ===
-"
-          if [ -f "${APP_NAME}/integration-output.log" ]; then
-            MESSAGE+=$(cat "${APP_NAME}/integration-output.log")
-          else
-            MESSAGE+="(no integration test log file)"
-          fi
-
-          ESCAPED=$(python - << 'PY'
-import json, sys
-text = sys.stdin.read()
-print(json.dumps(text)[1:-1])
-PY
-          <<< "$MESSAGE")
+          ESCAPED=$(python -c "import json,sys; print(json.dumps(sys.stdin.read())[1:-1])" <<< "$LOG_TEXT")
 
           aws logs put-log-events \
             --log-group-name "$LOG_GROUP" \
