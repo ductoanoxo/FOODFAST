@@ -9,6 +9,7 @@ const connectDB = require('./config/db');
 const { errorHandler } = require('./API/Middleware/errorMiddleware');
 const logger = require('./API/Utils/logger');
 const path = require('path');
+const { register, metricsMiddleware, updateBusinessMetrics, updateMongoMetrics } = require('./config/metrics');
 
 // Load environment variables from root directory
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
@@ -60,6 +61,20 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
+
+// ---------------------- METRICS ---------------------- //
+// Metrics middleware to track HTTP requests
+app.use(metricsMiddleware);
+
+// Metrics endpoint for Prometheus
+app.get('/metrics', async (req, res) => {
+    try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+    } catch (error) {
+        res.status(500).end(error);
+    }
+});
 
 // ---------------------- STATIC FILES ---------------------- //
 // Cho phép truy cập ảnh tĩnh từ thư mục /uploads
@@ -115,6 +130,21 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
     logger.info(`Server running on port ${PORT}`);
     console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📊 Metrics available at http://localhost:${PORT}/metrics`);
+    
+    // Update business metrics every 30 seconds
+    setInterval(async () => {
+        const mongoose = require('mongoose');
+        const models = {
+            Order: require('./API/Models/Order'),
+            Drone: require('./API/Models/Drone'),
+            User: require('./API/Models/User'),
+            Restaurant: require('./API/Models/Restaurant'),
+        };
+        
+        await updateBusinessMetrics(models);
+        updateMongoMetrics(mongoose);
+    }, 30000);
 });
 
 // ---------------------- SOCKET.IO SETUP ---------------------- //
