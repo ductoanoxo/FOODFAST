@@ -42,7 +42,7 @@ app.use(
             'http://3.85.205.219:3001', // Admin App on EC2
             'http://3.85.205.219:3002', // Restaurant App on EC2
             'http://3.85.205.219:3003', // Drone App on EC2
-            // Env vars (fallback/override)
+            // Env vars (fallback/override)ssssssss
             process.env.CLIENT_URL,
             process.env.RESTAURANT_URL,
             process.env.ADMIN_URL,
