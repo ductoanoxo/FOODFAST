@@ -84,13 +84,13 @@ jobs:
           SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
         run: |
           echo "Syncing monitoring configs to EC2..."
-          ssh $SERVER_USER@$SERVER_HOST "mkdir -p ~/FOODFAST/monitoring/grafana"
-          scp -r monitoring/prometheus.yml $SERVER_USER@$SERVER_HOST:~/FOODFAST/monitoring/
-          scp -r monitoring/alerts.yml $SERVER_USER@$SERVER_HOST:~/FOODFAST/monitoring/
-          scp -r monitoring/grafana/datasources.yml $SERVER_USER@$SERVER_HOST:~/FOODFAST/monitoring/grafana/
-          scp -r monitoring/grafana/dashboards.yml $SERVER_USER@$SERVER_HOST:~/FOODFAST/monitoring/grafana/
-          scp -r monitoring/grafana/foodfast-dashboard.json $SERVER_USER@$SERVER_HOST:~/FOODFAST/monitoring/grafana/
-          echo "✅ Monitoring configs synced"
+          ssh $SERVER_USER@$SERVER_HOST "mkdir -p ~/prometheus-config ~/grafana-config/provisioning/datasources ~/grafana-config/provisioning/dashboards ~/grafana-config/dashboards"
+          scp monitoring/prometheus.yml $SERVER_USER@$SERVER_HOST:~/prometheus-config/
+          scp monitoring/alerts.yml $SERVER_USER@$SERVER_HOST:~/prometheus-config/
+          scp monitoring/grafana/datasources.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/datasources/
+          scp monitoring/grafana/dashboards.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/dashboards/
+          scp monitoring/grafana/foodfast-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
+          echo "✅ Monitoring configs synced to prometheus-config and grafana-config"
 
       # ======================
       # 5) Tạo script deploy để chép lên EC2
@@ -168,11 +168,7 @@ jobs:
           sudo docker pull prom/prometheus:latest
           sudo docker rm -f foodfast-prometheus 2>/dev/null || true
           
-          # Tạo thư mục config nếu chưa có
-          mkdir -p ~/prometheus-config
-          cp ~/FOODFAST/monitoring/prometheus.yml ~/prometheus-config/
-          cp ~/FOODFAST/monitoring/alerts.yml ~/prometheus-config/
-          
+          # Config files đã được sync vào ~/prometheus-config trước đó
           sudo docker run -d --name foodfast-prometheus --restart unless-stopped \
             --network foodfast-net --network-alias prometheus \
             -p 9090:9090 \
@@ -188,14 +184,7 @@ jobs:
           sudo docker pull grafana/grafana:latest
           sudo docker rm -f foodfast-grafana 2>/dev/null || true
           
-          # Tạo thư mục config Grafana
-          mkdir -p ~/grafana-config/provisioning/datasources
-          mkdir -p ~/grafana-config/provisioning/dashboards
-          mkdir -p ~/grafana-config/dashboards
-          cp ~/FOODFAST/monitoring/grafana/datasources.yml ~/grafana-config/provisioning/datasources/
-          cp ~/FOODFAST/monitoring/grafana/dashboards.yml ~/grafana-config/provisioning/dashboards/
-          cp ~/FOODFAST/monitoring/grafana/foodfast-dashboard.json ~/grafana-config/dashboards/
-          
+          # Config files đã được sync vào ~/grafana-config trước đó
           sudo docker run -d --name foodfast-grafana --restart unless-stopped \
             --network foodfast-net --network-alias grafana \
             -p 3030:3000 \
