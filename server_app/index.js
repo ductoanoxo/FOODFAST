@@ -9,6 +9,7 @@ const connectDB = require('./config/db');
 const { errorHandler } = require('./API/Middleware/errorMiddleware');
 const logger = require('./API/Utils/logger');
 const path = require('path');
+const { register, metricsMiddleware, updateBusinessMetrics, updateMongoMetrics } = require('./config/metrics');
 
 // Load environment variables from root directory
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
@@ -38,11 +39,11 @@ app.use(
             'http://localhost:3002', // Admin App (production)
             'http://localhost:3003', // Drone App (production)
             // EC2 Production URLs
-            'http://3.85.205.219:3000', // Client App on EC2
-            'http://3.85.205.219:3001', // Admin App on EC2
-            'http://3.85.205.219:3002', // Restaurant App on EC2
-            'http://3.85.205.219:3003', // Drone App on EC2
-            // Env vars (fallback/override)ssssssss
+            'http://98.90.205.114:3000', // Client App on EC2
+            'http://98.90.205.114:3001', // Admin App on EC2
+            'http://98.90.205.114:3002', // Restaurant App on EC2
+            'http://98.90.205.114:3003', // Drone App on EC2
+            // Env vars (fallback/override)
             process.env.CLIENT_URL,
             process.env.RESTAURANT_URL,
             process.env.ADMIN_URL,
@@ -60,6 +61,20 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
+
+// ---------------------- METRICS ---------------------- //
+// Metrics middleware to track HTTP requests
+app.use(metricsMiddleware);
+
+// Metrics endpoint for Prometheus
+app.get('/metrics', async (req, res) => {
+    try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+    } catch (error) {
+        res.status(500).end(error);
+    }
+});
 
 // ---------------------- STATIC FILES ---------------------- //
 // Cho phép truy cập ảnh tĩnh từ thư mục /uploads
@@ -115,6 +130,21 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
     logger.info(`Server running on port ${PORT}`);
     console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📊 Metrics available at http://localhost:${PORT}/metrics`);
+    
+    // Update business metrics every 30 seconds
+    setInterval(async () => {
+        const mongoose = require('mongoose');
+        const models = {
+            Order: require('./API/Models/Order'),
+            Drone: require('./API/Models/Drone'),
+            User: require('./API/Models/User'),
+            Restaurant: require('./API/Models/Restaurant'),
+        };
+        
+        await updateBusinessMetrics(models);
+        updateMongoMetrics(mongoose);
+    }, 30000);
 });
 
 // ---------------------- SOCKET.IO SETUP ---------------------- //

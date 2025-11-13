@@ -179,7 +179,6 @@ describe('🚀 ORDER FLOW - INTEGRATION TEST (DEMO)', () => {
             },
             paymentMethod: 'COD'
         };
-
         const createRes = await request(app)
             .post('/api/orders')
             .set('Authorization', `Bearer ${userToken}`)

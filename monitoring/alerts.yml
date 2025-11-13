@@ -1,0 +1,104 @@
+# Prometheus Alert Rules for FoodFast
+groups:
+  - name: foodfast_alerts
+    interval: 30s
+    rules:
+      # Alert khi service down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute."
+
+      # Alert khi API response time cao
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency detected"
+          description: "95th percentile latency is above 1 second for {{ $labels.route }} (current: {{ $value }}s)"
+
+      # Alert khi error rate cao
+      - alert: HighErrorRate
+        expr: (rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% for {{ $labels.route }} (current: {{ $value | humanizePercentage }})"
+
+      # Alert khi CPU usage cao
+      - alert: HighCPUUsage
+        expr: process_cpu_seconds_total > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% on {{ $labels.instance }}"
+
+      # Alert khi Memory usage cao
+      - alert: HighMemoryUsage
+        expr: (process_resident_memory_bytes / 1024 / 1024 / 1024) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 1GB on {{ $labels.instance }} (current: {{ $value }}GB)"
+
+      # Alert khi MongoDB connection pool sắp đầy
+      - alert: MongoDBConnectionPoolNearFull
+        expr: mongodb_connections_current / mongodb_connections_available > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MongoDB connection pool near capacity"
+          description: "MongoDB connection pool is over 80% utilized"
+
+      # Alert khi số lượng active orders quá cao
+      - alert: TooManyActiveOrders
+        expr: active_orders_count > 1000
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "High number of active orders"
+          description: "There are {{ $value }} active orders in the system"
+
+      # Alert khi số lượng available drones thấp
+      - alert: LowAvailableDrones
+        expr: available_drones_count < 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low number of available drones"
+          description: "Only {{ $value }} drones are available for delivery"
+
+      # Alert khi disk space thấp
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is below 10% on {{ $labels.instance }}"
+
+      # Alert khi request rate đột ngột tăng cao
+      - alert: UnusualRequestRate
+        expr: rate(http_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "Unusual request rate detected"
+          description: "Request rate is unusually high: {{ $value }} requests/second"
