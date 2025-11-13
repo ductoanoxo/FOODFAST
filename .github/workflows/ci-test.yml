@@ -13,7 +13,6 @@ on:
       - main
       - develop
 
-# Grant minimal permissions required for uploading SARIF/code-scanning results
 permissions:
   contents: read
   security-events: write
@@ -25,7 +24,6 @@ jobs:
     
     services:
       mongodb:
-        # Use the official MongoDB 7.0 image
         image: mongo:7.0
         ports:
           - 27017:27017
@@ -41,6 +39,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Dùng cho CÁCH 3 (đẩy log lên CloudWatch)
+      - name: Configure AWS credentials (for CloudWatch)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -69,7 +75,6 @@ jobs:
           echo "=========================================="
           npm run test:unit 2>&1 | tee test-output.log
           
-          # Check for test failures from Jest output only
           if grep -q "No tests found" test-output.log || grep -q "0 tests" test-output.log; then
             echo "⚠️  No unit tests found - will add later"
             exit 0
@@ -92,7 +97,6 @@ jobs:
           echo "=========================================="
           npm run test:integration 2>&1 | tee integration-output.log
           
-          # Check for test failures from Jest output only
           if grep -q "No tests found" integration-output.log || grep -q "0 tests" integration-output.log; then
             echo "⚠️  No integration tests found - will add later"
             exit 0
@@ -125,15 +129,73 @@ jobs:
           fail_ci_if_error: false
         continue-on-error: true
 
-      - name: Upload server test logs (if failed)
+      # ⭐ CÁCH 1: hiện log test ngay trong tab Summary
+      - name: Add server test logs to job summary
+        if: always()
+        run: |
+          {
+            echo "## 🧪 Server Unit Tests"
+            echo '```'
+            if [ -f server_app/test-output.log ]; then
+              cat server_app/test-output.log
+            else
+              echo "No unit test log file found."
+            fi
+            echo '```'
+            echo
+            echo "## 🧪 Server Integration Tests"
+            echo '```'
+            if [ -f server_app/integration-output.log ]; then
+              cat server_app/integration-output.log
+            else
+              echo "No integration test log file found."
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ⭐ CÁCH 3: đẩy log test server lên CloudWatch Logs
+      - name: Push server test logs to CloudWatch (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: server-tests-logs
-          path: |
-            server_app/test-output.log
-            server_app/integration-output.log
-          if-no-files-found: ignore
+        run: |
+          LOG_GROUP="/ci/server-tests"
+          LOG_STREAM="${GITHUB_RUN_ID}-server"
+
+          aws logs create-log-group --log-group-name "$LOG_GROUP" 2>/dev/null || true
+          aws logs create-log-stream --log-group-name "$LOG_GROUP" --log-stream-name "$LOG_STREAM" 2>/dev/null || true
+
+          TS=$(($(date +%s%N)/1000000))
+
+          MESSAGE="Server tests failed for run ${GITHUB_RUN_ID}
+
+=== Unit tests ===
+"
+          if [ -f server_app/test-output.log ]; then
+            MESSAGE+=$(cat server_app/test-output.log)
+          else
+            MESSAGE+="(no unit test log file)"
+          fi
+
+          MESSAGE+="
+
+=== Integration tests ===
+"
+          if [ -f server_app/integration-output.log ]; then
+            MESSAGE+=$(cat server_app/integration-output.log)
+          else
+            MESSAGE+="(no integration test log file)"
+          fi
+
+          ESCAPED=$(python - << 'PY'
+import json, sys
+text = sys.stdin.read()
+print(json.dumps(text)[1:-1])
+PY
+          <<< "$MESSAGE")
+
+          aws logs put-log-events \
+            --log-group-name "$LOG_GROUP" \
+            --log-stream-name "$LOG_STREAM" \
+            --log-events "[{\"timestamp\":$TS,\"message\":\"$ESCAPED\"}]"
 
   test-client-apps:
     name: Test Frontend Apps
@@ -150,6 +212,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Cho CloudWatch ở job frontend
+      - name: Configure AWS credentials (for CloudWatch)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -174,7 +244,6 @@ jobs:
           if [ -f "package.json" ] && grep -q "test:unit" package.json; then
             npm run test:unit 2>&1 | tee test-output.log
             
-            # Check for test failures from Vitest/Jest output only
             if grep -q "No test files found" test-output.log || grep -q "Test Files.*0" test-output.log || grep -q "no tests" test-output.log; then
               echo "⚠️  No unit tests found for ${{ matrix.app }} - will add later"
               exit 0
@@ -185,7 +254,6 @@ jobs:
               echo "⚠️  Some unit tests are skipped for ${{ matrix.app }}"
               echo "⚠️  Please remove .skip or implement the tests"
               grep "skipped" test-output.log
-              # Continue but warn
             fi
             echo "✅ Unit tests passed for ${{ matrix.app }}"
           else
@@ -204,7 +272,6 @@ jobs:
           if [ -f "package.json" ] && grep -q "test:integration" package.json; then
             npm run test:integration 2>&1 | tee integration-output.log
             
-            # Check for test failures from Vitest/Jest output only
             if grep -q "no tests" integration-output.log || grep -q "Test Files.*0" integration-output.log || grep -q "No test files found" integration-output.log; then
               echo "⚠️  No integration tests found for ${{ matrix.app }} - will add later"
               exit 0
@@ -220,7 +287,6 @@ jobs:
               echo "⚠️  Some integration tests are skipped for ${{ matrix.app }}"
               echo "⚠️  Please remove .skip or implement the tests"
               grep "skipped" integration-output.log
-              # Continue but warn
             fi
             echo "✅ Integration tests passed for ${{ matrix.app }}"
           else
@@ -260,22 +326,75 @@ jobs:
         working-directory: ./${{ matrix.app }}
         run: npm run build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.app }}-build
-          path: ${{ matrix.app }}/dist
-          retention-days: 7
+      # CÁCH 1 cho frontend: hiện log trong Summary
+      - name: Add frontend test logs to job summary
+        if: always()
+        run: |
+          {
+            echo "## 🧪 Frontend tests for ${{ matrix.app }} - Unit"
+            echo '```'
+            if [ -f "${{ matrix.app }}/test-output.log" ]; then
+              cat "${{ matrix.app }}/test-output.log"
+            else
+              echo "No unit test log file found."
+            fi
+            echo '```'
+            echo
+            echo "## 🧪 Frontend tests for ${{ matrix.app }} - Integration"
+            echo '```'
+            if [ -f "${{ matrix.app }}/integration-output.log" ]; then
+              cat "${{ matrix.app }}/integration-output.log"
+            else
+              echo "No integration test log file found."
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload frontend test logs (if failed)
+      # CÁCH 3 cho frontend: đẩy log lên CloudWatch khi FAIL
+      - name: Push frontend test logs to CloudWatch (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.app }}-test-logs
-          path: |
-            ${{ matrix.app }}/test-output.log
-            ${{ matrix.app }}/integration-output.log
-          if-no-files-found: ignore
+        env:
+          APP_NAME: ${{ matrix.app }}
+        run: |
+          LOG_GROUP="/ci/frontend-tests"
+          LOG_STREAM="${GITHUB_RUN_ID}-${APP_NAME}"
+
+          aws logs create-log-group --log-group-name "$LOG_GROUP" 2>/dev/null || true
+          aws logs create-log-stream --log-group-name "$LOG_GROUP" --log-stream-name "$LOG_STREAM" 2>/dev/null || true
+
+          TS=$(($(date +%s%N)/1000000))
+
+          MESSAGE="Frontend tests failed for app ${APP_NAME}, run ${GITHUB_RUN_ID}
+
+=== Unit tests (${APP_NAME}) ===
+"
+          if [ -f "${APP_NAME}/test-output.log" ]; then
+            MESSAGE+=$(cat "${APP_NAME}/test-output.log")
+          else
+            MESSAGE+="(no unit test log file)"
+          fi
+
+          MESSAGE+="
+
+=== Integration tests (${APP_NAME}) ===
+"
+          if [ -f "${APP_NAME}/integration-output.log" ]; then
+            MESSAGE+=$(cat "${APP_NAME}/integration-output.log")
+          else
+            MESSAGE+="(no integration test log file)"
+          fi
+
+          ESCAPED=$(python - << 'PY'
+import json, sys
+text = sys.stdin.read()
+print(json.dumps(text)[1:-1])
+PY
+          <<< "$MESSAGE")
+
+          aws logs put-log-events \
+            --log-group-name "$LOG_GROUP" \
+            --log-stream-name "$LOG_STREAM" \
+            --log-events "[{\"timestamp\":$TS,\"message\":\"$ESCAPED\"}]"
 
   security-scan:
     name: Security Scan
