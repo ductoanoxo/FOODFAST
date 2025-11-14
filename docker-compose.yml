@@ -145,6 +145,7 @@ services:
       - ./monitoring/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
       - ./monitoring/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
       - ./monitoring/grafana/foodfast-dashboard.json:/etc/grafana/provisioning/dashboards/foodfast-dashboard.json
+      - ./monitoring/grafana/cicd-dashboard.json:/etc/grafana/provisioning/dashboards/cicd-dashboard.json
     depends_on:
       - prometheus
     networks:
@@ -182,6 +183,16 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
     privileged: true
+    networks:
+      - foodfast_network
+
+  # Pushgateway - CI/CD Metrics Collection
+  pushgateway:
+    image: prom/pushgateway:latest
+    container_name: foodfast_pushgateway
+    restart: always
+    ports:
+      - "9091:9091"
     networks:
       - foodfast_network
 
