@@ -610,6 +610,69 @@
       "title": "Total Restaurants",
       "type": "stat"
     }
+    ,
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "req/s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 18, "x": 0, "y": 30 },
+      "id": 22,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "pluginVersion": "8.0.0",
+      "targets": [ { "expr": "sum by (instance) (rate(http_requests_total[1m]))", "legendFormat": "{{instance}}", "refId": "A" } ],
+      "title": "Request Rate (req/s) - Timeseries",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }, "unit": "req/s" } },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 30 },
+      "id": 24,
+      "options": { "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "pluginVersion": "8.0.0",
+      "targets": [ { "expr": "sum(rate(http_requests_total{status=~\"5..\"}[1m]))", "refId": "A" } ],
+      "title": "Error Rate (5xx)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
+      "id": 26,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "pluginVersion": "8.0.0",
+      "targets": [ { "expr": "sum by (status) (rate(http_requests_total[5m]))", "legendFormat": "{{status}}", "refId": "A" } ],
+      "title": "HTTP Status Breakdown (rate/5m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+      "id": 28,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+      "pluginVersion": "8.0.0",
+      "targets": [ { "expr": "sum by (status) (rate(orders_status_total[5m]))", "legendFormat": "{{status}}", "refId": "A" } ],
+      "title": "Orders By Status (rate/5m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "none" } },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 44 },
+      "id": 30,
+      "options": { "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "pluginVersion": "8.0.0",
+      "targets": [ { "expr": "mongodb_connections_current", "refId": "A" } ],
+      "title": "MongoDB Connections",
+      "type": "stat"
+    }
   ],
   "refresh": "10s",
   "schemaVersion": 27,

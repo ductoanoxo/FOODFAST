@@ -489,6 +489,24 @@ const createOrder = asyncHandler(async(req, res) => {
         console.error('Failed to emit new-order:', e)
     }
 
+    // Emit order:created event for real-time updates to all connected clients
+    try {
+        const createdPayload = {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            totalAmount: order.totalAmount,
+            timestamp: new Date(),
+        }
+        
+        console.log('📡 [SERVER] Emitting order:created globally:', createdPayload)
+        io.emit('order:created', createdPayload)
+        io.to('admin-room').emit('order:created', createdPayload)
+        console.log('✅ Emitted order:created event globally and to admin-room')
+    } catch (e) {
+        console.error('Failed to emit order:created:', e)
+    }
+
     res.status(201).json({
         success: true,
         data: order,
@@ -684,7 +702,7 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
         ...(refundInfo && { refundInfo }), // Include refund info if cancellation happened
     }
 
-    // Emit with colon format
+    // Emit to specific rooms
     io.to(`order-${order._id}`).emit('order:status-updated', payload)
     io.to(`restaurant-${order.restaurant}`).emit('order:status-updated', {...payload, restaurantId: order.restaurant })
 
@@ -694,9 +712,21 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
         io.to(`restaurant-${order.restaurant}`).emit('order:cancelled', {...payload, restaurantId: order.restaurant })
     }
 
-    // Also emit hyphen variant for older clients that still listen to 'order-status-updated'
+    // Also emit hyphen variant for older clients
     io.to(`order-${order._id}`).emit('order-status-updated', payload)
     io.to(`restaurant-${order.restaurant}`).emit('order-status-updated', {...payload, restaurantId: order.restaurant })
+    
+    // Emit globally for all connected clients (admin dashboards, user order history)
+    console.log(`📡 [SERVER] Emitting order:status-updated globally:`, payload)
+    io.emit('order:status-updated', payload)
+    
+    // Also emit to admin-room specifically
+    io.to('admin-room').emit('order:status-updated', payload)
+    
+    if (status === 'cancelled') {
+        io.emit('order:cancelled', payload)
+        io.to('admin-room').emit('order:cancelled', payload)
+    }
 
     res.json({
         success: true,
@@ -811,8 +841,18 @@ const cancelOrder = asyncHandler(async(req, res) => {
             timestamp: now,
         }
 
+        // Emit to specific order room
         io.to(`order-${order._id}`).emit('order:status-updated', cancelPayload)
         io.to(`order-${order._id}`).emit('order:cancelled', cancelPayload)
+        
+        // Emit globally for admin and user dashboards
+        console.log(`📡 [SERVER] Emitting order cancelled globally:`, cancelPayload)
+        io.emit('order:status-updated', cancelPayload)
+        io.emit('order:cancelled', cancelPayload)
+        
+        // Also emit to admin-room specifically
+        io.to('admin-room').emit('order:status-updated', cancelPayload)
+        io.to('admin-room').emit('order:cancelled', cancelPayload)
 
         if (order.restaurant && order.restaurant._id) {
             io.to(`restaurant-${order.restaurant._id}`).emit('order:cancelled', {
@@ -880,6 +920,26 @@ const confirmDelivery = asyncHandler(async(req, res) => {
     order.status = 'delivered';
     order.deliveredAt = new Date();
     await order.save();
+
+    // Emit order status update globally
+    const io = req.app.get('io');
+    if (io) {
+        const deliveryPayload = {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            status: 'delivered',
+            deliveredAt: order.deliveredAt,
+            timestamp: new Date(),
+        };
+        
+        // Emit to order room
+        io.to(`order-${order._id}`).emit('order:status-updated', deliveryPayload);
+        io.to(`order-${order._id}`).emit('delivery:complete', deliveryPayload);
+        
+        // Emit globally
+        io.emit('order:status-updated', deliveryPayload);
+        io.emit('delivery:complete', deliveryPayload);
+    }
 
     // Update drone status to available and clear current order
     if (order.drone) {

@@ -4,7 +4,7 @@
 echo "Starting traffic generation..."
 
 count=0
-while [ $count -lt 200 ]; do
+while [ $count -lt 1000 ]; do
   curl -s http://localhost:5000/api/health > /dev/null &
   curl -s http://localhost:5000/api/products > /dev/null &
   curl -s http://localhost:5000/api/categories > /dev/null &

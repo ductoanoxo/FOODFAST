@@ -39,12 +39,35 @@ const OrderTrackingPage = () => {
   useEffect(() => {
     fetchOrderTracking();
 
-    if (orderId) {
-      socketService.emit('join-order', orderId);
+    const token = localStorage.getItem('token')
+    if (!token) {
+      console.warn('No token found for socket connection')
+      const interval = setInterval(fetchOrderTracking, 30000);
+      return () => clearInterval(interval)
     }
+
+    // Connect socket
+    socketService.connect(token)
+
+    // Setup socket listeners after connection
+    const setupSocketListeners = () => {
+      if (!socketService.isConnected()) {
+        console.log('⏳ Waiting for socket connection in OrderTracking...')
+        setTimeout(setupSocketListeners, 500)
+        return
+      }
+
+      console.log('✅ Socket connected, joining order room:', orderId)
+      if (orderId) {
+        socketService.emit('join-order', orderId);
+      }
+    }
+
+    setupSocketListeners()
 
     const handleOrderStatusUpdate = (data) => {
       if (data.orderId === orderId || data._id === orderId) {
+        console.log('📡 Order status updated:', data);
         // Update order state immediately if paymentStatus is provided
         if (data.paymentStatus) {
           setOrder(prev => prev ? { ...prev, status: data.status || prev.status, paymentStatus: data.paymentStatus } : prev);
@@ -56,28 +79,68 @@ const OrderTrackingPage = () => {
 
     const handleDroneAssigned = (data) => {
       if (data.orderId === orderId) {
+        console.log('📡 Drone assigned:', data);
+        message.success('🚁 Drone đã được phân công giao hàng!');
         fetchOrderTracking();
       }
     };
 
     const handleDeliveryComplete = (data) => {
       if (data.orderId === orderId) {
+        console.log('📡 Delivery complete:', data);
         message.success('🎉 Đơn hàng đã được giao đến!');
         fetchOrderTracking();
       }
     };
+    
+    const handleOrderCancelled = (data) => {
+      if (data.orderId === orderId) {
+        console.log('📡 Order cancelled:', data);
+        message.warning('❌ Đơn hàng đã bị hủy');
+        fetchOrderTracking();
+      }
+    };
+    
+    const handleDroneLocationUpdate = (data) => {
+      if (data.orderId === orderId) {
+        console.log('📡 Drone location updated:', data);
+        // Update drone location without full refresh
+        setOrder(prev => {
+          if (!prev || !prev.drone) return prev;
+          return {
+            ...prev,
+            drone: {
+              ...prev.drone,
+              location: data.location
+            }
+          };
+        });
+      }
+    };
 
+    // Add event listeners
+    console.log('📡 Setting up event listeners for order:', orderId)
     socketService.on('order:status-updated', handleOrderStatusUpdate);
     socketService.on('order:drone-assigned', handleDroneAssigned);
     socketService.on('delivery:complete', handleDeliveryComplete);
+    socketService.on('order:cancelled', handleOrderCancelled);
+    socketService.on('drone:location-update', handleDroneLocationUpdate);
+    socketService.on('order:update', handleOrderStatusUpdate);
 
     const interval = setInterval(fetchOrderTracking, 30000);
 
     return () => {
+      console.log('🧹 Cleaning up OrderTracking socket listeners')
       clearInterval(interval);
-      socketService.off('order:status-updated', handleOrderStatusUpdate);
-      socketService.off('order:drone-assigned', handleDroneAssigned);
-      socketService.off('delivery:complete', handleDeliveryComplete);
+      if (orderId) {
+        socketService.emit('leave-order', orderId);
+      }
+      socketService.off('order:status-updated');
+      socketService.off('order:drone-assigned');
+      socketService.off('delivery:complete');
+      socketService.off('order:cancelled');
+      socketService.off('drone:location-update');
+      socketService.off('order:update');
     };
   }, [orderId]);
 

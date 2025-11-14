@@ -128,7 +128,7 @@ services:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
       - ./monitoring/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
-      - ./monitoring/grafana/foodfast-dashboard.json:/etc/grafana/provisioning/dashboards/foodfast-dashboard.json
+      - ./monitoring/grafana:/etc/grafana/dashboards:ro
     depends_on:
       - prometheus
     networks:

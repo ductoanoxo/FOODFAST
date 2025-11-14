@@ -28,17 +28,22 @@ class SocketService {
         });
 
         this.socket.on('connect', () => {
-            console.log('✅ Socket connected:', this.socket.id);
+            console.log('✅ Admin Socket connected:', this.socket.id);
             this.connected = true;
+            
+            // Log all incoming events for debugging
+            this.socket.onAny((eventName, ...args) => {
+                console.log(`📡 [SOCKET EVENT] ${eventName}:`, args[0]);
+            });
         });
 
         this.socket.on('disconnect', (reason) => {
-            console.log('❌ Socket disconnected:', reason);
+            console.log('❌ Admin Socket disconnected:', reason);
             this.connected = false;
         });
 
         this.socket.on('connect_error', (error) => {
-            console.error('❌ Socket connection error:', error.message);
+            console.error('❌ Admin Socket connection error:', error.message);
         });
 
         return this.socket;

@@ -12,7 +12,7 @@ class SocketService {
     initialize(server) {
         this.io = socketIO(server, {
             cors: {
-                origin: '*',
+                origin: '*',    
                 methods: ['GET', 'POST'],
                 credentials: true,
             },
@@ -164,6 +164,17 @@ class SocketService {
         socket.on('customer:track-order', (orderId) => {
             socket.join(`order-${orderId}`);
             console.log(`📦 Customer ${socket.id} tracking order ${orderId}`);
+        });
+        
+        // Handle join-order event
+        socket.on('join-order', (orderId) => {
+            socket.join(`order-${orderId}`);
+            console.log(`📦 Customer ${user.name} joined order room ${orderId}`);
+        });
+        
+        socket.on('leave-order', (orderId) => {
+            socket.leave(`order-${orderId}`);
+            console.log(`📦 Customer ${user.name} left order room ${orderId}`);
         });
     }
 
@@ -413,9 +424,12 @@ class SocketService {
                 eta,
                 timestamp: new Date(),
             };
-            // Emit both modern and legacy event names
+            // Emit to specific order room
             this.io.to(`order-${orderId}`).emit('order:status-updated', payload);
             this.io.to(`order-${orderId}`).emit('order-status-updated', payload);
+            
+            // Also emit globally for dashboards
+            this.io.emit('order:status-updated', payload);
         }
     }
 
