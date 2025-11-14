@@ -90,6 +90,7 @@ jobs:
           scp monitoring/grafana/datasources.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/datasources/
           scp monitoring/grafana/dashboards.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/dashboards/
           scp monitoring/grafana/foodfast-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
+          scp monitoring/grafana/cicd-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
           echo "✅ Monitoring configs synced to prometheus-config and grafana-config"
 
       # ======================
@@ -215,6 +216,14 @@ jobs:
             -v /var/lib/docker/:/var/lib/docker:ro \
             -v /dev/disk/:/dev/disk:ro \
             gcr.io/cadvisor/cadvisor:latest
+
+          echo "=== Deploy Pushgateway ==="
+          sudo docker pull prom/pushgateway:latest
+          sudo docker rm -f foodfast-pushgateway 2>/dev/null || true
+          sudo docker run -d --name foodfast-pushgateway --restart unless-stopped \
+            --network foodfast-net --network-alias pushgateway \
+            -p 9091:9091 \
+            prom/pushgateway:latest
 
           echo "✅ Deploy done (including monitoring stack)."
           SCRIPT

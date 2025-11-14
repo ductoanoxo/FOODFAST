@@ -47,3 +47,11 @@ scrape_configs:
     static_configs:
       - targets: ['cadvisor:8080']
     scrape_interval: 15s
+
+  # Prometheus Pushgateway for CI/CD Metrics
+  - job_name: 'pushgateway'
+    honor_labels: true
+    static_configs:
+      - targets: ['pushgateway:9091']
+    scrape_interval: 10s
+    scrape_timeout: 5s
