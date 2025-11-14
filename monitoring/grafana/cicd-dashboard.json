@@ -375,9 +375,9 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(rate(github_workflow_run_total[5m])) by (workflow)",
+          "expr": "github_workflow_run_total",
           "refId": "A",
-          "legendFormat": "{{workflow}}"
+          "legendFormat": "{{workflow}} - {{branch}}"
         }
       ],
       "title": "Workflow Runs Over Time",
@@ -483,12 +483,12 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(rate(github_workflow_success_total[5m]))",
+          "expr": "sum(github_workflow_success_total)",
           "refId": "A",
           "legendFormat": "Success"
         },
         {
-          "expr": "sum(rate(github_workflow_failure_total[5m]))",
+          "expr": "sum(github_workflow_failure_total)",
           "refId": "B",
           "legendFormat": "Failure"
         }

@@ -11,6 +11,8 @@ on:
     branches:
       - main
       - kiet
+      - DUCTOAN
+      - deploy
   workflow_dispatch:
 
 jobs:
