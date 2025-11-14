@@ -15,7 +15,6 @@ on:
 env:
   REGISTRY: ghcr.io
   OWNER: ${{ github.repository_owner }}
-  PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://98.90.205.114:9091' }}
 
 jobs:
   deploy:
@@ -30,13 +29,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ======================
-      # 0) Record Start Time
-      # ======================
-      - name: Record Deploy Start Time
-        id: start_time
-        run: echo "start_timestamp=$(date +%s)" >> $GITHUB_OUTPUT
-
       # ======================
       # 1) Checkout
       # ======================
@@ -98,8 +90,7 @@ jobs:
           scp monitoring/grafana/datasources.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/datasources/
           scp monitoring/grafana/dashboards.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/dashboards/
           scp monitoring/grafana/foodfast-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
-          scp monitoring/grafana/cicd-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
-          echo "✅ Monitoring configs synced (including CI/CD dashboard)"
+          echo "✅ Monitoring configs synced to prometheus-config and grafana-config"
 
       # ======================
       # 5) Tạo script deploy để chép lên EC2
@@ -194,7 +185,6 @@ jobs:
           sudo docker rm -f foodfast-grafana 2>/dev/null || true
           
           # Config files đã được sync vào ~/grafana-config trước đó
-          # Note: CI/CD dashboard được sync trong bước sync monitoring configs
           sudo docker run -d --name foodfast-grafana --restart unless-stopped \
             --network foodfast-net --network-alias grafana \
             -p 3030:3000 \
@@ -225,19 +215,6 @@ jobs:
             -v /var/lib/docker/:/var/lib/docker:ro \
             -v /dev/disk/:/dev/disk:ro \
             gcr.io/cadvisor/cadvisor:latest
-
-          echo "=== Deploy Pushgateway ==="
-          sudo docker pull prom/pushgateway:latest
-          sudo docker rm -f foodfast-pushgateway 2>/dev/null || true
-          sudo docker run -d --name foodfast-pushgateway --restart unless-stopped \
-            --network foodfast-net --network-alias pushgateway \
-            -p 9091:9091 \
-            -v pushgateway_data:/pushgateway \
-            prom/pushgateway:latest \
-            --web.listen-address=:9091 \
-            --web.telemetry-path=/metrics \
-            --persistence.file=/pushgateway/pushgateway.data \
-            --persistence.interval=5m
 
           echo "✅ Deploy done (including monitoring stack)."
           SCRIPT
@@ -296,39 +273,3 @@ jobs:
           done
           echo "❌ Backend is NOT responding on port 5000"
           exit 1
-
-      # ======================
-      # 8) Push Deployment Metrics
-      # ======================
-      - name: Push Deployment Metrics to Prometheus
-        if: always()
-        run: |
-          END_TIME=$(date +%s)
-          START_TIME=${{ steps.start_time.outputs.start_timestamp }}
-          DURATION=$((END_TIME - START_TIME))
-          
-          # Xác định deployment status
-          if [ "${{ job.status }}" == "success" ]; then
-            DEPLOY_STATUS=1
-          else
-            DEPLOY_STATUS=0
-          fi
-          
-          # Đẩy metrics lên Pushgateway
-          cat <<EOF | curl --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/deployment/instance/${GITHUB_RUN_ID}"
-          # HELP deployment_duration_seconds Duration of deployment process
-          # TYPE deployment_duration_seconds gauge
-          deployment_duration_seconds{environment="production",branch="main",workflow="deploy"} ${DURATION}
-          
-          # HELP deployment_status Deployment status (1=success, 0=failure)
-          # TYPE deployment_status gauge
-          deployment_status{environment="production",branch="main",workflow="deploy"} ${DEPLOY_STATUS}
-          
-          # HELP deployment_timestamp_seconds Timestamp of deployment completion
-          # TYPE deployment_timestamp_seconds gauge
-          deployment_timestamp_seconds{environment="production",branch="main",workflow="deploy"} ${END_TIME}
-          
-          # HELP deployment_count_total Total number of deployments
-          # TYPE deployment_count_total counter
-          deployment_count_total{environment="production",branch="main",workflow="deploy"} 1
-          EOF

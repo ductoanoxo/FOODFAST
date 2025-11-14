@@ -12,6 +12,3 @@ datasources:
       timeInterval: "15s"
       queryTimeout: "60s"
       httpMethod: "POST"
-      exemplarTraceIdDestinations:
-        - name: trace_id
-          datasourceUid: tempo

@@ -17,7 +17,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ github.repository_owner }}
-  PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://98.90.205.114:9091' }}
 
 jobs:
   build-and-push:
@@ -43,10 +42,6 @@ jobs:
             image: foodfast-server
 
     steps:
-      - name: Record Build Start Time
-        id: start_time
-        run: echo "start_timestamp=$(date +%s)" >> $GITHUB_OUTPUT
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -92,39 +87,8 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.image }}:buildcache,mode=max
           platforms: linux/amd64,linux/arm64
           build-args: |
-            VITE_API_URL=${{ secrets.VITE_API_URL || 'http://98.90.205.114:5000/api' }}
-            VITE_SOCKET_URL=${{ secrets.VITE_SOCKET_URL || 'http://98.90.205.114:5000' }}
+            VITE_API_URL=${{ secrets.VITE_API_URL || 'http://13.220.101.54:5000/api' }}
+            VITE_SOCKET_URL=${{ secrets.VITE_SOCKET_URL || 'http://13.220.101.54:5000' }}
 
       - name: Image digest
         run: echo ${{ steps.meta.outputs.digest }}
-
-      - name: Push Docker Build Metrics to Prometheus
-        if: always()
-        env:
-          SERVICE_NAME: ${{ matrix.service.name }}
-        run: |
-          END_TIME=$(date +%s)
-          START_TIME=${{ steps.start_time.outputs.start_timestamp }}
-          DURATION=$((END_TIME - START_TIME))
-          
-          # Xác định build status
-          if [ "${{ job.status }}" == "success" ]; then
-            BUILD_STATUS=1
-          else
-            BUILD_STATUS=0
-          fi
-          
-          # Đẩy metrics lên Pushgateway
-          cat <<EOF | curl --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/docker_build/instance/${GITHUB_RUN_ID}/service/${SERVICE_NAME}"
-          # HELP docker_build_duration_seconds Duration of Docker image build
-          # TYPE docker_build_duration_seconds gauge
-          docker_build_duration_seconds{service="${SERVICE_NAME}",branch="${GITHUB_REF_NAME}",workflow="docker-build"} ${DURATION}
-          
-          # HELP docker_build_status Build status (1=success, 0=failure)
-          # TYPE docker_build_status gauge
-          docker_build_status{service="${SERVICE_NAME}",branch="${GITHUB_REF_NAME}",workflow="docker-build"} ${BUILD_STATUS}
-          
-          # HELP docker_build_timestamp_seconds Timestamp of build completion
-          # TYPE docker_build_timestamp_seconds gauge
-          docker_build_timestamp_seconds{service="${SERVICE_NAME}",branch="${GITHUB_REF_NAME}",workflow="docker-build"} ${END_TIME}
-          EOF
