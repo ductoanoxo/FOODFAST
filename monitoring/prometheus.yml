@@ -47,3 +47,18 @@ scrape_configs:
     static_configs:
       - targets: ['cadvisor:8080']
     scrape_interval: 15s
+
+  # ==============================================
+  # CI/CD Metrics từ Pushgateway
+  # ==============================================
+  - job_name: 'pushgateway'
+    honor_labels: true
+    static_configs:
+      - targets: ['pushgateway:9091']
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metric_relabel_configs:
+      # Giữ lại các label quan trọng từ CI/CD
+      - source_labels: [job]
+        regex: '(ci_server_tests|ci_frontend_tests|docker_build|deployment)'
+        action: keep

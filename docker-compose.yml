@@ -185,10 +185,28 @@ services:
     networks:
       - foodfast_network
 
+  # Pushgateway - CI/CD Metrics
+  pushgateway:
+    image: prom/pushgateway:latest
+    container_name: foodfast_pushgateway
+    restart: always
+    ports:
+      - "9091:9091"
+    command:
+      - '--web.listen-address=:9091'
+      - '--web.telemetry-path=/metrics'
+      - '--persistence.file=/pushgateway/pushgateway.data'
+      - '--persistence.interval=5m'
+    volumes:
+      - pushgateway_data:/pushgateway
+    networks:
+      - foodfast_network
+
 volumes:
   mongodb_data:
   prometheus_data:
   grafana_data:
+  pushgateway_data:
 
 networks:
   foodfast_network:

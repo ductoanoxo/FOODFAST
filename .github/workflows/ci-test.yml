@@ -17,6 +17,9 @@ permissions:
   contents: read
   security-events: write
 
+env:
+  PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://98.90.205.114:9091' }}
+
 jobs:
   test-server:
     name: Test Server App
@@ -37,6 +40,10 @@ jobs:
           --health-retries 5
 
     steps:
+      - name: Record CI Start Time
+        id: start_time
+        run: echo "start_timestamp=$(date +%s)" >> $GITHUB_OUTPUT
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -234,6 +241,35 @@ jobs:
             --log-group-name "$LOG_GROUP" \
             --log-stream-name "$LOG_STREAM" \
             --log-events "[{\"timestamp\":$TS,\"message\":\"$ESCAPED\"}]"
+
+      - name: Push Server CI/CD Metrics to Prometheus
+        if: always()
+        run: |
+          END_TIME=$(date +%s)
+          START_TIME=${{ steps.start_time.outputs.start_timestamp }}
+          DURATION=$((END_TIME - START_TIME))
+          
+          # Xác định test status
+          if [ "${{ job.status }}" == "success" ]; then
+            TEST_STATUS=1
+          else
+            TEST_STATUS=0
+          fi
+          
+          # Đẩy metrics lên Pushgateway
+          cat <<EOF | curl --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/ci_server_tests/instance/${GITHUB_RUN_ID}"
+          # HELP ci_test_duration_seconds Duration of CI test execution
+          # TYPE ci_test_duration_seconds gauge
+          ci_test_duration_seconds{app="server_app",branch="${GITHUB_REF_NAME}",workflow="ci-test"} ${DURATION}
+          
+          # HELP ci_test_status Test execution status (1=success, 0=failure)
+          # TYPE ci_test_status gauge
+          ci_test_status{app="server_app",branch="${GITHUB_REF_NAME}",workflow="ci-test"} ${TEST_STATUS}
+          
+          # HELP ci_test_timestamp_seconds Timestamp of test completion
+          # TYPE ci_test_timestamp_seconds gauge
+          ci_test_timestamp_seconds{app="server_app",branch="${GITHUB_REF_NAME}",workflow="ci-test"} ${END_TIME}
+          EOF
 
 
   test-client-apps:
@@ -468,6 +504,38 @@ jobs:
             --log-group-name "$LOG_GROUP" \
             --log-stream-name "$LOG_STREAM" \
             --log-events "[{\"timestamp\":$TS,\"message\":\"$ESCAPED\"}]"
+
+      - name: Push CI/CD Metrics to Prometheus
+        if: always()
+        env:
+          APP_NAME: ${{ matrix.app }}
+        run: |
+          END_TIME=$(date +%s)
+          
+          # Tính duration (giả sử start time là khi job bắt đầu)
+          DURATION=$((END_TIME - $(date -d "$(date -u +"%Y-%m-%d %H:%M:%S")" +%s) + 60))
+          
+          # Xác định test status
+          if [ "${{ job.status }}" == "success" ]; then
+            TEST_STATUS=1
+          else
+            TEST_STATUS=0
+          fi
+          
+          # Đẩy metrics lên Pushgateway
+          cat <<EOF | curl --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/ci_frontend_tests/instance/${GITHUB_RUN_ID}/app/${APP_NAME}"
+          # HELP ci_test_duration_seconds Duration of CI test execution
+          # TYPE ci_test_duration_seconds gauge
+          ci_test_duration_seconds{app="${APP_NAME}",branch="${GITHUB_REF_NAME}",workflow="ci-test"} ${DURATION}
+          
+          # HELP ci_test_status Test execution status (1=success, 0=failure)
+          # TYPE ci_test_status gauge
+          ci_test_status{app="${APP_NAME}",branch="${GITHUB_REF_NAME}",workflow="ci-test"} ${TEST_STATUS}
+          
+          # HELP ci_test_timestamp_seconds Timestamp of test completion
+          # TYPE ci_test_timestamp_seconds gauge
+          ci_test_timestamp_seconds{app="${APP_NAME}",branch="${GITHUB_REF_NAME}",workflow="ci-test"} ${END_TIME}
+          EOF
 
 
   security-scan:
