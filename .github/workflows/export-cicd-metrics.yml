@@ -8,6 +8,11 @@ on:
       - 'Auto Deploy Foodfast to EC2'
     types:
       - completed
+    branches:
+      - main
+      - kiet
+      - DUCTOAN
+      - deploy
   workflow_dispatch:
 
 jobs:
@@ -95,14 +100,18 @@ jobs:
           echo "Pushing metrics to Pushgateway at $PUSHGATEWAY_URL"
           echo "Job name: github_actions/$JOB_NAME"
           
-          # Push metrics
-          cat metrics.txt | curl --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/github_actions/instance/${JOB_NAME}" || {
-            echo "⚠️  Failed to push metrics to Pushgateway"
+          # Push metrics với verbose output
+          HTTP_CODE=$(curl -w "%{http_code}" -o /tmp/response.txt --data-binary @metrics.txt "${PUSHGATEWAY_URL}/metrics/job/github_actions/instance/${JOB_NAME}")
+          
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ]; then
+            echo "✅ Metrics pushed successfully (HTTP $HTTP_CODE)"
+            curl -s "${PUSHGATEWAY_URL}/metrics" | grep "github_workflow" | head -5
+          else
+            echo "⚠️  Failed to push metrics (HTTP $HTTP_CODE)"
+            cat /tmp/response.txt
             echo "Make sure Pushgateway is accessible at $PUSHGATEWAY_URL"
             exit 0  # Don't fail the workflow if metrics push fails
-          }
-          
-          echo "✅ Metrics pushed successfully"
+          fi
 
       - name: Summary
         if: always()
