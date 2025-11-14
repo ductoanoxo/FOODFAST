@@ -60,33 +60,40 @@ jobs:
           RUN_NUMBER: ${{ steps.workflow-info.outputs.run_number }}
           ACTOR: ${{ steps.workflow-info.outputs.actor }}
         run: |
+          # Get current timestamp for metrics
+          TIMESTAMP=$(date +%s)000  # Milliseconds
+          
           cat > metrics.txt <<EOF
           # HELP github_workflow_run_total Total number of workflow runs
           # TYPE github_workflow_run_total counter
-          github_workflow_run_total{workflow="$WORKFLOW_NAME",branch="$BRANCH",actor="$ACTOR"} 1
+          github_workflow_run_total{workflow="$WORKFLOW_NAME",branch="$BRANCH",actor="$ACTOR"} 1 $TIMESTAMP
           
           # HELP github_workflow_success_total Total number of successful workflow runs
           # TYPE github_workflow_success_total counter
-          github_workflow_success_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $([ "$CONCLUSION" = "success" ] && echo 1 || echo 0)
+          github_workflow_success_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $([ "$CONCLUSION" = "success" ] && echo 1 || echo 0) $TIMESTAMP
           
           # HELP github_workflow_failure_total Total number of failed workflow runs
           # TYPE github_workflow_failure_total counter
-          github_workflow_failure_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $([ "$CONCLUSION" = "failure" ] && echo 1 || echo 0)
+          github_workflow_failure_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $([ "$CONCLUSION" = "failure" ] && echo 1 || echo 0) $TIMESTAMP
           
           # HELP github_workflow_duration_seconds Duration of workflow run in seconds
           # TYPE github_workflow_duration_seconds gauge
-          github_workflow_duration_seconds{workflow="$WORKFLOW_NAME",branch="$BRANCH",conclusion="$CONCLUSION"} $DURATION
+          github_workflow_duration_seconds{workflow="$WORKFLOW_NAME",branch="$BRANCH",conclusion="$CONCLUSION",run_id="$RUN_ID"} $DURATION $TIMESTAMP
           
           # HELP github_workflow_run_number Sequential run number of the workflow
           # TYPE github_workflow_run_number gauge
-          github_workflow_run_number{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $RUN_NUMBER
+          github_workflow_run_number{workflow="$WORKFLOW_NAME",branch="$BRANCH",run_id="$RUN_ID"} $RUN_NUMBER $TIMESTAMP
           
           # HELP github_workflow_status Current status of workflow (1=success, 0=failure, -1=unknown)
           # TYPE github_workflow_status gauge
-          github_workflow_status{workflow="$WORKFLOW_NAME",branch="$BRANCH",run_id="$RUN_ID"} $([ "$CONCLUSION" = "success" ] && echo 1 || [ "$CONCLUSION" = "failure" ] && echo 0 || echo -1)
+          github_workflow_status{workflow="$WORKFLOW_NAME",branch="$BRANCH",run_id="$RUN_ID",actor="$ACTOR"} $([ "$CONCLUSION" = "success" ] && echo 1 || [ "$CONCLUSION" = "failure" ] && echo 0 || echo -1) $TIMESTAMP
+          
+          # HELP github_workflow_last_run_time Unix timestamp of the last workflow run
+          # TYPE github_workflow_last_run_time gauge
+          github_workflow_last_run_time{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $TIMESTAMP
           EOF
           
-          echo "Generated metrics:"
+          echo "Generated metrics with timestamp $TIMESTAMP:"
           cat metrics.txt
 
       - name: Push metrics to Pushgateway

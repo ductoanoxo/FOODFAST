@@ -29,7 +29,7 @@
       },
       "id": 1,
       "options": {
-        "content": "# 🚀 FoodFast CI/CD Pipeline Dashboard\n\nMonitoring GitHub Actions workflows: CI Testing, Docker Build & Push, Production Deployment",
+        "content": "# 🚀 FoodFast CI/CD Pipeline Dashboard\n\nMonitoring GitHub Actions workflows: CI Testing, Docker Build & Push, Production Deployment\n\n**Last Update:** <span style='color: #52c41a;'>{{__value.time}}</span> | **Auto-refresh:** Every 30s",
         "mode": "markdown"
       },
       "pluginVersion": "8.0.0",
@@ -79,9 +79,9 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(github_workflow_run_total)",
+          "expr": "sum(increase(github_workflow_run_total[24h]))",
           "refId": "A",
-          "legendFormat": "Total Runs"
+          "legendFormat": "Total Runs (24h)"
         }
       ],
       "title": "Total Workflow Runs",
@@ -130,12 +130,12 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(github_workflow_success_total)",
+          "expr": "sum(increase(github_workflow_success_total[24h]))",
           "refId": "A",
-          "legendFormat": "Success"
+          "legendFormat": "Success (24h)"
         }
       ],
-      "title": "✅ Successful Runs",
+      "title": "✅ Successful Runs (24h)",
       "type": "stat"
     },
     {
@@ -181,12 +181,12 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(github_workflow_failure_total)",
+          "expr": "sum(increase(github_workflow_failure_total[24h]))",
           "refId": "A",
-          "legendFormat": "Failures"
+          "legendFormat": "Failures (24h)"
         }
       ],
-      "title": "❌ Failed Runs",
+      "title": "❌ Failed Runs (24h)",
       "type": "stat"
     },
     {
@@ -240,12 +240,12 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "(sum(github_workflow_success_total) / (sum(github_workflow_success_total) + sum(github_workflow_failure_total))) * 100",
+          "expr": "(sum(increase(github_workflow_success_total[24h])) / (sum(increase(github_workflow_success_total[24h])) + sum(increase(github_workflow_failure_total[24h])))) * 100",
           "refId": "A",
-          "legendFormat": "Success Rate"
+          "legendFormat": "Success Rate (24h)"
         }
       ],
-      "title": "Success Rate %",
+      "title": "Success Rate % (24h)",
       "type": "gauge"
     },
     {
@@ -309,6 +309,65 @@
     },
     {
       "datasource": "Prometheus",
+      "description": "Time since last workflow run",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3600
+              },
+              {
+                "color": "red",
+                "value": 7200
+              }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "time() - (github_workflow_last_run_time / 1000)",
+          "refId": "A",
+          "legendFormat": "⏰ Last Run"
+        }
+      ],
+      "title": "⏰ Time Since Last Workflow Run",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
       "description": "Workflow runs over time",
       "fieldConfig": {
         "defaults": {
@@ -359,7 +418,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 12
       },
       "id": 7,
       "options": {
@@ -375,12 +434,12 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "github_workflow_run_total",
+          "expr": "increase(github_workflow_run_total[5m])",
           "refId": "A",
           "legendFormat": "{{workflow}} - {{branch}}"
         }
       ],
-      "title": "Workflow Runs Over Time",
+      "title": "Workflow Runs Rate (5m)",
       "type": "timeseries"
     },
     {
@@ -467,7 +526,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 17
+        "y": 20
       },
       "id": 8,
       "options": {
@@ -483,17 +542,17 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(github_workflow_success_total)",
+          "expr": "sum(increase(github_workflow_success_total[1h]))",
           "refId": "A",
           "legendFormat": "Success"
         },
         {
-          "expr": "sum(github_workflow_failure_total)",
+          "expr": "sum(increase(github_workflow_failure_total[1h]))",
           "refId": "B",
           "legendFormat": "Failure"
         }
       ],
-      "title": "Success vs Failure Rate",
+      "title": "Success vs Failure (Hourly)",
       "type": "timeseries"
     },
     {
@@ -557,7 +616,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 17
+        "y": 20
       },
       "id": 9,
       "options": {
@@ -638,7 +697,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 25
+        "y": 28
       },
       "id": 10,
       "options": {
@@ -703,7 +762,7 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 25
+        "y": 28
       },
       "id": 11,
       "options": {
@@ -720,12 +779,12 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(github_workflow_run_total) by (branch)",
+          "expr": "sum(increase(github_workflow_run_total[24h])) by (branch)",
           "refId": "A",
           "legendFormat": "{{branch}}"
         }
       ],
-      "title": "Runs by Branch",
+      "title": "Runs by Branch (24h)",
       "type": "piechart"
     },
     {
@@ -750,7 +809,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 25
+        "y": 28
       },
       "id": 12,
       "options": {
@@ -767,12 +826,12 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(github_workflow_run_total) by (actor)",
+          "expr": "sum(increase(github_workflow_run_total[24h])) by (actor)",
           "refId": "A",
           "legendFormat": "{{actor}}"
         }
       ],
-      "title": "Runs by Actor",
+      "title": "Runs by Actor (24h)",
       "type": "piechart"
     },
     {
@@ -803,7 +862,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 33
+        "y": 36
       },
       "id": 13,
       "options": {
