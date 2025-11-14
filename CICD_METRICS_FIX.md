@@ -171,3 +171,14 @@ Vấn đề đã được fix bằng cách:
 4. Verify metrics flow: GitHub Actions → Pushgateway → Prometheus → Grafana
 
 **Status:** ✅ RESOLVED
+
+---
+
+## 🔄 Testing with Real Data
+
+Để có real data từ GitHub Actions workflows, trigger bất kỳ workflow nào trong danh sách:
+- CI - Test and Lint
+- Docker Build and Push  
+- Auto Deploy to EC2
+
+Sau khi workflow hoàn thành, `export-cicd-metrics` sẽ tự động chạy và push metrics thật.
