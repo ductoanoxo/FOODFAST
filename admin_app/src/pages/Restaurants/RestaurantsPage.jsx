@@ -61,7 +61,7 @@ const RestaurantsPage = () => {
 
     const handleToggleStatus = async (id, isOpen) => {
         try {
-            const token = localStorage.getItem('token')
+            const token = localStorage.getItem('admin_token')
 
             const config = {
                 headers: {

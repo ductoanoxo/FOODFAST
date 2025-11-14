@@ -124,7 +124,7 @@ const FleetMap = () => {
   };
 
   const initializeSocket = () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('admin_token');
     if (!token) return;
 
     socketService.connect(token);
