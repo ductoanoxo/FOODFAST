@@ -696,9 +696,21 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
         // ✅ Use consistent event naming: emit both colon and hyphen variants for compatibility
     const payload = {
         orderId: order._id,
+        _id: order._id,
         orderNumber: order.orderNumber,
         status: order.status,
         timestamp: now,
+        confirmedAt: order.confirmedAt,
+        preparingAt: order.preparingAt,
+        readyAt: order.readyAt,
+        deliveringAt: order.deliveringAt,
+        arrivedAt: order.arrivedAt,
+        deliveredAt: order.deliveredAt,
+        cancelledAt: order.cancelledAt,
+        timeoutAt: order.timeoutAt,
+        returnedAt: order.returnedAt,
+        cancelReason: order.cancelReason,
+        paymentStatus: order.paymentStatus,
         ...(refundInfo && { refundInfo }), // Include refund info if cancellation happened
     }
 

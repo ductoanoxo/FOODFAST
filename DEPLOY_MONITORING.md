@@ -6,7 +6,7 @@
 - ✅ Dashboard với business metrics
 - ✅ Alert rules
 
-## 🔧 Deploy lên EC2 (98.90.205.114)
+## 🔧 Deploy lên EC2 (13.220.101.54)
 
 ### Bước 1: Push code lên GitHub
 
@@ -19,7 +19,7 @@ git push origin kiet
 ### Bước 2: SSH vào EC2
 
 ```bash
-ssh -i "C:\Users\ADMIN\Downloads\CNPM_AWS_SGU.pem" ubuntu@98.90.205.114
+ssh -i "C:\Users\ADMIN\Downloads\CNPM_AWS_SGU.pem" ubuntu@13.220.101.54
 ```
 
 ### Bước 3: Pull code mới trên EC2
@@ -83,7 +83,7 @@ Không mở port công khai, chỉ truy cập qua SSH tunnel:
 
 ```bash
 # Từ máy local, tạo SSH tunnel
-ssh -i "C:\Users\ADMIN\Downloads\CNPM_AWS_SGU.pem" -L 3030:localhost:3030 -L 9090:localhost:9090 ubuntu@98.90.205.114
+ssh -i "C:\Users\ADMIN\Downloads\CNPM_AWS_SGU.pem" -L 3030:localhost:3030 -L 9090:localhost:9090 ubuntu@13.220.101.54
 
 # Sau đó truy cập qua localhost:
 # Grafana: http://localhost:3030
@@ -127,14 +127,14 @@ docker-compose up -d grafana
 ### URLs khi deploy:
 
 **Nếu mở ports công khai (không khuyến nghị):**
-- Grafana: `http://98.90.205.114:3030`
-- Prometheus: `http://98.90.205.114:9090`
-- Metrics: `http://98.90.205.114:5000/metrics`
+- Grafana: `http://13.220.101.54:3030`
+- Prometheus: `http://13.220.101.54:9090`
+- Metrics: `http://13.220.101.54:5000/metrics`
 
 **Nếu dùng SSH tunnel (khuyến nghị):**
 ```bash
 # Tạo tunnel trước
-ssh -i "C:\Users\ADMIN\Downloads\CNPM_AWS_SGU.pem" -L 3030:localhost:3030 ubuntu@98.90.205.114
+ssh -i "C:\Users\ADMIN\Downloads\CNPM_AWS_SGU.pem" -L 3030:localhost:3030 ubuntu@13.220.101.54
 
 # Sau đó truy cập qua localhost
 http://localhost:3030
@@ -314,16 +314,16 @@ docker stats
 
 ```
 Application:
-- Client:      http://98.90.205.114:3000
-- Restaurant:  http://98.90.205.114:3001  
-- Admin:       http://98.90.205.114:3002
-- Drone:       http://98.90.205.114:3003
-- API:         http://98.90.205.114:5000
+- Client:      http://13.220.101.54:3000
+- Restaurant:  http://13.220.101.54:3001  
+- Admin:       http://13.220.101.54:3002
+- Drone:       http://13.220.101.54:3003
+- API:         http://13.220.101.54:5000
 
 Monitoring (via SSH tunnel):
 - Grafana:     http://localhost:3030
 - Prometheus:  http://localhost:9090
-- Metrics:     http://98.90.205.114:5000/metrics
+- Metrics:     http://13.220.101.54:5000/metrics
 ```
 
 ## 💡 Tips

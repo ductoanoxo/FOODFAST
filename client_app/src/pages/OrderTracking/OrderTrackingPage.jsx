@@ -68,12 +68,32 @@ const OrderTrackingPage = () => {
     const handleOrderStatusUpdate = (data) => {
       if (data.orderId === orderId || data._id === orderId) {
         console.log('📡 Order status updated:', data);
-        // Update order state immediately if paymentStatus is provided
-        if (data.paymentStatus) {
-          setOrder(prev => prev ? { ...prev, status: data.status || prev.status, paymentStatus: data.paymentStatus } : prev);
-        }
-        // Fetch full order data to ensure everything is in sync
-        fetchOrderTracking();
+        // Update order state immediately from socket data
+        setOrder(prev => {
+          if (!prev) return prev;
+          
+          const updated = { 
+            ...prev, 
+            status: data.status || prev.status,
+            ...(data.paymentStatus && { paymentStatus: data.paymentStatus }),
+            ...(data.confirmedAt && { confirmedAt: data.confirmedAt }),
+            ...(data.preparingAt && { preparingAt: data.preparingAt }),
+            ...(data.readyAt && { readyAt: data.readyAt }),
+            ...(data.deliveringAt && { deliveringAt: data.deliveringAt }),
+            ...(data.arrivedAt && { arrivedAt: data.arrivedAt }),
+            ...(data.deliveredAt && { deliveredAt: data.deliveredAt }),
+            ...(data.cancelledAt && { cancelledAt: data.cancelledAt }),
+            ...(data.timeoutAt && { timeoutAt: data.timeoutAt }),
+            ...(data.returnedAt && { returnedAt: data.returnedAt }),
+            ...(data.cancelReason && { cancelReason: data.cancelReason }),
+          };
+          
+          return updated;
+        });
+        
+        // Optional: Fetch full order data in background to ensure everything is in sync
+        // But don't wait for it - UI already updated from socket
+        setTimeout(() => fetchOrderTracking(), 1000);
       }
     };
 
