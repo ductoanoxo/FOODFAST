@@ -166,15 +166,94 @@ class SocketService {
             console.log(`📦 Customer ${socket.id} tracking order ${orderId}`);
         });
         
-        // Handle join-order event
+        // Handle join-order event (multiple naming variants for compatibility)
         socket.on('join-order', (orderId) => {
             socket.join(`order-${orderId}`);
             console.log(`📦 Customer ${user.name} joined order room ${orderId}`);
         });
         
+        socket.on('join-order-room', (data) => {
+            const orderId = data.orderId || data;
+            socket.join(`order-${orderId}`);
+            console.log(`📦 User ${user.name} joined order room ${orderId}`);
+        });
+        
         socket.on('leave-order', (orderId) => {
             socket.leave(`order-${orderId}`);
             console.log(`📦 Customer ${user.name} left order room ${orderId}`);
+        });
+        
+        socket.on('leave-order-room', (data) => {
+            const orderId = data.orderId || data;
+            socket.leave(`order-${orderId}`);
+            console.log(`📦 User ${user.name} left order room ${orderId}`);
+        });
+        
+        // Handle order status update requests from client (for setting waiting_for_customer status)
+        socket.on('order:status-updated', async (data) => {
+            try {
+                const { orderId, status, timestamp } = data;
+                console.log(`📡 [SERVER] Client requested status update:`, { orderId, status, timestamp });
+                
+                // Only allow specific status transitions from client
+                if (status === 'waiting_for_customer') {
+                    const Order = require('../API/Models/Order');
+                    const order = await Order.findById(orderId);
+                    
+                    if (!order) {
+                        console.error(`❌ Order ${orderId} not found`);
+                        return;
+                    }
+                    
+                    console.log(`📦 Order ${orderId} current status: ${order.status}`);
+                    
+                    if (order.status === 'delivering') {
+                        order.status = 'waiting_for_customer';
+                        order.arrivedAt = timestamp || new Date();
+                        await order.save();
+                        
+                        console.log(`✅ Order ${orderId} status updated: delivering → waiting_for_customer`);
+                        
+                        // Broadcast the update to all connected clients with full details
+                        const payload = {
+                            orderId: order._id,
+                            _id: order._id,
+                            orderNumber: order.orderNumber,
+                            status: order.status,
+                            timestamp: order.arrivedAt,
+                            arrivedAt: order.arrivedAt,
+                            confirmedAt: order.confirmedAt,
+                            preparingAt: order.preparingAt,
+                            readyAt: order.readyAt,
+                            deliveringAt: order.deliveringAt,
+                            deliveredAt: order.deliveredAt,
+                            cancelledAt: order.cancelledAt,
+                            paymentStatus: order.paymentStatus,
+                        };
+                        
+                        console.log(`📡 [SERVER] Broadcasting order:status-updated to:`, {
+                            orderRoom: `order-${orderId}`,
+                            restaurantRoom: `restaurant-${order.restaurant}`,
+                            adminRoom: 'admin-room',
+                            global: 'all clients',
+                            payload: payload
+                        });
+                        
+                        this.io.to(`order-${orderId}`).emit('order:status-updated', payload);
+                        this.io.to(`restaurant-${order.restaurant}`).emit('order:status-updated', {...payload, restaurantId: order.restaurant });
+                        this.io.emit('order:status-updated', payload);
+                        this.io.to('admin-room').emit('order:status-updated', payload);
+                        
+                        console.log(`✅ [SERVER] Broadcast complete for order ${orderId}`);
+                    } else {
+                        console.log(`⚠️ Order ${orderId} status is ${order.status}, not 'delivering'. Skipping update.`);
+                    }
+                } else {
+                    console.log(`⚠️ Status "${status}" is not allowed from client`);
+                }
+            } catch (error) {
+                console.error('❌ Error updating order status from socket:', error);
+            }
         });
     }
 
