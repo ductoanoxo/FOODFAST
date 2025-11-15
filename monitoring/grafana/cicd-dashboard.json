@@ -692,7 +692,12 @@
       "id": 10,
       "options": {
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Time"
+          }
+        ]
       },
       "pluginVersion": "8.0.0",
       "targets": [
@@ -700,7 +705,7 @@
           "expr": "github_workflow_status",
           "refId": "A",
           "format": "table",
-          "instant": true
+          "instant": false
         }
       ],
       "title": "Workflow Status Table",
@@ -709,17 +714,18 @@
           "id": "organize",
           "options": {
             "excludeByName": {
-              "Time": true,
               "job": true,
               "instance": true
             },
             "indexByName": {
-              "workflow": 0,
-              "branch": 1,
-              "run_id": 2,
-              "Value": 3
+              "Time": 0,
+              "workflow": 1,
+              "branch": 2,
+              "run_id": 3,
+              "Value": 4
             },
             "renameByName": {
+              "Time": "Last Update",
               "workflow": "Workflow",
               "branch": "Branch",
               "run_id": "Run ID",
@@ -860,7 +866,7 @@
         "sortBy": [
           {
             "desc": true,
-            "displayName": "Run Number"
+            "displayName": "Last Update"
           }
         ]
       },
@@ -870,7 +876,7 @@
           "expr": "github_workflow_run_number",
           "refId": "A",
           "format": "table",
-          "instant": true
+          "instant": false
         }
       ],
       "title": "Recent Workflow Runs",
@@ -879,16 +885,17 @@
           "id": "organize",
           "options": {
             "excludeByName": {
-              "Time": true,
               "job": true,
               "instance": true
             },
             "indexByName": {
-              "workflow": 0,
-              "branch": 1,
-              "Value": 2
+              "Time": 0,
+              "workflow": 1,
+              "branch": 2,
+              "Value": 3
             },
             "renameByName": {
+              "Time": "Last Update",
               "workflow": "Workflow",
               "branch": "Branch",
               "Value": "Run Number"
