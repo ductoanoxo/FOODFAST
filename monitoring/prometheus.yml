@@ -16,7 +16,6 @@ alerting:
 # Load rules từ files
 rule_files:
   - '/etc/prometheus/alerts.yml'
-  - '/etc/prometheus/recording-rules.yml'
 
 # Cấu hình scrape các targets
 scrape_configs:
@@ -52,19 +51,7 @@ scrape_configs:
   # Prometheus Pushgateway for CI/CD Metrics
   - job_name: 'pushgateway'
     honor_labels: true
-    honor_timestamps: true
     static_configs:
       - targets: ['pushgateway:9091']
-    scrape_interval: 5s
-    scrape_timeout: 3s
-    metric_relabel_configs:
-      # Giữ nguyên labels từ pushgateway, không override
-      - source_labels: [__name__]
-        regex: 'github_.*'
-        action: keep
-      # Đảm bảo không có duplicate metrics
-      - source_labels: [job, instance]
-        separator: ';'
-        regex: 'pushgateway;.*'
-        target_label: source
-        replacement: 'github_actions'
+    scrape_interval: 10s
+    scrape_timeout: 5s
