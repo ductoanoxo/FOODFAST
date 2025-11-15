@@ -588,17 +588,17 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(rate(github_workflow_success_total[5m])) * 300",
+          "expr": "sum(github_workflow_success_total)",
           "refId": "A",
           "legendFormat": "Success"
         },
         {
-          "expr": "sum(rate(github_workflow_failure_total[5m])) * 300",
+          "expr": "sum(github_workflow_failure_total)",
           "refId": "B",
           "legendFormat": "Failed"
         }
       ],
-      "title": "📊 Hoạt động theo thời gian",
+      "title": "📊 Tổng số Workflows (Success vs Failed)",
       "type": "timeseries"
     },
     {
