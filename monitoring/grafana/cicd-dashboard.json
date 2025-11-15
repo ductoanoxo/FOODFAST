@@ -692,12 +692,7 @@
       "id": 10,
       "options": {
         "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Time"
-          }
-        ]
+        "sortBy": []
       },
       "pluginVersion": "8.0.0",
       "targets": [
@@ -705,7 +700,7 @@
           "expr": "github_workflow_status",
           "refId": "A",
           "format": "table",
-          "instant": false
+          "instant": true
         }
       ],
       "title": "Workflow Status Table",
@@ -714,18 +709,17 @@
           "id": "organize",
           "options": {
             "excludeByName": {
+              "Time": true,
               "job": true,
               "instance": true
             },
             "indexByName": {
-              "Time": 0,
-              "workflow": 1,
-              "branch": 2,
-              "run_id": 3,
-              "Value": 4
+              "workflow": 0,
+              "branch": 1,
+              "run_id": 2,
+              "Value": 3
             },
             "renameByName": {
-              "Time": "Last Update",
               "workflow": "Workflow",
               "branch": "Branch",
               "run_id": "Run ID",
@@ -866,7 +860,7 @@
         "sortBy": [
           {
             "desc": true,
-            "displayName": "Last Update"
+            "displayName": "Run Number"
           }
         ]
       },
@@ -876,7 +870,7 @@
           "expr": "github_workflow_run_number",
           "refId": "A",
           "format": "table",
-          "instant": false
+          "instant": true
         }
       ],
       "title": "Recent Workflow Runs",
@@ -885,17 +879,16 @@
           "id": "organize",
           "options": {
             "excludeByName": {
+              "Time": true,
               "job": true,
               "instance": true
             },
             "indexByName": {
-              "Time": 0,
-              "workflow": 1,
-              "branch": 2,
-              "Value": 3
+              "workflow": 0,
+              "branch": 1,
+              "Value": 2
             },
             "renameByName": {
-              "Time": "Last Update",
               "workflow": "Workflow",
               "branch": "Branch",
               "Value": "Run Number"
@@ -1298,7 +1291,7 @@
       "transparent": true
     }
   ],
-  "refresh": "10s",
+  "refresh": "30s",
   "schemaVersion": 27,
   "style": "dark",
   "tags": ["cicd", "github-actions", "foodfast", "devops", "monitoring"],
@@ -1400,11 +1393,11 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h"],
+    "refresh_intervals": ["10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h"],
     "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
   },
   "timezone": "browser",

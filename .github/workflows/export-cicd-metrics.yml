@@ -23,18 +23,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: main  # Always use latest code from main branch
-
-      - name: Setup SSH (for fallback push via server)
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.PROD_SSH_KEY }}
-
-      - name: Add EC2 to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
       - name: Get workflow information
         id: workflow-info
@@ -72,47 +60,44 @@ jobs:
           RUN_NUMBER: ${{ steps.workflow-info.outputs.run_number }}
           ACTOR: ${{ steps.workflow-info.outputs.actor }}
         run: |
-          # Calculate increment values
+          # For counters: always increment by 1 (never reset to 0 or decrease)
+          # Pushgateway will persist and accumulate the values
           if [ "$CONCLUSION" = "success" ]; then
             SUCCESS_INCREMENT=1
             FAILURE_INCREMENT=0
-            STATUS=1
           elif [ "$CONCLUSION" = "failure" ]; then
             SUCCESS_INCREMENT=0
             FAILURE_INCREMENT=1
-            STATUS=0
           else
             SUCCESS_INCREMENT=0
             FAILURE_INCREMENT=0
-            STATUS=-1
           fi
           
-          # Generate metrics directly (no placeholders)
-          cat > metrics.txt << METRICEOF
-# HELP github_workflow_run_total Total number of workflow runs (counter)
-# TYPE github_workflow_run_total counter
-github_workflow_run_total{workflow="${WORKFLOW_NAME}",branch="${BRANCH}",actor="${ACTOR}"} 1
-
-# HELP github_workflow_success_total Total number of successful workflow runs (counter)
-# TYPE github_workflow_success_total counter
-github_workflow_success_total{workflow="${WORKFLOW_NAME}",branch="${BRANCH}"} ${SUCCESS_INCREMENT}
-
-# HELP github_workflow_failure_total Total number of failed workflow runs (counter)
-# TYPE github_workflow_failure_total counter
-github_workflow_failure_total{workflow="${WORKFLOW_NAME}",branch="${BRANCH}"} ${FAILURE_INCREMENT}
-
-# HELP github_workflow_duration_seconds Duration of workflow run in seconds
-# TYPE github_workflow_duration_seconds gauge
-github_workflow_duration_seconds{workflow="${WORKFLOW_NAME}",branch="${BRANCH}",conclusion="${CONCLUSION}"} ${DURATION}
-
-# HELP github_workflow_run_number Sequential run number of the workflow
-# TYPE github_workflow_run_number gauge
-github_workflow_run_number{workflow="${WORKFLOW_NAME}",branch="${BRANCH}"} ${RUN_NUMBER}
-
-# HELP github_workflow_status Current status of workflow (1=success, 0=failure, -1=unknown)
-# TYPE github_workflow_status gauge
-github_workflow_status{workflow="${WORKFLOW_NAME}",branch="${BRANCH}",run_id="${RUN_ID}"} ${STATUS}
-METRICEOF
+          cat > metrics.txt <<EOF
+          # HELP github_workflow_run_total Total number of workflow runs (counter)
+          # TYPE github_workflow_run_total counter
+          github_workflow_run_total{workflow="$WORKFLOW_NAME",branch="$BRANCH",actor="$ACTOR"} 1
+          
+          # HELP github_workflow_success_total Total number of successful workflow runs (counter)
+          # TYPE github_workflow_success_total counter
+          github_workflow_success_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $SUCCESS_INCREMENT
+          
+          # HELP github_workflow_failure_total Total number of failed workflow runs (counter)
+          # TYPE github_workflow_failure_total counter
+          github_workflow_failure_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $FAILURE_INCREMENT
+          
+          # HELP github_workflow_duration_seconds Duration of workflow run in seconds
+          # TYPE github_workflow_duration_seconds gauge
+          github_workflow_duration_seconds{workflow="$WORKFLOW_NAME",branch="$BRANCH",conclusion="$CONCLUSION"} $DURATION
+          
+          # HELP github_workflow_run_number Sequential run number of the workflow
+          # TYPE github_workflow_run_number gauge
+          github_workflow_run_number{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $RUN_NUMBER
+          
+          # HELP github_workflow_status Current status of workflow (1=success, 0=failure, -1=unknown)
+          # TYPE github_workflow_status gauge
+          github_workflow_status{workflow="$WORKFLOW_NAME",branch="$BRANCH",run_id="$RUN_ID"} $([ "$CONCLUSION" = "success" ] && echo 1 || [ "$CONCLUSION" = "failure" ] && echo 0 || echo -1)
+          EOF
           
           echo "Generated metrics:"
           cat metrics.txt
@@ -121,59 +106,25 @@ METRICEOF
         env:
           PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://13.220.101.54:9091' }}
           WORKFLOW_NAME: ${{ steps.workflow-info.outputs.workflow_name }}
-          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
-          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
         run: |
           # Sanitize workflow name for Prometheus job label
           JOB_NAME=$(echo "$WORKFLOW_NAME" | tr ' ' '_' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_]/_/g')
           
-          echo "=========================================="
-          echo "Pushing metrics to Pushgateway"
-          echo "=========================================="
-          echo "URL: $PUSHGATEWAY_URL"
-          echo "Job: github_actions"
-          echo "Original Workflow Name: $WORKFLOW_NAME"
-          echo "Sanitized Job Name: $JOB_NAME"
+          echo "Pushing metrics to Pushgateway at $PUSHGATEWAY_URL"
+          echo "Job name: github_actions/$JOB_NAME"
           
-          # CRITICAL: Create unique instance with timestamp
-          TIMESTAMP=$(date +%s)
-          INSTANCE="${JOB_NAME}_${TIMESTAMP}"
+          # Push metrics với verbose output
+          HTTP_CODE=$(curl -w "%{http_code}" -o /tmp/response.txt --data-binary @metrics.txt "${PUSHGATEWAY_URL}/metrics/job/github_actions/instance/${JOB_NAME}")
           
-          echo "Instance: $INSTANCE"
-          echo "Timestamp: $TIMESTAMP"
-          echo "=========================================="
-          
-          # Show metrics to be pushed
-          echo "Metrics to push:"
-          cat metrics.txt
-          echo "=========================================="
-          
-          # Try direct push first (if Pushgateway is publicly accessible)
-          PUSH_URL="${PUSHGATEWAY_URL}/metrics/job/github_actions/instance/${INSTANCE}"
-          echo "Attempting direct push to: $PUSH_URL"
-          
-          HTTP_CODE=$(curl -w "%{http_code}" -o /tmp/response.txt --connect-timeout 5 --max-time 10 --data-binary @metrics.txt "$PUSH_URL" 2>/dev/null || echo "000")
-          
-          echo "HTTP Response Code: $HTTP_CODE"
-          
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ] || [ "$HTTP_CODE" = "201" ]; then
-            echo "✅ Metrics pushed successfully via direct connection!"
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ]; then
+            echo "✅ Metrics pushed successfully (HTTP $HTTP_CODE)"
+            curl -s "${PUSHGATEWAY_URL}/metrics" | grep "github_workflow" | head -5
           else
-            echo "⚠️  Direct push failed or timed out (HTTP $HTTP_CODE)"
-            echo "Attempting to push via SSH to EC2 server..."
-            
-            # Copy metrics file to server and push from there (using ssh-agent)
-            scp metrics.txt $SERVER_USER@$SERVER_HOST:/tmp/github_metrics_${TIMESTAMP}.txt
-            
-            # Push from server (Pushgateway is on localhost in EC2)
-            ssh $SERVER_USER@$SERVER_HOST "curl --data-binary @/tmp/github_metrics_${TIMESTAMP}.txt 'http://localhost:9091/metrics/job/github_actions/instance/${INSTANCE}' && rm /tmp/github_metrics_${TIMESTAMP}.txt && echo '✅ Pushed from server successfully'"
-            
-            echo "✅ Metrics pushed successfully via SSH!"
+            echo "⚠️  Failed to push metrics (HTTP $HTTP_CODE)"
+            cat /tmp/response.txt
+            echo "Make sure Pushgateway is accessible at $PUSHGATEWAY_URL"
+            exit 0  # Don't fail the workflow if metrics push fails
           fi
-          
-          echo "=========================================="
-          echo "Verifying metrics in Pushgateway:"
-          curl -s "http://${SERVER_HOST}:9091/metrics" 2>/dev/null | grep "instance=\"${INSTANCE}\"" | head -3 || echo "Metrics will appear shortly..."
 
       - name: Summary
         if: always()
@@ -188,13 +139,5 @@ METRICEOF
           - **Run**: #${{ steps.workflow-info.outputs.run_number }}
           - **Actor**: ${{ steps.workflow-info.outputs.actor }}
           
-          ### 📍 Instance Label
-          Generated with timestamp for unique time series in Grafana.
-          
-          ### 🔗 View Metrics
-          - [Pushgateway](http://13.220.101.54:9091)
-          - [Prometheus](http://13.220.101.54:9090)
-          - [Grafana Dashboard](http://13.220.101.54:3030)
-          
-          Metrics are now available for real-time visualization! 🎉
+          Metrics have been exported to Prometheus Pushgateway for Grafana visualization.
           EOF
