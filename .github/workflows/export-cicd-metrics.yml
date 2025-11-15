@@ -112,25 +112,48 @@ jobs:
           # Sanitize workflow name for Prometheus job label
           JOB_NAME=$(echo "$WORKFLOW_NAME" | tr ' ' '_' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_]/_/g')
           
-          echo "Pushing metrics to Pushgateway at $PUSHGATEWAY_URL"
-          echo "Job name: github_actions/$JOB_NAME"
+          echo "=========================================="
+          echo "Pushing metrics to Pushgateway"
+          echo "=========================================="
+          echo "URL: $PUSHGATEWAY_URL"
+          echo "Job: github_actions"
+          echo "Original Workflow Name: $WORKFLOW_NAME"
+          echo "Sanitized Job Name: $JOB_NAME"
           
-          # CRITICAL: Use PUT with unique instance label to create new time series
-          # This ensures Grafana sees new data points with updated timestamps
+          # CRITICAL: Create unique instance with timestamp
           TIMESTAMP=$(date +%s)
           INSTANCE="${JOB_NAME}_${TIMESTAMP}"
           
-          # Push metrics với verbose output
-          HTTP_CODE=$(curl -w "%{http_code}" -o /tmp/response.txt -X PUT --data-binary @metrics.txt "${PUSHGATEWAY_URL}/metrics/job/github_actions/instance/${INSTANCE}")
+          echo "Instance: $INSTANCE"
+          echo "Timestamp: $TIMESTAMP"
+          echo "=========================================="
           
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ]; then
-            echo "✅ Metrics pushed successfully (HTTP $HTTP_CODE) with instance: ${INSTANCE}"
-            curl -s "${PUSHGATEWAY_URL}/metrics" | grep "github_workflow" | head -10
+          # Show metrics to be pushed
+          echo "Metrics to push:"
+          cat metrics.txt
+          echo "=========================================="
+          
+          # Push metrics using POST (Pushgateway default method)
+          PUSH_URL="${PUSHGATEWAY_URL}/metrics/job/github_actions/instance/${INSTANCE}"
+          echo "Full URL: $PUSH_URL"
+          
+          HTTP_CODE=$(curl -w "%{http_code}" -o /tmp/response.txt --data-binary @metrics.txt "$PUSH_URL")
+          
+          echo "HTTP Response Code: $HTTP_CODE"
+          echo "Response body:"
+          cat /tmp/response.txt || echo "(no response body)"
+          echo "=========================================="
+          
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ] || [ "$HTTP_CODE" = "201" ]; then
+            echo "✅ Metrics pushed successfully!"
+            echo ""
+            echo "Verifying metrics in Pushgateway:"
+            curl -s "${PUSHGATEWAY_URL}/metrics" | grep "instance=\"${INSTANCE}\"" | head -5 || echo "No metrics found yet (may take a moment)"
           else
-            echo "⚠️  Failed to push metrics (HTTP $HTTP_CODE)"
-            cat /tmp/response.txt
-            echo "Make sure Pushgateway is accessible at $PUSHGATEWAY_URL"
-            exit 0  # Don't fail the workflow if metrics push fails
+            echo "❌ Failed to push metrics (HTTP $HTTP_CODE)"
+            echo "This may cause incomplete dashboard data"
+            echo "Please check Pushgateway accessibility"
+            # Don't fail workflow, just warn
           fi
 
       - name: Summary
@@ -146,5 +169,13 @@ jobs:
           - **Run**: #${{ steps.workflow-info.outputs.run_number }}
           - **Actor**: ${{ steps.workflow-info.outputs.actor }}
           
-          Metrics have been exported to Prometheus Pushgateway for Grafana visualization.
+          ### 📍 Instance Label
+          Generated with timestamp for unique time series in Grafana.
+          
+          ### 🔗 View Metrics
+          - [Pushgateway](http://13.220.101.54:9091)
+          - [Prometheus](http://13.220.101.54:9090)
+          - [Grafana Dashboard](http://13.220.101.54:3030)
+          
+          Metrics are now available for real-time visualization! 🎉
           EOF
