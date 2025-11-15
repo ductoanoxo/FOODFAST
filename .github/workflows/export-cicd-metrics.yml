@@ -85,31 +85,52 @@ jobs:
             FAILURE_INCREMENT=0
           fi
           
-          cat > metrics.txt <<EOF
-          # HELP github_workflow_run_total Total number of workflow runs (counter)
-          # TYPE github_workflow_run_total counter
-          github_workflow_run_total{workflow="$WORKFLOW_NAME",branch="$BRANCH",actor="$ACTOR"} 1
+          cat > metrics.txt <<'EOF'
+# HELP github_workflow_run_total Total number of workflow runs (counter)
+# TYPE github_workflow_run_total counter
+github_workflow_run_total{workflow="WORKFLOW_NAME_PLACEHOLDER",branch="BRANCH_PLACEHOLDER",actor="ACTOR_PLACEHOLDER"} 1
+
+# HELP github_workflow_success_total Total number of successful workflow runs (counter)
+# TYPE github_workflow_success_total counter
+github_workflow_success_total{workflow="WORKFLOW_NAME_PLACEHOLDER",branch="BRANCH_PLACEHOLDER"} SUCCESS_INCREMENT_PLACEHOLDER
+
+# HELP github_workflow_failure_total Total number of failed workflow runs (counter)
+# TYPE github_workflow_failure_total counter
+github_workflow_failure_total{workflow="WORKFLOW_NAME_PLACEHOLDER",branch="BRANCH_PLACEHOLDER"} FAILURE_INCREMENT_PLACEHOLDER
+
+# HELP github_workflow_duration_seconds Duration of workflow run in seconds
+# TYPE github_workflow_duration_seconds gauge
+github_workflow_duration_seconds{workflow="WORKFLOW_NAME_PLACEHOLDER",branch="BRANCH_PLACEHOLDER",conclusion="CONCLUSION_PLACEHOLDER"} DURATION_PLACEHOLDER
+
+# HELP github_workflow_run_number Sequential run number of the workflow
+# TYPE github_workflow_run_number gauge
+github_workflow_run_number{workflow="WORKFLOW_NAME_PLACEHOLDER",branch="BRANCH_PLACEHOLDER"} RUN_NUMBER_PLACEHOLDER
+
+# HELP github_workflow_status Current status of workflow (1=success, 0=failure, -1=unknown)
+# TYPE github_workflow_status gauge
+github_workflow_status{workflow="WORKFLOW_NAME_PLACEHOLDER",branch="BRANCH_PLACEHOLDER",run_id="RUN_ID_PLACEHOLDER"} STATUS_PLACEHOLDER
+EOF
+
+          # Replace placeholders with actual values
+          sed -i "s/WORKFLOW_NAME_PLACEHOLDER/$WORKFLOW_NAME/g" metrics.txt
+          sed -i "s/BRANCH_PLACEHOLDER/$BRANCH/g" metrics.txt
+          sed -i "s/ACTOR_PLACEHOLDER/$ACTOR/g" metrics.txt
+          sed -i "s/SUCCESS_INCREMENT_PLACEHOLDER/$SUCCESS_INCREMENT/g" metrics.txt
+          sed -i "s/FAILURE_INCREMENT_PLACEHOLDER/$FAILURE_INCREMENT/g" metrics.txt
+          sed -i "s/CONCLUSION_PLACEHOLDER/$CONCLUSION/g" metrics.txt
+          sed -i "s/DURATION_PLACEHOLDER/$DURATION/g" metrics.txt
+          sed -i "s/RUN_NUMBER_PLACEHOLDER/$RUN_NUMBER/g" metrics.txt
+          sed -i "s/RUN_ID_PLACEHOLDER/$RUN_ID/g" metrics.txt
           
-          # HELP github_workflow_success_total Total number of successful workflow runs (counter)
-          # TYPE github_workflow_success_total counter
-          github_workflow_success_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $SUCCESS_INCREMENT
-          
-          # HELP github_workflow_failure_total Total number of failed workflow runs (counter)
-          # TYPE github_workflow_failure_total counter
-          github_workflow_failure_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $FAILURE_INCREMENT
-          
-          # HELP github_workflow_duration_seconds Duration of workflow run in seconds
-          # TYPE github_workflow_duration_seconds gauge
-          github_workflow_duration_seconds{workflow="$WORKFLOW_NAME",branch="$BRANCH",conclusion="$CONCLUSION"} $DURATION
-          
-          # HELP github_workflow_run_number Sequential run number of the workflow
-          # TYPE github_workflow_run_number gauge
-          github_workflow_run_number{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $RUN_NUMBER
-          
-          # HELP github_workflow_status Current status of workflow (1=success, 0=failure, -1=unknown)
-          # TYPE github_workflow_status gauge
-          github_workflow_status{workflow="$WORKFLOW_NAME",branch="$BRANCH",run_id="$RUN_ID"} $([ "$CONCLUSION" = "success" ] && echo 1 || [ "$CONCLUSION" = "failure" ] && echo 0 || echo -1)
-          EOF
+          # Calculate status value
+          if [ "$CONCLUSION" = "success" ]; then
+            STATUS=1
+          elif [ "$CONCLUSION" = "failure" ]; then
+            STATUS=0
+          else
+            STATUS=-1
+          fi
+          sed -i "s/STATUS_PLACEHOLDER/$STATUS/g" metrics.txt
           
           echo "Generated metrics:"
           cat metrics.txt
