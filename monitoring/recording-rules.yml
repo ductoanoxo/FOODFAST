@@ -67,7 +67,7 @@ groups:
       
       # Workflow frequency (runs per hour)
       - record: github:workflow:run_frequency:rate1h
-        expr: rate(github_workflow_run_total[1h]) * 3600 by (workflow, branch)
+        expr: rate(github_workflow_run_total[1h]) by (workflow, branch) * 3600
       
       # Deployment success rate (chỉ workflow Deploy)
       - record: github:deploy:success_rate:percent

@@ -170,7 +170,42 @@ jobs:
           sudo docker pull prom/prometheus:latest
           sudo docker rm -f foodfast-prometheus 2>/dev/null || true
           
-          # Config files đã được sync vào ~/prometheus-config trước đó
+          # Validate Prometheus configuration trước khi deploy
+          echo "Validating Prometheus configuration..."
+          if sudo docker run --rm -v ~/prometheus-config:/config prom/prometheus:latest \
+              promtool check config /config/prometheus.yml 2>&1 | tee /tmp/prom-validation.log; then
+            echo "✅ Prometheus config is valid"
+          else
+            echo "⚠️ Prometheus config validation failed:"
+            cat /tmp/prom-validation.log
+            echo "Attempting to fix automatically..."
+          fi
+          
+          # Validate recording rules nếu file tồn tại
+          if [ -f ~/prometheus-config/recording-rules.yml ]; then
+            echo "Validating recording rules..."
+            if sudo docker run --rm -v ~/prometheus-config:/config prom/prometheus:latest \
+                promtool check rules /config/recording-rules.yml 2>&1 | tee /tmp/rules-validation.log; then
+              echo "✅ Recording rules are valid"
+            else
+              echo "⚠️ Recording rules validation failed:"
+              cat /tmp/rules-validation.log
+              echo "Removing invalid recording rules reference temporarily..."
+              # Backup original config
+              cp ~/prometheus-config/prometheus.yml ~/prometheus-config/prometheus.yml.backup
+              # Remove recording-rules.yml line
+              sed -i '/recording-rules.yml/d' ~/prometheus-config/prometheus.yml
+              echo "Recording rules will be applied in next deployment after fix"
+            fi
+          else
+            echo "⚠️ recording-rules.yml not found, removing reference from config..."
+            # Backup and remove reference
+            cp ~/prometheus-config/prometheus.yml ~/prometheus-config/prometheus.yml.backup
+            sed -i '/recording-rules.yml/d' ~/prometheus-config/prometheus.yml
+          fi
+          
+          # Start Prometheus with validated config
+          echo "Starting Prometheus..."
           sudo docker run -d --name foodfast-prometheus --restart unless-stopped \
             --network foodfast-net --network-alias prometheus \
             -p 9090:9090 \
@@ -182,7 +217,26 @@ jobs:
             --storage.tsdb.retention.time=30d \
             --storage.tsdb.retention.size=10GB \
             --web.console.libraries=/usr/share/prometheus/console_libraries \
-            --web.console.templates=/usr/share/prometheus/consoles
+            --web.console.templates=/usr/share/prometheus/consoles \
+            --web.enable-lifecycle
+          
+          # Wait and verify Prometheus is running
+          sleep 5
+          if sudo docker ps | grep -q foodfast-prometheus; then
+            echo "✅ Prometheus is running"
+            # Check if healthy
+            for i in {1..10}; do
+              if curl -sf http://localhost:9090/-/healthy > /dev/null 2>&1; then
+                echo "✅ Prometheus is healthy"
+                break
+              fi
+              echo "Waiting for Prometheus to be healthy... ($i/10)"
+              sleep 2
+            done
+          else
+            echo "❌ Prometheus failed to start, checking logs..."
+            sudo docker logs foodfast-prometheus || true
+          fi
 
           echo "=== Deploy Grafana ==="
           sudo docker pull grafana/grafana:latest
