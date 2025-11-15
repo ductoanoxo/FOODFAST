@@ -60,18 +60,30 @@ jobs:
           RUN_NUMBER: ${{ steps.workflow-info.outputs.run_number }}
           ACTOR: ${{ steps.workflow-info.outputs.actor }}
         run: |
+          # Tính số success và failure dựa trên run_number và conclusion
+          if [ "$CONCLUSION" = "success" ]; then
+            SUCCESS_COUNT=$RUN_NUMBER
+            FAILURE_COUNT=0
+          elif [ "$CONCLUSION" = "failure" ]; then
+            SUCCESS_COUNT=0
+            FAILURE_COUNT=$RUN_NUMBER
+          else
+            SUCCESS_COUNT=0
+            FAILURE_COUNT=0
+          fi
+          
           cat > metrics.txt <<EOF
-          # HELP github_workflow_run_total Total number of workflow runs
+          # HELP github_workflow_run_total Total number of workflow runs (counter)
           # TYPE github_workflow_run_total counter
-          github_workflow_run_total{workflow="$WORKFLOW_NAME",branch="$BRANCH",actor="$ACTOR"} 1
+          github_workflow_run_total{workflow="$WORKFLOW_NAME",branch="$BRANCH",actor="$ACTOR"} $RUN_NUMBER
           
-          # HELP github_workflow_success_total Total number of successful workflow runs
+          # HELP github_workflow_success_total Total number of successful workflow runs (counter)
           # TYPE github_workflow_success_total counter
-          github_workflow_success_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $([ "$CONCLUSION" = "success" ] && echo 1 || echo 0)
+          github_workflow_success_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $SUCCESS_COUNT
           
-          # HELP github_workflow_failure_total Total number of failed workflow runs
+          # HELP github_workflow_failure_total Total number of failed workflow runs (counter)
           # TYPE github_workflow_failure_total counter
-          github_workflow_failure_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $([ "$CONCLUSION" = "failure" ] && echo 1 || echo 0)
+          github_workflow_failure_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $FAILURE_COUNT
           
           # HELP github_workflow_duration_seconds Duration of workflow run in seconds
           # TYPE github_workflow_duration_seconds gauge
