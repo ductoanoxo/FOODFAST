@@ -3,17 +3,11 @@ name: Export CI/CD Metrics to Prometheus
 on:
   workflow_run:
     workflows:
-      - 'CI - Test and Lint (Deploy Branch - Testing Conflict)'
-      - 'Docker Build and Push'
-      - 'Auto Deploy Foodfast to EC2'
+      - "CI - Test and Lint (Deploy Branch - Testing Conflict)"
+      - "Docker Build and Push"
+      - "Auto Deploy Foodfast to EC2"
     types:
       - completed
-    branches:
-      - main
-      - kiet
-      - DUCTOAN
-      - deploy
-  workflow_dispatch:
 
 jobs:
   export-metrics:
@@ -24,120 +18,146 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get workflow information
-        id: workflow-info
+      - name: Extract workflow metrics
+        id: metrics
         run: |
-          WORKFLOW_NAME="${{ github.event.workflow_run.name || github.workflow }}"
-          WORKFLOW_CONCLUSION="${{ github.event.workflow_run.conclusion || 'unknown' }}"
-          WORKFLOW_DURATION=0
-          BRANCH="${{ github.event.workflow_run.head_branch || github.ref_name }}"
-          RUN_ID="${{ github.event.workflow_run.id || github.run_id }}"
-          RUN_NUMBER="${{ github.event.workflow_run.run_number || github.run_number }}"
-          ACTOR="${{ github.event.workflow_run.actor.login || github.actor }}"
+          # Lấy thông tin workflow
+          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
+          WORKFLOW_STATUS="${{ github.event.workflow_run.conclusion }}"
+          WORKFLOW_DURATION=${{ github.event.workflow_run.updated_at }}
+          WORKFLOW_CREATED=${{ github.event.workflow_run.created_at }}
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          REPO="${{ github.repository }}"
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          RUN_NUMBER="${{ github.event.workflow_run.run_number }}"
+          ACTOR="${{ github.event.workflow_run.actor.login }}"
           
-          # Tính duration nếu có
-          if [ "${{ github.event.workflow_run.created_at }}" != "" ] && [ "${{ github.event.workflow_run.updated_at }}" != "" ]; then
-            START=$(date -d "${{ github.event.workflow_run.created_at }}" +%s)
-            END=$(date -d "${{ github.event.workflow_run.updated_at }}" +%s)
-            WORKFLOW_DURATION=$((END - START))
-          fi
+          # Tính duration (giây)
+          CREATED_TS=$(date -d "${{ github.event.workflow_run.created_at }}" +%s)
+          UPDATED_TS=$(date -d "${{ github.event.workflow_run.updated_at }}" +%s)
+          DURATION=$((UPDATED_TS - CREATED_TS))
+          
+          # Chuyển status sang số (0=success, 1=failure, 2=cancelled, 3=skipped)
+          case "$WORKFLOW_STATUS" in
+            success) STATUS_CODE=0 ;;
+            failure) STATUS_CODE=1 ;;
+            cancelled) STATUS_CODE=2 ;;
+            skipped) STATUS_CODE=3 ;;
+            *) STATUS_CODE=4 ;;
+          esac
           
           echo "workflow_name=$WORKFLOW_NAME" >> $GITHUB_OUTPUT
-          echo "conclusion=$WORKFLOW_CONCLUSION" >> $GITHUB_OUTPUT
-          echo "duration=$WORKFLOW_DURATION" >> $GITHUB_OUTPUT
+          echo "status=$WORKFLOW_STATUS" >> $GITHUB_OUTPUT
+          echo "status_code=$STATUS_CODE" >> $GITHUB_OUTPUT
+          echo "duration=$DURATION" >> $GITHUB_OUTPUT
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "repo=$REPO" >> $GITHUB_OUTPUT
           echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
           echo "run_number=$RUN_NUMBER" >> $GITHUB_OUTPUT
           echo "actor=$ACTOR" >> $GITHUB_OUTPUT
-
-      - name: Generate Prometheus metrics
-        env:
-          WORKFLOW_NAME: ${{ steps.workflow-info.outputs.workflow_name }}
-          CONCLUSION: ${{ steps.workflow-info.outputs.conclusion }}
-          DURATION: ${{ steps.workflow-info.outputs.duration }}
-          BRANCH: ${{ steps.workflow-info.outputs.branch }}
-          RUN_ID: ${{ steps.workflow-info.outputs.run_id }}
-          RUN_NUMBER: ${{ steps.workflow-info.outputs.run_number }}
-          ACTOR: ${{ steps.workflow-info.outputs.actor }}
-        run: |
-          # For counters: always increment by 1 (never reset to 0 or decrease)
-          # Pushgateway will persist and accumulate the values
-          if [ "$CONCLUSION" = "success" ]; then
-            SUCCESS_INCREMENT=1
-            FAILURE_INCREMENT=0
-          elif [ "$CONCLUSION" = "failure" ]; then
-            SUCCESS_INCREMENT=0
-            FAILURE_INCREMENT=1
-          else
-            SUCCESS_INCREMENT=0
-            FAILURE_INCREMENT=0
-          fi
           
-          cat > metrics.txt <<EOF
-          # HELP github_workflow_run_total Total number of workflow runs (counter)
-          # TYPE github_workflow_run_total counter
-          github_workflow_run_total{workflow="$WORKFLOW_NAME",branch="$BRANCH",actor="$ACTOR"} 1
-          
-          # HELP github_workflow_success_total Total number of successful workflow runs (counter)
-          # TYPE github_workflow_success_total counter
-          github_workflow_success_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $SUCCESS_INCREMENT
-          
-          # HELP github_workflow_failure_total Total number of failed workflow runs (counter)
-          # TYPE github_workflow_failure_total counter
-          github_workflow_failure_total{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $FAILURE_INCREMENT
-          
-          # HELP github_workflow_duration_seconds Duration of workflow run in seconds
-          # TYPE github_workflow_duration_seconds gauge
-          github_workflow_duration_seconds{workflow="$WORKFLOW_NAME",branch="$BRANCH",conclusion="$CONCLUSION"} $DURATION
-          
-          # HELP github_workflow_run_number Sequential run number of the workflow
-          # TYPE github_workflow_run_number gauge
-          github_workflow_run_number{workflow="$WORKFLOW_NAME",branch="$BRANCH"} $RUN_NUMBER
-          
-          # HELP github_workflow_status Current status of workflow (1=success, 0=failure, -1=unknown)
-          # TYPE github_workflow_status gauge
-          github_workflow_status{workflow="$WORKFLOW_NAME",branch="$BRANCH",run_id="$RUN_ID"} $([ "$CONCLUSION" = "success" ] && echo 1 || [ "$CONCLUSION" = "failure" ] && echo 0 || echo -1)
-          EOF
-          
-          echo "Generated metrics:"
-          cat metrics.txt
+          echo "📊 Workflow: $WORKFLOW_NAME"
+          echo "📊 Status: $WORKFLOW_STATUS ($STATUS_CODE)"
+          echo "📊 Duration: ${DURATION}s"
+          echo "📊 Branch: $BRANCH"
+          echo "📊 Run: #$RUN_NUMBER"
 
       - name: Push metrics to Pushgateway
         env:
           PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://13.220.101.54:9091' }}
-          WORKFLOW_NAME: ${{ steps.workflow-info.outputs.workflow_name }}
         run: |
-          # Sanitize workflow name for Prometheus job label
-          JOB_NAME=$(echo "$WORKFLOW_NAME" | tr ' ' '_' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_]/_/g')
+          WORKFLOW_NAME="${{ steps.metrics.outputs.workflow_name }}"
+          STATUS="${{ steps.metrics.outputs.status }}"
+          STATUS_CODE="${{ steps.metrics.outputs.status_code }}"
+          DURATION="${{ steps.metrics.outputs.duration }}"
+          BRANCH="${{ steps.metrics.outputs.branch }}"
+          REPO="${{ steps.metrics.outputs.repo }}"
+          RUN_ID="${{ steps.metrics.outputs.run_id }}"
+          RUN_NUMBER="${{ steps.metrics.outputs.run_number }}"
+          ACTOR="${{ steps.metrics.outputs.actor }}"
           
-          echo "Pushing metrics to Pushgateway at $PUSHGATEWAY_URL"
-          echo "Job name: github_actions/$JOB_NAME"
+          # Escape workflow name cho URL
+          WORKFLOW_NAME_ESCAPED=$(echo "$WORKFLOW_NAME" | sed 's/ /_/g')
           
-          # Push metrics với verbose output
-          HTTP_CODE=$(curl -w "%{http_code}" -o /tmp/response.txt --data-binary @metrics.txt "${PUSHGATEWAY_URL}/metrics/job/github_actions/instance/${JOB_NAME}")
+          # Tạo metrics trong format Prometheus
+          cat <<EOF | curl --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/github_actions/instance/${WORKFLOW_NAME_ESCAPED}/branch/${BRANCH}"
+          # HELP github_workflow_run_status Status of GitHub Actions workflow run (0=success, 1=failure, 2=cancelled, 3=skipped, 4=other)
+          # TYPE github_workflow_run_status gauge
+          github_workflow_run_status{workflow="${WORKFLOW_NAME}",repo="${REPO}",branch="${BRANCH}",status="${STATUS}",actor="${ACTOR}",run_id="${RUN_ID}",run_number="${RUN_NUMBER}"} ${STATUS_CODE}
           
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ]; then
-            echo "✅ Metrics pushed successfully (HTTP $HTTP_CODE)"
-            curl -s "${PUSHGATEWAY_URL}/metrics" | grep "github_workflow" | head -5
+          # HELP github_workflow_run_duration_seconds Duration of GitHub Actions workflow run in seconds
+          # TYPE github_workflow_run_duration_seconds gauge
+          github_workflow_run_duration_seconds{workflow="${WORKFLOW_NAME}",repo="${REPO}",branch="${BRANCH}",status="${STATUS}",actor="${ACTOR}",run_id="${RUN_ID}",run_number="${RUN_NUMBER}"} ${DURATION}
+          
+          # HELP github_workflow_run_timestamp_seconds Timestamp when workflow run completed
+          # TYPE github_workflow_run_timestamp_seconds gauge
+          github_workflow_run_timestamp_seconds{workflow="${WORKFLOW_NAME}",repo="${REPO}",branch="${BRANCH}",status="${STATUS}",actor="${ACTOR}",run_id="${RUN_ID}",run_number="${RUN_NUMBER}"} $(date +%s)
+          
+          # HELP github_workflow_run_count_total Total count of workflow runs
+          # TYPE github_workflow_run_count_total counter
+          github_workflow_run_count_total{workflow="${WORKFLOW_NAME}",repo="${REPO}",branch="${BRANCH}",status="${STATUS}"} 1
+          
+          # HELP github_workflow_run_success_total Total count of successful workflow runs
+          # TYPE github_workflow_run_success_total counter
+          github_workflow_run_success_total{workflow="${WORKFLOW_NAME}",repo="${REPO}",branch="${BRANCH}"} $([[ "${STATUS}" == "success" ]] && echo "1" || echo "0")
+          
+          # HELP github_workflow_run_failure_total Total count of failed workflow runs
+          # TYPE github_workflow_run_failure_total counter
+          github_workflow_run_failure_total{workflow="${WORKFLOW_NAME}",repo="${REPO}",branch="${BRANCH}"} $([[ "${STATUS}" == "failure" ]] && echo "1" || echo "0")
+          EOF
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ Metrics pushed successfully to ${PUSHGATEWAY_URL}"
           else
-            echo "⚠️  Failed to push metrics (HTTP $HTTP_CODE)"
-            cat /tmp/response.txt
-            echo "Make sure Pushgateway is accessible at $PUSHGATEWAY_URL"
-            exit 0  # Don't fail the workflow if metrics push fails
+            echo "❌ Failed to push metrics to ${PUSHGATEWAY_URL}"
+            exit 1
           fi
 
-      - name: Summary
+      - name: Push deployment metrics (if deploy workflow)
+        if: contains(steps.metrics.outputs.workflow_name, 'Deploy')
+        env:
+          PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://13.220.101.54:9091' }}
+        run: |
+          WORKFLOW_NAME="${{ steps.metrics.outputs.workflow_name }}"
+          STATUS="${{ steps.metrics.outputs.status }}"
+          STATUS_CODE="${{ steps.metrics.outputs.status_code }}"
+          BRANCH="${{ steps.metrics.outputs.branch }}"
+          REPO="${{ steps.metrics.outputs.repo }}"
+          
+          cat <<EOF | curl --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/github_deployments/instance/production/branch/${BRANCH}"
+          # HELP github_deployment_status Status of deployment (0=success, 1=failure)
+          # TYPE github_deployment_status gauge
+          github_deployment_status{workflow="${WORKFLOW_NAME}",repo="${REPO}",branch="${BRANCH}",environment="production"} ${STATUS_CODE}
+          
+          # HELP github_deployment_timestamp_seconds Timestamp of last deployment
+          # TYPE github_deployment_timestamp_seconds gauge
+          github_deployment_timestamp_seconds{workflow="${WORKFLOW_NAME}",repo="${REPO}",branch="${BRANCH}",environment="production"} $(date +%s)
+          
+          # HELP github_deployment_count_total Total deployments
+          # TYPE github_deployment_count_total counter
+          github_deployment_count_total{workflow="${WORKFLOW_NAME}",repo="${REPO}",branch="${BRANCH}",environment="production",status="${STATUS}"} 1
+          EOF
+          
+          echo "✅ Deployment metrics pushed"
+
+      - name: Create deployment summary
         if: always()
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
-          ## 📊 CI/CD Metrics Export
+          ## 📊 CI/CD Metrics Exported
           
-          - **Workflow**: ${{ steps.workflow-info.outputs.workflow_name }}
-          - **Conclusion**: ${{ steps.workflow-info.outputs.conclusion }}
-          - **Duration**: ${{ steps.workflow-info.outputs.duration }}s
-          - **Branch**: ${{ steps.workflow-info.outputs.branch }}
-          - **Run**: #${{ steps.workflow-info.outputs.run_number }}
-          - **Actor**: ${{ steps.workflow-info.outputs.actor }}
+          - **Workflow**: ${{ steps.metrics.outputs.workflow_name }}
+          - **Status**: ${{ steps.metrics.outputs.status }} 
+          - **Duration**: ${{ steps.metrics.outputs.duration }}s
+          - **Branch**: ${{ steps.metrics.outputs.branch }}
+          - **Run**: #${{ steps.metrics.outputs.run_number }}
+          - **Actor**: ${{ steps.metrics.outputs.actor }}
+          - **Pushgateway**: ${PUSHGATEWAY_URL:-http://13.220.101.54:9091}
           
-          Metrics have been exported to Prometheus Pushgateway for Grafana visualization.
+          ### 🔗 Quick Links
+          - [Prometheus](${{ secrets.PROMETHEUS_URL || 'http://13.220.101.54:9090' }})
+          - [Grafana Dashboard](${{ secrets.GRAFANA_URL || 'http://13.220.101.54:3030' }}/d/cicd-metrics/cicd-pipeline-metrics)
+          - [Pushgateway Metrics](${{ secrets.PUSHGATEWAY_URL || 'http://13.220.101.54:9091' }}/metrics)
+          
+          Metrics are now available in real-time on Grafana! 📈
           EOF

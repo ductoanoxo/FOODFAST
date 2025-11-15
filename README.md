@@ -4,8 +4,7 @@
 > 🍱 *Food delivery system with drone management*  
 >  
 > **🔖 Version:** *Deploy Branch — Testing Conflict Resolution*  
-> **⚙️ CI/CD:** *GitHub Actions • Vercel • Railway*  
-> **📊 Monitoring:** *Real-time CI/CD Dashboard with Grafana*
+> **⚙️ CI/CD:** *GitHub Actions • Vercel • Railway*
 
 ---
 
