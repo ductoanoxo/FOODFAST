@@ -225,7 +225,10 @@ jobs:
           sudo docker run -d --name foodfast-pushgateway --restart unless-stopped \
             --network foodfast-net --network-alias pushgateway \
             -p 9091:9091 \
-            prom/pushgateway:latest
+            -v pushgateway_data:/data \
+            prom/pushgateway:latest \
+            --persistence.file=/data/pushgateway.data \
+            --persistence.interval=5m
 
           echo "✅ Deploy done (including monitoring stack)."
           SCRIPT
