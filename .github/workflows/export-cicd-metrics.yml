@@ -26,6 +26,16 @@ jobs:
         with:
           ref: main  # Always use latest code from main branch
 
+      - name: Setup SSH (for fallback push via server)
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.PROD_SSH_KEY }}
+
+      - name: Add EC2 to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
+
       - name: Get workflow information
         id: workflow-info
         run: |
@@ -108,6 +118,8 @@ jobs:
         env:
           PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://13.220.101.54:9091' }}
           WORKFLOW_NAME: ${{ steps.workflow-info.outputs.workflow_name }}
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
         run: |
           # Sanitize workflow name for Prometheus job label
           JOB_NAME=$(echo "$WORKFLOW_NAME" | tr ' ' '_' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_]/_/g')
@@ -133,28 +145,32 @@ jobs:
           cat metrics.txt
           echo "=========================================="
           
-          # Push metrics using POST (Pushgateway default method)
+          # Try direct push first (if Pushgateway is publicly accessible)
           PUSH_URL="${PUSHGATEWAY_URL}/metrics/job/github_actions/instance/${INSTANCE}"
-          echo "Full URL: $PUSH_URL"
+          echo "Attempting direct push to: $PUSH_URL"
           
-          HTTP_CODE=$(curl -w "%{http_code}" -o /tmp/response.txt --data-binary @metrics.txt "$PUSH_URL")
+          HTTP_CODE=$(curl -w "%{http_code}" -o /tmp/response.txt --connect-timeout 5 --max-time 10 --data-binary @metrics.txt "$PUSH_URL" 2>/dev/null || echo "000")
           
           echo "HTTP Response Code: $HTTP_CODE"
-          echo "Response body:"
-          cat /tmp/response.txt || echo "(no response body)"
-          echo "=========================================="
           
           if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ] || [ "$HTTP_CODE" = "201" ]; then
-            echo "✅ Metrics pushed successfully!"
-            echo ""
-            echo "Verifying metrics in Pushgateway:"
-            curl -s "${PUSHGATEWAY_URL}/metrics" | grep "instance=\"${INSTANCE}\"" | head -5 || echo "No metrics found yet (may take a moment)"
+            echo "✅ Metrics pushed successfully via direct connection!"
           else
-            echo "❌ Failed to push metrics (HTTP $HTTP_CODE)"
-            echo "This may cause incomplete dashboard data"
-            echo "Please check Pushgateway accessibility"
-            # Don't fail workflow, just warn
+            echo "⚠️  Direct push failed or timed out (HTTP $HTTP_CODE)"
+            echo "Attempting to push via SSH to EC2 server..."
+            
+            # Copy metrics file to server and push from there (using ssh-agent)
+            scp metrics.txt $SERVER_USER@$SERVER_HOST:/tmp/github_metrics_${TIMESTAMP}.txt
+            
+            # Push from server (Pushgateway is on localhost in EC2)
+            ssh $SERVER_USER@$SERVER_HOST "curl --data-binary @/tmp/github_metrics_${TIMESTAMP}.txt 'http://localhost:9091/metrics/job/github_actions/instance/${INSTANCE}' && rm /tmp/github_metrics_${TIMESTAMP}.txt && echo '✅ Pushed from server successfully'"
+            
+            echo "✅ Metrics pushed successfully via SSH!"
           fi
+          
+          echo "=========================================="
+          echo "Verifying metrics in Pushgateway:"
+          curl -s "http://${SERVER_HOST}:9091/metrics" 2>/dev/null | grep "instance=\"${INSTANCE}\"" | head -3 || echo "Metrics will appear shortly..."
 
       - name: Summary
         if: always()
