@@ -28,7 +28,7 @@ describe('🚀 ORDER FLOW - INTEGRATION TEST (DEMO)', () => {
 
     beforeAll(async() => {
         // Setup in-memory MongoDB
-        mongod = await MongoMemoryServer.create();
+        mongod = await MongoMemoryServer.123123132create();
         const uri = mongod.getUri();
 
         if (mongoose.connection.readyState !== 0) {
