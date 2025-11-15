@@ -9,279 +9,140 @@
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
+      },
+      {
+        "datasource": "Prometheus",
+        "enable": true,
+        "expr": "changes(github_workflow_run_total[1m]) > 0",
+        "iconColor": "blue",
+        "name": "Workflow Runs",
+        "step": "1m",
+        "tagKeys": "workflow,branch",
+        "textFormat": "{{workflow}} on {{branch}}",
+        "titleFormat": "Workflow Started"
       }
     ]
   },
   "editable": true,
   "gnetId": null,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "GitHub Actions",
+      "tooltip": "View GitHub Actions workflows",
+      "type": "link",
+      "url": "https://github.com/ductoanoxo/FOODFAST/actions"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Pushgateway",
+      "tooltip": "View Pushgateway metrics",
+      "type": "link",
+      "url": "http://13.220.101.54:9091"
+    },
+    {
+      "asDropdown": false,
+      "icon": "cloud",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Prometheus",
+      "tooltip": "View Prometheus targets and queries",
+      "type": "link",
+      "url": "http://13.220.101.54:9090"
+    }
+  ],
   "panels": [
     {
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "SUCCESS"
-                },
-                "1": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "FAILURE"
-                },
-                "2": {
-                  "color": "yellow",
-                  "index": 2,
-                  "text": "CANCELLED"
-                },
-                "3": {
-                  "color": "blue",
-                  "index": 3,
-                  "text": "SKIPPED"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
+      "description": "FoodFast CI/CD Pipeline Monitoring Dashboard - Real-time tracking of GitHub Actions workflows",
       "gridPos": {
-        "h": 8,
-        "w": 6,
+        "h": 4,
+        "w": 24,
         "x": 0,
         "y": 0
       },
+      "id": 1,
+      "options": {
+        "content": "# 🚀 FoodFast CI/CD Pipeline Dashboard\n\n**Real-time monitoring** of GitHub Actions workflows including:\n- ✅ **CI - Test and Lint**: Code quality checks and automated testing\n- 🐳 **Docker Build and Push**: Multi-architecture container builds\n- 🚀 **Auto Deploy**: Production deployment to EC2\n- 📊 **Export Metrics**: Automated metrics collection to Prometheus\n\n---\n\n📊 **Metrics Flow**: GitHub Actions → Pushgateway (`:9091`) → Prometheus (`:9090`) → Grafana (`:3030`)\n\n🔄 **Auto-refresh**: Every 30 seconds | 📅 **Default Time Range**: Last 6 hours\n\n💡 **Quick Tip**: Use the **Workflow** and **Branch** filters above to focus on specific pipelines",
+        "mode": "markdown"
+      },
+      "pluginVersion": "8.0.0",
+      "title": "📋 Dashboard Overview",
+      "type": "text",
+      "transparent": true
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Total workflow runs across all branches",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 0,
+        "y": 4
+      },
       "id": 2,
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["sum"],
           "fields": ""
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
+        "textMode": "auto"
       },
-      "pluginVersion": "9.0.0",
+      "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "github_workflow_run_status{workflow=\"CI - Test and Lint (Deploy Branch - Testing Conflict)\"}",
-          "refId": "A"
+          "expr": "sum(github_workflow_run_total)",
+          "refId": "A",
+          "legendFormat": "Total Runs"
         }
       ],
-      "title": "CI Test Status",
-      "type": "gauge"
+      "title": "Total Workflow Runs",
+      "type": "stat"
     },
     {
       "datasource": "Prometheus",
+      "description": "Successful workflow runs",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "SUCCESS"
-                },
-                "1": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "FAILURE"
-                },
-                "2": {
-                  "color": "yellow",
-                  "index": 2,
-                  "text": "CANCELLED"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 6,
-        "y": 0
-      },
-      "id": 3,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
-      },
-      "pluginVersion": "9.0.0",
-      "targets": [
-        {
-          "expr": "github_workflow_run_status{workflow=\"Docker Build and Push\"}",
-          "refId": "A"
-        }
-      ],
-      "title": "Build Status",
-      "type": "gauge"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "SUCCESS"
-                },
-                "1": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "FAILURE"
-                },
-                "2": {
-                  "color": "yellow",
-                  "index": 2,
-                  "text": "CANCELLED"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 12,
-        "y": 0
-      },
-      "id": 4,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
-      },
-      "pluginVersion": "9.0.0",
-      "targets": [
-        {
-          "expr": "github_workflow_run_status{workflow=\"Auto Deploy Foodfast to EC2\"}",
-          "refId": "A"
-        }
-      ],
-      "title": "Deploy Status",
-      "type": "gauge"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
           },
           "mappings": [],
           "thresholds": {
@@ -294,128 +155,151 @@
             ]
           },
           "unit": "short"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 0
+        "h": 6,
+        "w": 4,
+        "x": 4,
+        "y": 4
       },
-      "id": 5,
+      "id": 3,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["sum"],
+          "fields": ""
         },
-        "tooltip": {
-          "mode": "single"
-        }
+        "textMode": "auto"
       },
+      "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(rate(github_workflow_run_count_total[5m])) by (status)",
-          "legendFormat": "{{status}}",
-          "refId": "A"
+          "expr": "sum(github_workflow_success_total)",
+          "refId": "A",
+          "legendFormat": "Success"
         }
       ],
-      "title": "Pipeline Run Rate (5m)",
-      "type": "timeseries"
+      "title": "✅ Successful Runs",
+      "type": "stat"
     },
     {
       "datasource": "Prometheus",
+      "description": "Failed workflow runs",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               }
             ]
           },
-          "unit": "s"
-        },
-        "overrides": []
+          "unit": "short"
+        }
       },
       "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 8
+        "h": 6,
+        "w": 4,
+        "x": 8,
+        "y": 4
       },
-      "id": 6,
+      "id": 4,
       "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max",
-            "min"
-          ],
-          "displayMode": "table",
-          "placement": "bottom"
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["sum"],
+          "fields": ""
         },
-        "tooltip": {
-          "mode": "multi"
-        }
+        "textMode": "auto"
       },
+      "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "github_workflow_run_duration_seconds{workflow=\"CI - Test and Lint (Deploy Branch - Testing Conflict)\"}",
-          "legendFormat": "CI Test",
-          "refId": "A"
-        },
-        {
-          "expr": "github_workflow_run_duration_seconds{workflow=\"Docker Build and Push\"}",
-          "legendFormat": "Build",
-          "refId": "B"
-        },
-        {
-          "expr": "github_workflow_run_duration_seconds{workflow=\"Auto Deploy Foodfast to EC2\"}",
-          "legendFormat": "Deploy",
-          "refId": "C"
+          "expr": "sum(github_workflow_failure_total)",
+          "refId": "A",
+          "legendFormat": "Failures"
         }
       ],
-      "title": "Workflow Duration Over Time",
-      "type": "timeseries"
+      "title": "❌ Failed Runs",
+      "type": "stat"
     },
     {
       "datasource": "Prometheus",
+      "description": "Success rate percentage",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 4
+      },
+      "id": 5,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "(sum(github_workflow_success_total) / (sum(github_workflow_success_total) + sum(github_workflow_failure_total))) * 100",
+          "refId": "A",
+          "legendFormat": "Success Rate"
+        }
+      ],
+      "title": "Success Rate %",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Average workflow duration",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -440,175 +324,15 @@
             ]
           },
           "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "id": 7,
-      "options": {
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
-      },
-      "pluginVersion": "9.0.0",
-      "targets": [
-        {
-          "expr": "github_workflow_run_duration_seconds",
-          "legendFormat": "{{workflow}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Current Workflow Durations",
-      "type": "gauge"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            }
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 17
-      },
-      "id": 8,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "values": [
-            "value"
-          ]
-        },
-        "pieType": "donut",
-        "tooltip": {
-          "mode": "single"
         }
       },
-      "targets": [
-        {
-          "expr": "sum(github_workflow_run_count_total) by (status)",
-          "legendFormat": "{{status}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Workflow Status Distribution",
-      "type": "piechart"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "green",
-                "value": 90
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 17
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 4
       },
-      "id": 9,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
-      },
-      "pluginVersion": "9.0.0",
-      "targets": [
-        {
-          "expr": "(sum(github_workflow_run_success_total) / sum(github_workflow_run_count_total)) * 100",
-          "refId": "A"
-        }
-      ],
-      "title": "Overall Success Rate",
-      "type": "gauge"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 17
-      },
-      "id": 10,
+      "id": 6,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -616,147 +340,32 @@
         "orientation": "auto",
         "reduceOptions": {
           "values": false,
-          "calcs": [
-            "sum"
-          ],
+          "calcs": ["mean"],
           "fields": ""
         },
-        "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.0.0",
+      "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(github_workflow_run_count_total)",
-          "refId": "A"
+          "expr": "avg(github_workflow_duration_seconds)",
+          "refId": "A",
+          "legendFormat": "Avg Duration"
         }
       ],
-      "title": "Total Pipeline Runs",
+      "title": "⏱️ Average Duration",
       "type": "stat"
     },
     {
       "datasource": "Prometheus",
+      "description": "Workflow runs over time",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 70,
-            "gradientMode": "none",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "success"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "failure"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 25
-      },
-      "id": 11,
-      "options": {
-        "legend": {
-          "calcs": [
-            "sum"
-          ],
-          "displayMode": "table",
-          "placement": "right"
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "targets": [
-        {
-          "expr": "sum(increase(github_workflow_run_count_total{status=\"success\"}[1h])) by (workflow)",
-          "legendFormat": "{{workflow}} - Success",
-          "refId": "A"
-        },
-        {
-          "expr": "sum(increase(github_workflow_run_count_total{status=\"failure\"}[1h])) by (workflow)",
-          "legendFormat": "{{workflow}} - Failure",
-          "refId": "B"
-        }
-      ],
-      "title": "Workflow Runs per Hour (Success vs Failure)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
+            "axisLabel": "Runs",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -792,24 +401,19 @@
                 "value": null
               }
             ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
+          }
+        }
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 25
+        "w": 24,
+        "x": 0,
+        "y": 10
       },
-      "id": 12,
+      "id": 7,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "lastNotNull"
-          ],
+          "calcs": ["last", "mean"],
           "displayMode": "table",
           "placement": "right"
         },
@@ -817,23 +421,52 @@
           "mode": "multi"
         }
       },
+      "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(github_workflow_run_count_total) by (branch)",
-          "legendFormat": "{{branch}}",
-          "refId": "A"
+          "expr": "github_workflow_run_total",
+          "refId": "A",
+          "legendFormat": "{{workflow}} - {{branch}}"
         }
       ],
-      "title": "Runs by Branch",
+      "title": "Workflow Runs Over Time",
       "type": "timeseries"
     },
     {
       "datasource": "Prometheus",
+      "description": "Success vs Failure rate over time",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
-            "align": "auto",
-            "displayMode": "auto"
+            "axisLabel": "Count",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
@@ -850,34 +483,370 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "status"
+              "options": "Success"
             },
             "properties": [
               {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              },
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Failure"
+            },
+            "properties": [
               {
-                "id": "mappings",
-                "value": [
-                  {
-                    "options": {
-                      "success": {
-                        "color": "green",
-                        "index": 0
-                      },
-                      "failure": {
-                        "color": "red",
-                        "index": 1
-                      }
-                    },
-                    "type": "value"
-                  }
-                ]
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
               }
             ]
           }
         ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": ["sum"],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "sum(github_workflow_success_total)",
+          "refId": "A",
+          "legendFormat": "Success"
+        },
+        {
+          "expr": "sum(github_workflow_failure_total)",
+          "refId": "B",
+          "legendFormat": "Failure"
+        }
+      ],
+      "title": "Success vs Failure Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Duration of each workflow type",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Duration (seconds)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 300
+              },
+              {
+                "color": "red",
+                "value": 600
+              }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "min"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "github_workflow_duration_seconds",
+          "refId": "A",
+          "legendFormat": "{{workflow}} - {{branch}}"
+        }
+      ],
+      "title": "Workflow Duration by Type",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Current status of all workflows",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "displayMode": "color-background"
+          },
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "✅ Success"
+                },
+                "0": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "❌ Failed"
+                },
+                "-1": {
+                  "color": "yellow",
+                  "index": 2,
+                  "text": "⚠️ Unknown"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": -1
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 25
+      },
+      "id": 10,
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "github_workflow_status",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "title": "Workflow Status Table",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "job": true,
+              "instance": true
+            },
+            "indexByName": {
+              "workflow": 0,
+              "branch": 1,
+              "run_id": 2,
+              "Value": 3
+            },
+            "renameByName": {
+              "workflow": "Workflow",
+              "branch": "Branch",
+              "run_id": "Run ID",
+              "Value": "Status"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Most active branches by workflow runs",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          },
+          "mappings": []
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 25
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": ["value"]
+        },
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "sum(github_workflow_run_total) by (branch)",
+          "refId": "A",
+          "legendFormat": "{{branch}}"
+        }
+      ],
+      "title": "Runs by Branch",
+      "type": "piechart"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Most active contributors",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          },
+          "mappings": []
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 25
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": ["value"]
+        },
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "sum(github_workflow_run_total) by (actor)",
+          "refId": "A",
+          "legendFormat": "{{actor}}"
+        }
+      ],
+      "title": "Runs by Actor",
+      "type": "piechart"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Recent workflow runs",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "left",
+            "displayMode": "auto"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
       },
       "gridPos": {
         "h": 8,
@@ -887,23 +856,21 @@
       },
       "id": 13,
       "options": {
-        "footer": {
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Run Number"
+          }
+        ]
       },
-      "pluginVersion": "9.0.0",
+      "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "github_workflow_run_status",
+          "expr": "github_workflow_run_number",
+          "refId": "A",
           "format": "table",
-          "instant": true,
-          "refId": "A"
+          "instant": true
         }
       ],
       "title": "Recent Workflow Runs",
@@ -913,12 +880,19 @@
           "options": {
             "excludeByName": {
               "Time": true,
-              "__name__": true,
-              "instance": true,
-              "job": true
+              "job": true,
+              "instance": true
             },
-            "indexByName": {},
-            "renameByName": {}
+            "indexByName": {
+              "workflow": 0,
+              "branch": 1,
+              "Value": 2
+            },
+            "renameByName": {
+              "workflow": "Workflow",
+              "branch": "Branch",
+              "Value": "Run Number"
+            }
           }
         }
       ],
@@ -926,10 +900,39 @@
     },
     {
       "datasource": "Prometheus",
+      "description": "Breakdown of workflow runs by workflow type",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Workflow Runs",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
@@ -942,47 +945,74 @@
             ]
           },
           "unit": "short"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "h": 4,
-        "w": 6,
+        "h": 8,
+        "w": 12,
         "x": 0,
         "y": 41
       },
       "id": 14,
       "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
+        "legend": {
+          "calcs": ["sum", "mean"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
         },
-        "text": {},
-        "textMode": "auto"
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
-      "pluginVersion": "9.0.0",
+      "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(github_workflow_run_success_total)",
-          "refId": "A"
+          "expr": "sum(github_workflow_run_total{workflow=~\"$workflow\",branch=~\"$branch\"}) by (workflow)",
+          "refId": "A",
+          "legendFormat": "{{workflow}}",
+          "instant": true
         }
       ],
-      "title": "Total Successful Runs",
-      "type": "stat"
+      "title": "🔧 Workflow Runs by Type",
+      "type": "barchart"
     },
     {
       "datasource": "Prometheus",
+      "description": "Average duration for each workflow type",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Duration (seconds)",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "scheme",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
@@ -993,49 +1023,195 @@
                 "value": null
               },
               {
+                "color": "yellow",
+                "value": 300
+              },
+              {
                 "color": "red",
-                "value": 1
+                "value": 600
               }
             ]
           },
-          "unit": "short"
-        },
-        "overrides": []
+          "unit": "s"
+        }
       },
       "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 6,
+        "h": 8,
+        "w": 12,
+        "x": 12,
         "y": 41
       },
       "id": 15,
       "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
+        "legend": {
+          "calcs": ["mean", "max", "min"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
         },
-        "text": {},
-        "textMode": "auto"
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
-      "pluginVersion": "9.0.0",
+      "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "sum(github_workflow_run_failure_total)",
-          "refId": "A"
+          "expr": "avg(github_workflow_duration_seconds{workflow=~\"$workflow\",branch=~\"$branch\"}) by (workflow)",
+          "refId": "A",
+          "legendFormat": "{{workflow}}",
+          "instant": true
         }
       ],
-      "title": "Total Failed Runs",
-      "type": "stat"
+      "title": "⏱️ Average Duration by Workflow",
+      "type": "barchart"
     },
     {
       "datasource": "Prometheus",
+      "description": "Hourly workflow execution rate",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Workflows per Hour",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 3,
+            "pointSize": 8,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "rate(github_workflow_run_total{workflow=~\"$workflow\",branch=~\"$branch\"}[1h]) * 3600",
+          "refId": "A",
+          "legendFormat": "{{workflow}} ({{branch}})"
+        }
+      ],
+      "title": "📊 Workflow Execution Rate (per hour)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Failure rate percentage by workflow",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "orange",
+                "value": 15
+              },
+              {
+                "color": "red",
+                "value": 30
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 57
+      },
+      "id": 17,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "(sum(github_workflow_failure_total{workflow=~\"$workflow\",branch=~\"$branch\"}) by (workflow) / (sum(github_workflow_run_total{workflow=~\"$workflow\",branch=~\"$branch\"}) by (workflow))) * 100",
+          "refId": "A",
+          "legendFormat": "{{workflow}}",
+          "instant": true
+        }
+      ],
+      "title": "❌ Failure Rate by Workflow (%)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Latest workflow execution duration comparison",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1054,115 +1230,178 @@
                 "value": 180
               },
               {
-                "color": "red",
+                "color": "orange",
                 "value": 300
+              },
+              {
+                "color": "red",
+                "value": 600
               }
             ]
           },
           "unit": "s"
-        },
-        "overrides": []
+        }
       },
       "gridPos": {
-        "h": 4,
-        "w": 6,
+        "h": 8,
+        "w": 12,
         "x": 12,
-        "y": 41
+        "y": 57
       },
-      "id": 16,
+      "id": 18,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
+        "displayMode": "gradient",
+        "orientation": "horizontal",
         "reduceOptions": {
           "values": false,
-          "calcs": [
-            "mean"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": ""
         },
-        "text": {},
-        "textMode": "auto"
+        "showUnfilled": true
       },
-      "pluginVersion": "9.0.0",
+      "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "avg(github_workflow_run_duration_seconds)",
-          "refId": "A"
+          "expr": "github_workflow_duration_seconds{workflow=~\"$workflow\",branch=~\"$branch\"}",
+          "refId": "A",
+          "legendFormat": "{{workflow}} ({{branch}})",
+          "instant": true
         }
       ],
-      "title": "Average Workflow Duration",
-      "type": "stat"
+      "title": "⏱️ Latest Workflow Duration",
+      "type": "bargauge"
     },
     {
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "dateTimeFromNow"
-        },
-        "overrides": []
-      },
+      "description": "System information and dashboard metadata",
       "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 41
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 65
       },
-      "id": 17,
+      "id": 19,
       "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "text": {},
-        "textMode": "auto"
+        "content": "---\n\n## 📝 Dashboard Information\n\n**Metrics Source**: GitHub Actions → Prometheus Pushgateway → Prometheus → Grafana\n\n**Data Collection**:\n- Metrics are automatically exported after each GitHub Actions workflow completion\n- Export workflow: `.github/workflows/export-cicd-metrics.yml`\n- Pushgateway URL: `http://13.220.101.54:9091`\n- Prometheus scrape interval: 10 seconds\n\n**Available Metrics**:\n- `github_workflow_run_total` - Total workflow runs (counter)\n- `github_workflow_success_total` - Successful runs (counter)\n- `github_workflow_failure_total` - Failed runs (counter)\n- `github_workflow_duration_seconds` - Execution duration (gauge)\n- `github_workflow_status` - Current status (gauge: 1=success, 0=fail, -1=unknown)\n- `github_workflow_run_number` - Sequential run number (gauge)\n\n**Labels**: `workflow`, `branch`, `actor`, `run_id`, `conclusion`\n\n---\n\n💡 **Tips**:\n- Use time range selector to view historical data\n- Filter by specific workflows or branches using variables above\n- Hover over graphs for detailed tooltips\n- Click legend items to show/hide specific series\n\n🔗 **Quick Links**: \n- [GitHub Actions](https://github.com/ductoanoxo/FOODFAST/actions) - View all workflows\n- [Pushgateway](http://13.220.101.54:9091) - Raw metrics data\n- [Prometheus](http://13.220.101.54:9090) - Query metrics\n\n---\n\n**Dashboard Version**: 2.0 Enhanced | **Last Updated**: November 2025 | **Created by**: FoodFast DevOps Team",
+        "mode": "markdown"
       },
-      "pluginVersion": "9.0.0",
-      "targets": [
-        {
-          "expr": "max(github_workflow_run_timestamp_seconds) * 1000",
-          "refId": "A"
-        }
-      ],
-      "title": "Last Run Time",
-      "type": "stat"
+      "pluginVersion": "8.0.0",
+      "title": "ℹ️ Dashboard Information & Help",
+      "type": "text",
+      "transparent": true
     }
   ],
-  "refresh": "10s",
-  "schemaVersion": 30,
+  "refresh": "30s",
+  "schemaVersion": 27,
   "style": "dark",
-  "tags": ["cicd", "github-actions", "pipeline"],
+  "tags": ["cicd", "github-actions", "foodfast", "devops", "monitoring"],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(github_workflow_run_total, workflow)",
+        "description": "Filter by workflow name",
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "🔧 Workflow",
+        "multi": true,
+        "name": "workflow",
+        "options": [],
+        "query": {
+          "query": "label_values(github_workflow_run_total, workflow)",
+          "refId": "Prometheus-workflow-Variable-Query"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(github_workflow_run_total, branch)",
+        "description": "Filter by git branch",
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "🌿 Branch",
+        "multi": true,
+        "name": "branch",
+        "options": [],
+        "query": {
+          "query": "label_values(github_workflow_run_total, branch)",
+          "refId": "Prometheus-branch-Variable-Query"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(github_workflow_run_total, actor)",
+        "description": "Filter by contributor",
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "👤 Actor",
+        "multi": true,
+        "name": "actor",
+        "options": [],
+        "query": {
+          "query": "label_values(github_workflow_run_total, actor)",
+          "refId": "Prometheus-actor-Variable-Query"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
   },
   "time": {
     "from": "now-6h",
     "to": "now"
   },
-  "timepicker": {},
+  "timepicker": {
+    "refresh_intervals": ["10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+  },
   "timezone": "browser",
-  "title": "CI/CD Pipeline Metrics",
-  "uid": "cicd-metrics",
-  "version": 1
+  "title": "FoodFast CI/CD Pipeline - Enhanced",
+  "uid": "foodfast-cicd",
+  "version": 2
 }
