@@ -291,3 +291,68 @@ jobs:
           done
           echo "❌ Backend is NOT responding on port 5000"
           exit 1
+
+      # ======================
+      # 8) Push CI/CD Metrics to Prometheus
+      # ======================
+      - name: Push deployment metrics to Prometheus
+        if: always()
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+        run: |
+          WORKFLOW_NAME="${{ github.workflow }}"
+          CONCLUSION="${{ job.status }}"
+          BRANCH="${{ github.ref_name }}"
+          RUN_ID="${{ github.run_id }}"
+          RUN_NUMBER="${{ github.run_number }}"
+          ACTOR="${{ github.actor }}"
+          DURATION=$SECONDS
+          
+          # Calculate status
+          if [ "$CONCLUSION" = "success" ]; then
+            STATUS=1
+            SUCCESS=1
+            FAILURE=0
+          else
+            STATUS=0
+            SUCCESS=0
+            FAILURE=1
+          fi
+          
+          # Generate metrics
+          TIMESTAMP=$(date +%s)
+          INSTANCE=$(echo "$WORKFLOW_NAME" | tr ' ' '_' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_]/_/g')_${TIMESTAMP}
+          
+          cat > /tmp/deploy_metrics.txt << METRICEOF
+# HELP github_workflow_run_total Total number of workflow runs (counter)
+# TYPE github_workflow_run_total counter
+github_workflow_run_total{workflow="${WORKFLOW_NAME}",branch="${BRANCH}",actor="${ACTOR}"} 1
+
+# HELP github_workflow_success_total Total number of successful workflow runs (counter)
+# TYPE github_workflow_success_total counter
+github_workflow_success_total{workflow="${WORKFLOW_NAME}",branch="${BRANCH}"} ${SUCCESS}
+
+# HELP github_workflow_failure_total Total number of failed workflow runs (counter)
+# TYPE github_workflow_failure_total counter
+github_workflow_failure_total{workflow="${WORKFLOW_NAME}",branch="${BRANCH}"} ${FAILURE}
+
+# HELP github_workflow_duration_seconds Duration of workflow run in seconds
+# TYPE github_workflow_duration_seconds gauge
+github_workflow_duration_seconds{workflow="${WORKFLOW_NAME}",branch="${BRANCH}",conclusion="${CONCLUSION}"} ${DURATION}
+
+# HELP github_workflow_run_number Sequential run number of the workflow
+# TYPE github_workflow_run_number gauge
+github_workflow_run_number{workflow="${WORKFLOW_NAME}",branch="${BRANCH}"} ${RUN_NUMBER}
+
+# HELP github_workflow_status Current status of workflow (1=success, 0=failure, -1=unknown)
+# TYPE github_workflow_status gauge
+github_workflow_status{workflow="${WORKFLOW_NAME}",branch="${BRANCH}",run_id="${RUN_ID}"} ${STATUS}
+METRICEOF
+          
+          echo "📊 Pushing metrics with instance: ${INSTANCE}"
+          
+          # Copy metrics to server and push from there
+          scp /tmp/deploy_metrics.txt $SERVER_USER@$SERVER_HOST:/tmp/metrics_${TIMESTAMP}.txt
+          ssh $SERVER_USER@$SERVER_HOST "curl --data-binary @/tmp/metrics_${TIMESTAMP}.txt 'http://localhost:9091/metrics/job/github_actions/instance/${INSTANCE}' && rm /tmp/metrics_${TIMESTAMP}.txt && echo '✅ Metrics pushed successfully!'"
+
