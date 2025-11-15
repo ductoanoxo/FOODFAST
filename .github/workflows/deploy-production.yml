@@ -92,6 +92,10 @@ jobs:
           scp monitoring/grafana/foodfast-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
           scp monitoring/grafana/cicd-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
           echo "✅ Monitoring configs synced to prometheus-config and grafana-config"
+          
+          # Restart Grafana to reload dashboard immediately
+          echo "Restarting Grafana to load new dashboard..."
+          ssh $SERVER_USER@$SERVER_HOST "sudo docker restart foodfast-grafana 2>/dev/null || echo 'Grafana will be started in deploy step'"
 
       # ======================
       # 5) Tạo script deploy để chép lên EC2

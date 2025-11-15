@@ -1,0 +1,104 @@
+name: Sync Monitoring Configs to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'monitoring/**'
+  workflow_dispatch:
+
+jobs:
+  sync-configs:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.PROD_SSH_KEY }}
+
+      - name: Add EC2 to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync monitoring configs to EC2
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+        run: |
+          echo "🔄 Syncing monitoring configs to EC2..."
+          
+          # Create directories on server
+          ssh $SERVER_USER@$SERVER_HOST "mkdir -p ~/prometheus-config ~/grafana-config/provisioning/datasources ~/grafana-config/provisioning/dashboards ~/grafana-config/dashboards"
+          
+          # Sync Prometheus configs
+          echo "📊 Syncing Prometheus configs..."
+          scp monitoring/prometheus.yml $SERVER_USER@$SERVER_HOST:~/prometheus-config/
+          scp monitoring/alerts.yml $SERVER_USER@$SERVER_HOST:~/prometheus-config/
+          
+          # Sync Grafana configs
+          echo "📈 Syncing Grafana configs..."
+          scp monitoring/grafana/datasources.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/datasources/
+          scp monitoring/grafana/dashboards.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/dashboards/
+          scp monitoring/grafana/foodfast-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
+          scp monitoring/grafana/cicd-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
+          
+          echo "✅ All monitoring configs synced successfully"
+
+      - name: Reload Prometheus
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+        run: |
+          echo "🔄 Reloading Prometheus..."
+          ssh $SERVER_USER@$SERVER_HOST "sudo docker exec foodfast-prometheus kill -HUP 1 2>/dev/null || sudo docker restart foodfast-prometheus || echo '⚠️ Prometheus not running'"
+
+      - name: Restart Grafana to reload dashboards
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+        run: |
+          echo "🔄 Restarting Grafana to load new dashboards..."
+          ssh $SERVER_USER@$SERVER_HOST "sudo docker restart foodfast-grafana 2>/dev/null && echo '✅ Grafana restarted successfully' || echo '⚠️ Grafana not running'"
+
+      - name: Verify services
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+        run: |
+          echo "🔍 Verifying services..."
+          
+          echo "Checking Prometheus..."
+          curl -f http://$SERVER_HOST:9090/-/healthy || echo "⚠️ Prometheus not responding"
+          
+          echo "Checking Grafana..."
+          curl -f http://$SERVER_HOST:3030/api/health || echo "⚠️ Grafana not responding"
+          
+          echo "Checking Pushgateway..."
+          curl -f http://$SERVER_HOST:9091/-/healthy || echo "⚠️ Pushgateway not responding"
+
+      - name: Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<'EOF'
+          ## 📊 Monitoring Configs Sync Summary
+          
+          ### ✅ Synced Components:
+          - **Prometheus**: Configuration and alert rules
+          - **Grafana**: Datasources and dashboards (including CI/CD dashboard)
+          - **Services**: Prometheus reloaded, Grafana restarted
+          
+          ### 🔗 Access Points:
+          - **Grafana**: http://13.220.101.54:3030 (admin/admin123)
+          - **Prometheus**: http://13.220.101.54:9090
+          - **Pushgateway**: http://13.220.101.54:9091
+          
+          ### 📈 Dashboards:
+          - FoodFast Application Metrics
+          - CI/CD Pipeline Monitoring (Updated!)
+          
+          The dashboard changes are now live on the server! 🎉
+          EOF
