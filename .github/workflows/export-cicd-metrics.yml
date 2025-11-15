@@ -113,12 +113,17 @@ jobs:
           echo "Pushing metrics to Pushgateway at $PUSHGATEWAY_URL"
           echo "Job name: github_actions/$JOB_NAME"
           
+          # CRITICAL: Use PUT with unique instance label to create new time series
+          # This ensures Grafana sees new data points with updated timestamps
+          TIMESTAMP=$(date +%s)
+          INSTANCE="${JOB_NAME}_${TIMESTAMP}"
+          
           # Push metrics với verbose output
-          HTTP_CODE=$(curl -w "%{http_code}" -o /tmp/response.txt --data-binary @metrics.txt "${PUSHGATEWAY_URL}/metrics/job/github_actions/instance/${JOB_NAME}")
+          HTTP_CODE=$(curl -w "%{http_code}" -o /tmp/response.txt -X PUT --data-binary @metrics.txt "${PUSHGATEWAY_URL}/metrics/job/github_actions/instance/${INSTANCE}")
           
           if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ]; then
-            echo "✅ Metrics pushed successfully (HTTP $HTTP_CODE)"
-            curl -s "${PUSHGATEWAY_URL}/metrics" | grep "github_workflow" | head -5
+            echo "✅ Metrics pushed successfully (HTTP $HTTP_CODE) with instance: ${INSTANCE}"
+            curl -s "${PUSHGATEWAY_URL}/metrics" | grep "github_workflow" | head -10
           else
             echo "⚠️  Failed to push metrics (HTTP $HTTP_CODE)"
             cat /tmp/response.txt
