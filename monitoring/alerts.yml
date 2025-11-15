@@ -102,3 +102,113 @@ groups:
         annotations:
           summary: "Unusual request rate detected"
           description: "Request rate is unusually high: {{ $value }} requests/second"
+
+  # ============================================
+  # CI/CD Pipeline Alerts
+  # ============================================
+  - name: cicd_alerts
+    interval: 30s
+    rules:
+      # Alert khi workflow fail
+      - alert: CICDWorkflowFailed
+        expr: github_workflow_status{conclusion="failure"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "CI/CD Workflow Failed: {{ $labels.workflow }}"
+          description: "Workflow '{{ $labels.workflow }}' on branch '{{ $labels.branch }}' has failed (Run ID: {{ $labels.run_id }})"
+          runbook_url: "https://github.com/ductoanoxo/FOODFAST/actions/runs/{{ $labels.run_id }}"
+
+      # Alert khi có nhiều hơn 2 workflows fail liên tiếp
+      - alert: CICDConsecutiveFailures
+        expr: github:workflow:consecutive_failures > 2
+        for: 5m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "Multiple CI/CD Failures: {{ $labels.workflow }}"
+          description: "Workflow '{{ $labels.workflow }}' on branch '{{ $labels.branch }}' has failed {{ $value }} times consecutively"
+
+      # Alert khi workflow chạy quá lâu (> 15 phút)
+      - alert: CICDWorkflowTooSlow
+        expr: github_workflow_duration_seconds > 900
+        for: 1m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "CI/CD Workflow Running Too Long: {{ $labels.workflow }}"
+          description: "Workflow '{{ $labels.workflow }}' took {{ $value | humanizeDuration }} to complete (threshold: 15m)"
+
+      # Alert khi success rate thấp (< 80%)
+      - alert: CICDLowSuccessRate
+        expr: github:workflow:success_rate:percent < 80
+        for: 10m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Low CI/CD Success Rate: {{ $labels.workflow }}"
+          description: "Workflow '{{ $labels.workflow }}' on branch '{{ $labels.branch }}' has success rate of {{ $value | humanizePercentage }} (threshold: 80%)"
+
+      # Alert khi không có workflow run trong 2 giờ (có thể là CI/CD bị lỗi)
+      - alert: CICDNoRecentActivity
+        expr: (time() - github_workflow_last_run_timestamp) > 7200
+        for: 5m
+        labels:
+          severity: info
+          team: devops
+        annotations:
+          summary: "No CI/CD Activity: {{ $labels.workflow }}"
+          description: "No workflow runs for '{{ $labels.workflow }}' in the last 2 hours"
+
+      # Alert khi deployment fail trên main branch
+      - alert: ProductionDeploymentFailed
+        expr: github_workflow_status{workflow=~".*Deploy.*", branch="main", conclusion="failure"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "🚨 Production Deployment Failed"
+          description: "Production deployment workflow has failed on main branch (Run ID: {{ $labels.run_id }})"
+          runbook_url: "https://github.com/ductoanoxo/FOODFAST/actions/runs/{{ $labels.run_id }}"
+
+      # Alert khi workflow frequency quá cao (có thể spam)
+      - alert: CICDHighFrequency
+        expr: github:workflow:run_frequency:rate1h > 10
+        for: 10m
+        labels:
+          severity: info
+          team: devops
+        annotations:
+          summary: "High CI/CD Frequency: {{ $labels.workflow }}"
+          description: "Workflow '{{ $labels.workflow }}' is running {{ $value }} times per hour on branch '{{ $labels.branch }}'"
+
+      # Alert khi Docker build fail
+      - alert: DockerBuildFailed
+        expr: github_workflow_status{workflow="Docker Build and Push", conclusion="failure"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Docker Build Failed"
+          description: "Docker build workflow has failed on branch '{{ $labels.branch }}' (Run ID: {{ $labels.run_id }})"
+          runbook_url: "https://github.com/ductoanoxo/FOODFAST/actions/runs/{{ $labels.run_id }}"
+
+      # Alert khi test workflow fail
+      - alert: TestWorkflowFailed
+        expr: github_workflow_status{workflow=~".*Test.*|.*CI.*", conclusion="failure"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Test Workflow Failed: {{ $labels.workflow }}"
+          description: "Test workflow has failed on branch '{{ $labels.branch }}' (Run ID: {{ $labels.run_id }})"
+          runbook_url: "https://github.com/ductoanoxo/FOODFAST/actions/runs/{{ $labels.run_id }}"
+

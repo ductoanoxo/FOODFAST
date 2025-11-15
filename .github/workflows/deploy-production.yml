@@ -87,6 +87,7 @@ jobs:
           ssh $SERVER_USER@$SERVER_HOST "mkdir -p ~/prometheus-config ~/grafana-config/provisioning/datasources ~/grafana-config/provisioning/dashboards ~/grafana-config/dashboards"
           scp monitoring/prometheus.yml $SERVER_USER@$SERVER_HOST:~/prometheus-config/
           scp monitoring/alerts.yml $SERVER_USER@$SERVER_HOST:~/prometheus-config/
+          scp monitoring/recording-rules.yml $SERVER_USER@$SERVER_HOST:~/prometheus-config/
           scp monitoring/grafana/datasources.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/datasources/
           scp monitoring/grafana/dashboards.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/dashboards/
           scp monitoring/grafana/foodfast-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/

@@ -1,0 +1,109 @@
+# Prometheus Recording Rules for CI/CD Metrics
+# Tính toán các metrics phức tạp để tối ưu dashboard performance
+
+groups:
+  - name: cicd_aggregations
+    interval: 30s
+    rules:
+      # Tổng số workflow runs theo workflow và branch
+      - record: github:workflow:run_total:sum
+        expr: sum(github_workflow_run_total) by (workflow, branch)
+      
+      # Tổng số successful runs
+      - record: github:workflow:success_total:sum
+        expr: sum(github_workflow_success_total) by (workflow, branch)
+      
+      # Tổng số failed runs
+      - record: github:workflow:failure_total:sum
+        expr: sum(github_workflow_failure_total) by (workflow, branch)
+      
+      # Success rate (%) theo workflow và branch
+      - record: github:workflow:success_rate:percent
+        expr: |
+          100 * (
+            sum(github_workflow_success_total) by (workflow, branch)
+            / 
+            (
+              sum(github_workflow_success_total) by (workflow, branch) + 
+              sum(github_workflow_failure_total) by (workflow, branch)
+            )
+          )
+      
+      # Average duration theo workflow (last 1 hour)
+      - record: github:workflow:duration_seconds:avg1h
+        expr: avg_over_time(github_workflow_duration_seconds[1h]) by (workflow, branch)
+      
+      # Max duration theo workflow (last 1 hour)
+      - record: github:workflow:duration_seconds:max1h
+        expr: max_over_time(github_workflow_duration_seconds[1h]) by (workflow, branch)
+      
+      # Min duration theo workflow (last 1 hour)
+      - record: github:workflow:duration_seconds:min1h
+        expr: min_over_time(github_workflow_duration_seconds[1h]) by (workflow, branch)
+      
+      # Total runs per branch (across all workflows)
+      - record: github:branch:run_total:sum
+        expr: sum(github_workflow_run_total) by (branch)
+      
+      # Total successful runs per branch
+      - record: github:branch:success_total:sum
+        expr: sum(github_workflow_success_total) by (branch)
+      
+      # Total failed runs per branch
+      - record: github:branch:failure_total:sum
+        expr: sum(github_workflow_failure_total) by (branch)
+      
+      # Branch success rate
+      - record: github:branch:success_rate:percent
+        expr: |
+          100 * (
+            sum(github_workflow_success_total) by (branch)
+            / 
+            (
+              sum(github_workflow_success_total) by (branch) + 
+              sum(github_workflow_failure_total) by (branch)
+            )
+          )
+      
+      # Workflow frequency (runs per hour)
+      - record: github:workflow:run_frequency:rate1h
+        expr: rate(github_workflow_run_total[1h]) * 3600 by (workflow, branch)
+      
+      # Deployment success rate (chỉ workflow Deploy)
+      - record: github:deploy:success_rate:percent
+        expr: |
+          100 * (
+            sum(github_workflow_success_total{workflow=~".*Deploy.*"}) by (branch)
+            / 
+            (
+              sum(github_workflow_success_total{workflow=~".*Deploy.*"}) by (branch) + 
+              sum(github_workflow_failure_total{workflow=~".*Deploy.*"}) by (branch)
+            )
+          )
+
+  - name: cicd_alerts_data
+    interval: 30s
+    rules:
+      # Failed workflows trong 5 phút gần nhất
+      - record: github:workflow:failures:5m
+        expr: increase(github_workflow_failure_total[5m])
+      
+      # Consecutive failures
+      - record: github:workflow:consecutive_failures
+        expr: |
+          sum(
+            github_workflow_status{conclusion="failure"} == 0
+          ) by (workflow, branch)
+      
+      # Long running workflows (> 10 minutes)
+      - record: github:workflow:long_running:count
+        expr: count(github_workflow_duration_seconds > 600) by (workflow, branch)
+      
+      # Workflows running slower than average
+      - record: github:workflow:slower_than_avg
+        expr: |
+          (
+            github_workflow_duration_seconds
+            > 
+            1.5 * avg_over_time(github_workflow_duration_seconds[24h])
+          )
