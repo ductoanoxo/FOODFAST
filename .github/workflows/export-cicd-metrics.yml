@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: main  # Always use latest code from main branch
 
       - name: Get workflow information
         id: workflow-info
