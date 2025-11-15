@@ -111,16 +111,16 @@ github_workflow_run_number{workflow="WORKFLOW_NAME_PLACEHOLDER",branch="BRANCH_P
 github_workflow_status{workflow="WORKFLOW_NAME_PLACEHOLDER",branch="BRANCH_PLACEHOLDER",run_id="RUN_ID_PLACEHOLDER"} STATUS_PLACEHOLDER
 EOF
 
-          # Replace placeholders with actual values
-          sed -i "s/WORKFLOW_NAME_PLACEHOLDER/$WORKFLOW_NAME/g" metrics.txt
-          sed -i "s/BRANCH_PLACEHOLDER/$BRANCH/g" metrics.txt
-          sed -i "s/ACTOR_PLACEHOLDER/$ACTOR/g" metrics.txt
-          sed -i "s/SUCCESS_INCREMENT_PLACEHOLDER/$SUCCESS_INCREMENT/g" metrics.txt
-          sed -i "s/FAILURE_INCREMENT_PLACEHOLDER/$FAILURE_INCREMENT/g" metrics.txt
-          sed -i "s/CONCLUSION_PLACEHOLDER/$CONCLUSION/g" metrics.txt
-          sed -i "s/DURATION_PLACEHOLDER/$DURATION/g" metrics.txt
-          sed -i "s/RUN_NUMBER_PLACEHOLDER/$RUN_NUMBER/g" metrics.txt
-          sed -i "s/RUN_ID_PLACEHOLDER/$RUN_ID/g" metrics.txt
+          # Replace placeholders with actual values (use temp file for macOS/Linux compatibility)
+          sed "s/WORKFLOW_NAME_PLACEHOLDER/$WORKFLOW_NAME/g" metrics.txt > metrics.tmp && mv metrics.tmp metrics.txt
+          sed "s/BRANCH_PLACEHOLDER/$BRANCH/g" metrics.txt > metrics.tmp && mv metrics.tmp metrics.txt
+          sed "s/ACTOR_PLACEHOLDER/$ACTOR/g" metrics.txt > metrics.tmp && mv metrics.tmp metrics.txt
+          sed "s/SUCCESS_INCREMENT_PLACEHOLDER/$SUCCESS_INCREMENT/g" metrics.txt > metrics.tmp && mv metrics.tmp metrics.txt
+          sed "s/FAILURE_INCREMENT_PLACEHOLDER/$FAILURE_INCREMENT/g" metrics.txt > metrics.tmp && mv metrics.tmp metrics.txt
+          sed "s/CONCLUSION_PLACEHOLDER/$CONCLUSION/g" metrics.txt > metrics.tmp && mv metrics.tmp metrics.txt
+          sed "s/DURATION_PLACEHOLDER/$DURATION/g" metrics.txt > metrics.tmp && mv metrics.tmp metrics.txt
+          sed "s/RUN_NUMBER_PLACEHOLDER/$RUN_NUMBER/g" metrics.txt > metrics.tmp && mv metrics.tmp metrics.txt
+          sed "s/RUN_ID_PLACEHOLDER/$RUN_ID/g" metrics.txt > metrics.tmp && mv metrics.tmp metrics.txt
           
           # Calculate status value
           if [ "$CONCLUSION" = "success" ]; then
@@ -130,7 +130,7 @@ EOF
           else
             STATUS=-1
           fi
-          sed -i "s/STATUS_PLACEHOLDER/$STATUS/g" metrics.txt
+          sed "s/STATUS_PLACEHOLDER/$STATUS/g" metrics.txt > metrics.tmp && mv metrics.tmp metrics.txt
           
           echo "Generated metrics:"
           cat metrics.txt
