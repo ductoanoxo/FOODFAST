@@ -41,9 +41,7 @@ const OrderTrackingPage = () => {
 
     const token = localStorage.getItem('token')
     if (!token) {
-      console.warn('No token found for socket connection')
-      const interval = setInterval(fetchOrderTracking, 30000);
-      return () => clearInterval(interval)
+      console.warn('No token found for socket connection - will rely on polling interval')
     }
 
     // Connect socket
@@ -91,9 +89,7 @@ const OrderTrackingPage = () => {
           return updated;
         });
         
-        // Optional: Fetch full order data in background to ensure everything is in sync
-        // But don't wait for it - UI already updated from socket
-        setTimeout(() => fetchOrderTracking(), 1000);
+        // UI already updated from socket data - no need to fetch again immediately
       }
     };
 
@@ -101,7 +97,12 @@ const OrderTrackingPage = () => {
       if (data.orderId === orderId) {
         console.log('📡 Drone assigned:', data);
         message.success('🚁 Drone đã được phân công giao hàng!');
-        fetchOrderTracking();
+        // Update state directly from socket data
+        setOrder(prev => ({
+          ...prev,
+          drone: data.drone,
+          status: data.status || prev.status
+        }));
       }
     };
 
@@ -109,7 +110,13 @@ const OrderTrackingPage = () => {
       if (data.orderId === orderId) {
         console.log('📡 Delivery complete:', data);
         message.success('🎉 Đơn hàng đã được giao đến!');
-        fetchOrderTracking();
+        // Update state directly from socket data
+        setOrder(prev => ({
+          ...prev,
+          status: 'delivered',
+          deliveredAt: data.deliveredAt || new Date().toISOString(),
+          paymentStatus: data.paymentStatus || prev.paymentStatus
+        }));
       }
     };
     
@@ -117,7 +124,14 @@ const OrderTrackingPage = () => {
       if (data.orderId === orderId) {
         console.log('📡 Order cancelled:', data);
         message.warning('❌ Đơn hàng đã bị hủy');
-        fetchOrderTracking();
+        // Update state directly from socket data
+        setOrder(prev => ({
+          ...prev,
+          status: 'cancelled',
+          cancelledAt: data.cancelledAt || new Date().toISOString(),
+          cancelReason: data.cancelReason || prev.cancelReason,
+          refundInfo: data.refundInfo || prev.refundInfo
+        }));
       }
     };
     
@@ -147,7 +161,7 @@ const OrderTrackingPage = () => {
     socketService.on('drone:location-update', handleDroneLocationUpdate);
     socketService.on('order:update', handleOrderStatusUpdate);
 
-    const interval = setInterval(fetchOrderTracking, 30000);
+    const interval = setInterval(fetchOrderTracking, 10000); // Reduced to 10s for faster fallback
 
     return () => {
       console.log('🧹 Cleaning up OrderTracking socket listeners')

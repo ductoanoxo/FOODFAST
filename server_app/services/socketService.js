@@ -1,5 +1,5 @@
 const socketIO = require('socket.io');
-const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken'); 
 
 class SocketService {
     constructor() {
@@ -22,7 +22,7 @@ class SocketService {
         this.io.on('connection', this.handleConnection.bind(this));
 
         console.log('✅ Socket.IO initialized');
-        return this.io;
+        return this.io;       
     }
 
     // Authenticate socket connections
@@ -213,6 +213,17 @@ class SocketService {
                         await order.save();
                         
                         console.log(`✅ Order ${orderId} status updated: delivering → waiting_for_customer`);
+                        
+                        // 🚨 START DELIVERY TIMEOUT when drone arrives
+                        const { handleDroneArrived } = require('../API/services/droneDeliveryTimeoutService');
+                        if (order.drone) {
+                            console.log(`⏰ Starting delivery timeout for order ${orderId}`);
+                            await handleDroneArrived(
+                                order._id,
+                                order.drone,
+                                order.deliveryInfo?.location
+                            );
+                        }
                         
                         // Broadcast the update to all connected clients with full details
                         const payload = {
