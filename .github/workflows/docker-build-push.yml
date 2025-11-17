@@ -26,6 +26,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      statuses: write
 
     strategy:
       matrix:
