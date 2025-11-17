@@ -75,6 +75,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: ./${{ matrix.service.name }}
@@ -92,3 +93,20 @@ jobs:
 
       - name: Image digest
         run: echo ${{ steps.meta.outputs.digest }}
+
+      - name: Report status to source commit
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const status = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: '${{ github.event.workflow_run.head_sha }}',
+              state: status,
+              context: 'build-and-push (${{ matrix.service.name }}, ${{ matrix.service.image }})',
+              description: status === 'success' ? 'Docker build completed' : 'Docker build failed',
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
