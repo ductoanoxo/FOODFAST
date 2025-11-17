@@ -15,9 +15,9 @@
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| **Grafana Dashboard** | http://50.19.133.198:3030 | admin / admin123 |
-| **Prometheus** | http://50.19.133.198:9090 | No auth |
-| **Pushgateway** | http://50.19.133.198:9091 | No auth |
+| **Grafana Dashboard** | http://3.89.225.219:3030 | admin / admin123 |
+| **Prometheus** | http://3.89.225.219:9090 | No auth |
+| **Pushgateway** | http://3.89.225.219:9091 | No auth |
 | **GitHub Actions** | https://github.com/ductoanoxo/FOODFAST/actions | GitHub login |
 
 ---
@@ -85,12 +85,12 @@ Options: All, ductoanoxo, kiet, [contributors]
 
 ### Check Metrics Available
 ```bash
-curl http://50.19.133.198:9091/metrics | grep github_workflow
+curl http://3.89.225.219:9091/metrics | grep github_workflow
 ```
 
 ### Check Prometheus Targets
 ```bash
-curl http://50.19.133.198:9090/api/v1/targets | grep pushgateway
+curl http://3.89.225.219:9090/api/v1/targets | grep pushgateway
 ```
 
 ### Restart Grafana (if needed)
@@ -184,8 +184,8 @@ Suggested alert rules:
 ## 📞 Support
 
 **Issues?** Check:
-1. Prometheus targets: http://50.19.133.198:9090/targets
-2. Pushgateway metrics: http://50.19.133.198:9091/metrics
+1. Prometheus targets: http://3.89.225.219:9090/targets
+2. Pushgateway metrics: http://3.89.225.219:9091/metrics
 3. Grafana logs: `docker logs foodfast_grafana`
 4. GitHub Actions logs: Repository → Actions tab
 

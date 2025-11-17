@@ -4,7 +4,7 @@
 echo "🔍 Verifying CI/CD Dashboard Metrics..."
 echo ""
 
-PROM_URL="http://50.19.133.198:9090"
+PROM_URL="http://3.89.225.219:9090"
 
 # Test từng query trong dashboard
 echo "1️⃣  Total Workflow Runs:"
@@ -45,5 +45,5 @@ echo ""
 
 echo "✅ Verification complete!"
 echo ""
-echo "📊 View dashboard at: http://50.19.133.198:3030/d/foodfast-cicd"
+echo "📊 View dashboard at: http://3.89.225.219:3030/d/foodfast-cicd"
 echo "🔐 Login: admin / admin123"

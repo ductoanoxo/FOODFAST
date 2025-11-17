@@ -238,7 +238,7 @@ sum(github_workflow_failure_total)
 ### 1. Check current metrics
 
 ```bash
-curl http://50.19.133.198:9091/metrics | grep github_workflow_success_total
+curl http://3.89.225.219:9091/metrics | grep github_workflow_success_total
 ```
 
 Expected output:
@@ -250,7 +250,7 @@ github_workflow_success_total{...} 1
 ### 2. Query Prometheus
 
 ```bash
-curl -G http://50.19.133.198:9090/api/v1/query \
+curl -G http://3.89.225.219:9090/api/v1/query \
   --data-urlencode 'query=sum(github_workflow_success_total)'
 ```
 
@@ -258,7 +258,7 @@ Expected: `"value": [timestamp, "2"]`
 
 ### 3. Check Dashboard
 
-Open: http://50.19.133.198:3030/d/foodfast-cicd
+Open: http://3.89.225.219:3030/d/foodfast-cicd
 
 **Before fix:**
 - "Hoạt động theo thời gian" shows 47 (wrong)

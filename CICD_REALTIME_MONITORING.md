@@ -58,7 +58,7 @@ github_workflow_status{workflow="...", branch="...", actor="...", status="..."}
 
 ### 3. Grafana Dashboard
 
-**URL**: http://50.19.133.198:3030/d/foodfast-cicd
+**URL**: http://3.89.225.219:3030/d/foodfast-cicd
 
 **Features**:
 - 📊 Tổng số runs, success, failure
@@ -94,10 +94,10 @@ git push origin main
 
 ```bash
 # Xem tất cả metrics trên Pushgateway
-curl http://50.19.133.198:9091/metrics | grep github_workflow
+curl http://3.89.225.219:9091/metrics | grep github_workflow
 
 # Hoặc mở browser:
-# http://50.19.133.198:9091
+# http://3.89.225.219:9091
 ```
 
 Bạn sẽ thấy:
@@ -111,17 +111,17 @@ github_workflow_duration_seconds{workflow="CI - Test and Lint",...} 234
 
 ```bash
 # Query Prometheus
-curl -G http://50.19.133.198:9090/api/v1/query \
+curl -G http://3.89.225.219:9090/api/v1/query \
   --data-urlencode 'query=github_workflow_run_total'
 
 # Hoặc mở Prometheus UI:
-# http://50.19.133.198:9090/graph
+# http://3.89.225.219:9090/graph
 # Query: github_workflow_run_total
 ```
 
 ### Bước 5: Xem Dashboard Grafana
 
-1. Mở http://50.19.133.198:3030
+1. Mở http://3.89.225.219:3030
 2. Login: `admin` / `admin123`
 3. Vào Dashboard: "GitHub Actions CI/CD Monitor"
 4. Trong vòng **30 giây**, bạn sẽ thấy metrics mới xuất hiện:
@@ -145,7 +145,7 @@ curl -G http://50.19.133.198:9090/api/v1/query \
 **2. Kiểm tra Pushgateway có nhận metrics không:**
 
 ```bash
-curl http://50.19.133.198:9091/metrics | grep -A5 "github_workflow_run_total"
+curl http://3.89.225.219:9091/metrics | grep -A5 "github_workflow_run_total"
 ```
 
 Nếu không có → Workflow export-cicd-metrics failed hoặc PUSHGATEWAY_URL sai
@@ -154,7 +154,7 @@ Nếu không có → Workflow export-cicd-metrics failed hoặc PUSHGATEWAY_URL 
 
 ```bash
 # Vào Prometheus UI
-# http://50.19.133.198:9090/targets
+# http://3.89.225.219:9090/targets
 # Tìm job "pushgateway" → Status phải UP
 ```
 
@@ -266,7 +266,7 @@ sum(github_workflow_run_total) by (actor)
 ## 🔐 Security Notes
 
 1. **Pushgateway URL** được lưu trong GitHub Secrets:
-   - `PUSHGATEWAY_URL` = http://50.19.133.198:9091
+   - `PUSHGATEWAY_URL` = http://3.89.225.219:9091
 
 2. **Grafana credentials**:
    - Default: admin/admin123
@@ -280,10 +280,10 @@ sum(github_workflow_run_total) by (actor)
 
 - **GitHub Repository**: https://github.com/ductoanoxo/FOODFAST
 - **GitHub Actions**: https://github.com/ductoanoxo/FOODFAST/actions
-- **Prometheus**: http://50.19.133.198:9090
-- **Pushgateway**: http://50.19.133.198:9091
-- **Grafana**: http://50.19.133.198:3030
-- **Dashboard**: http://50.19.133.198:3030/d/foodfast-cicd
+- **Prometheus**: http://3.89.225.219:9090
+- **Pushgateway**: http://3.89.225.219:9091
+- **Grafana**: http://3.89.225.219:3030
+- **Dashboard**: http://3.89.225.219:3030/d/foodfast-cicd
 
 ## 🎉 Quick Test Script
 
@@ -313,12 +313,12 @@ echo ""
 
 # 3. Check Pushgateway
 echo "3️⃣ After workflow completes, check Pushgateway metrics:"
-echo "   curl http://50.19.133.198:9091/metrics | grep github_workflow_run_total"
+echo "   curl http://3.89.225.219:9091/metrics | grep github_workflow_run_total"
 echo ""
 
 # 4. Check Grafana
 echo "4️⃣ Then check Grafana Dashboard:"
-echo "   http://50.19.133.198:3030/d/foodfast-cicd"
+echo "   http://3.89.225.219:3030/d/foodfast-cicd"
 echo ""
 echo "   Dashboard will auto-refresh in 30 seconds"
 echo ""

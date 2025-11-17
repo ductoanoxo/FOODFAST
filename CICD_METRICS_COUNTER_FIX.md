@@ -101,18 +101,18 @@ Fix này đã được deploy tự động qua workflow:
 
 2. **Kiểm tra Pushgateway:**
    ```bash
-   curl http://50.19.133.198:9091/metrics | grep github_workflow_run_total
+   curl http://3.89.225.219:9091/metrics | grep github_workflow_run_total
    ```
    
    Expect: Thấy giá trị tăng dần theo run_number
 
 3. **Kiểm tra Prometheus:**
    ```bash
-   curl 'http://50.19.133.198:9090/api/v1/query?query=github_workflow_run_total'
+   curl 'http://3.89.225.219:9090/api/v1/query?query=github_workflow_run_total'
    ```
 
 4. **Kiểm tra Grafana Dashboard:**
-   - Mở http://50.19.133.198:3030
+   - Mở http://3.89.225.219:3030
    - Dashboard: "CI/CD Pipeline Monitoring"
    - Test các time range: Last 24h, Last 6 days, Last 30 days
    - Expect: Tất cả đều có data chính xác

@@ -39,10 +39,10 @@ app.use(
             'http://localhost:3002', // Admin App (production)
             'http://localhost:3003', // Drone App (production)
             // EC2 Production URLs
-            'http://50.19.133.198:3000', // Client App on EC2
-            'http://50.19.133.198:3001', // Admin App on EC2
-            'http://50.19.133.198:3002', // Restaurant App on EC2
-            'http://50.19.133.198:3003', // Drone App on EC2
+            'http://3.89.225.219:3000', // Client App on EC2
+            'http://3.89.225.219:3001', // Admin App on EC2
+            'http://3.89.225.219:3002', // Restaurant App on EC2
+            'http://3.89.225.219:3003', // Drone App on EC2
             // Env vars (fallback/override)
             process.env.CLIENT_URL,
             process.env.RESTAURANT_URL,

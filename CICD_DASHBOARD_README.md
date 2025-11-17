@@ -68,7 +68,7 @@ CI/CD Monitoring Documentation
 
 ### Version 2.0 Enhanced
 
-**Access**: http://50.19.133.198:3030  
+**Access**: http://3.89.225.219:3030  
 **Login**: admin / admin123  
 **Dashboard**: FoodFast CI/CD Pipeline - Enhanced
 
@@ -151,7 +151,7 @@ Grafana Dashboard (:3030)
 
 ### View Dashboard
 ```
-1. Open: http://50.19.133.198:3030
+1. Open: http://3.89.225.219:3030
 2. Login: admin / admin123
 3. Select: FoodFast CI/CD Pipeline - Enhanced
 ```
@@ -166,8 +166,8 @@ Grafana Dashboard (:3030)
 
 ### Troubleshoot
 ```
-1. Check Pushgateway: http://50.19.133.198:9091
-2. Check Prometheus: http://50.19.133.198:9090/targets
+1. Check Pushgateway: http://3.89.225.219:9091
+2. Check Prometheus: http://3.89.225.219:9090/targets
 3. Check GitHub Actions: Repository → Actions tab
 4. View logs: docker logs foodfast_grafana
 ```
@@ -307,8 +307,8 @@ Dashboard Settings → JSON Model → Copy
 ### Related Project Docs
 - [GitHub Repository](https://github.com/ductoanoxo/FOODFAST)
 - [GitHub Actions Workflows](https://github.com/ductoanoxo/FOODFAST/actions)
-- [Prometheus Target](http://50.19.133.198:9090/targets)
-- [Pushgateway Metrics](http://50.19.133.198:9091/metrics)
+- [Prometheus Target](http://3.89.225.219:9090/targets)
+- [Pushgateway Metrics](http://3.89.225.219:9091/metrics)
 
 ---
 
@@ -316,7 +316,7 @@ Dashboard Settings → JSON Model → Copy
 
 ### Quick Troubleshooting
 1. Dashboard not loading? → Check Grafana container: `docker ps | grep grafana`
-2. No data? → Check Pushgateway: `curl http://50.19.133.198:9091/metrics | grep github`
+2. No data? → Check Pushgateway: `curl http://3.89.225.219:9091/metrics | grep github`
 3. Metrics stale? → Run a GitHub Action workflow
 4. Filters empty? → Wait for workflows to generate metrics
 

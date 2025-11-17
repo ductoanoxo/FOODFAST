@@ -3,9 +3,9 @@
 ## 📋 Pre-deployment Checklist
 
 ### 1. GitHub Secrets Configuration
-- [ ] `PUSHGATEWAY_URL` = http://50.19.133.198:9091
-- [ ] `PROMETHEUS_URL` = http://50.19.133.198:9090  
-- [ ] `GRAFANA_URL` = http://50.19.133.198:3030
+- [ ] `PUSHGATEWAY_URL` = http://3.89.225.219:9091
+- [ ] `PROMETHEUS_URL` = http://3.89.225.219:9090  
+- [ ] `GRAFANA_URL` = http://3.89.225.219:3030
 
 ### 2. Workflows Ready
 - [ ] `.github/workflows/ci-test.yml` - CI workflow
@@ -49,11 +49,11 @@ Go to: https://github.com/ductoanoxo/FOODFAST/actions
 - [ ] **"Export CI/CD Metrics to Prometheus" workflow completed** ⭐
 
 ### Step 3: Check Pushgateway
-Open: http://50.19.133.198:9091
+Open: http://3.89.225.219:9091
 
 Or run:
 ```bash
-curl http://50.19.133.198:9091/metrics | grep github_workflow
+curl http://3.89.225.219:9091/metrics | grep github_workflow
 ```
 
 - [ ] Pushgateway UI loads
@@ -65,7 +65,7 @@ curl http://50.19.133.198:9091/metrics | grep github_workflow
 - [ ] `github_workflow_status` present
 
 ### Step 4: Check Prometheus
-Open: http://50.19.133.198:9090
+Open: http://3.89.225.219:9090
 
 #### 4.1 Check Targets
 - [ ] Go to Status → Targets
@@ -95,7 +95,7 @@ avg(github_workflow_duration_seconds)
 - [ ] Values make sense
 
 ### Step 5: Check Grafana Dashboard
-Open: http://50.19.133.198:3030/d/foodfast-cicd
+Open: http://3.89.225.219:3030/d/foodfast-cicd
 
 Login: `admin` / `admin123`
 
@@ -188,7 +188,7 @@ github_workflow_status
 - [ ] Verify PUSHGATEWAY_URL secret is correct
 - [ ] Try manual curl:
 ```bash
-curl -X POST http://50.19.133.198:9091/metrics/job/test \
+curl -X POST http://3.89.225.219:9091/metrics/job/test \
   --data-binary @- <<EOF
 # TYPE test_metric counter
 test_metric{label="value"} 1

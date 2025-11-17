@@ -8,7 +8,7 @@ Vào repo → Settings → Secrets and variables → Actions → New repository 
 
 ```
 Name: PUSHGATEWAY_URL
-Value: http://50.19.133.198:9091
+Value: http://3.89.225.219:9091
 ```
 
 ### 2️⃣ Deploy Pushgateway
@@ -34,7 +34,7 @@ git push origin main
 
 ### 3️⃣ Truy cập Dashboard
 
-1. Mở Grafana Production: **<http://50.19.133.198:3030>**
+1. Mở Grafana Production: **<http://3.89.225.219:3030>**
 2. Login: `admin` / `admin123`
 3. Tìm dashboard: **"FoodFast CI/CD Pipeline"**
 
@@ -44,17 +44,17 @@ git push origin main
 
 ### Xem Pushgateway đã nhận metrics chưa:
 ```bash
-curl http://50.19.133.198:9091/metrics | grep github_workflow
+curl http://3.89.225.219:9091/metrics | grep github_workflow
 ```
 
 ### Xem Prometheus đã scrape chưa:
-Mở: <http://50.19.133.198:9090/targets>
+Mở: <http://3.89.225.219:9090/targets>
 Tìm job `pushgateway` → Status phải là UP
 
 ### Test push metrics thủ công:
 ```bash
 echo "github_workflow_run_total{workflow=\"test\",branch=\"main\"} 1" | \
-  curl --data-binary @- http://50.19.133.198:9091/metrics/job/github_actions/instance/manual_test
+  curl --data-binary @- http://3.89.225.219:9091/metrics/job/github_actions/instance/manual_test
 ```
 
 ## 📊 Dashboard sẽ hiển thị:
