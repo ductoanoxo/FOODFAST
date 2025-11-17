@@ -69,6 +69,7 @@ jobs:
           echo "📊 Actor: $ACTOR"
 
       - name: Push metrics to Pushgateway
+        continue-on-error: true
         env:
           PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://3.89.225.219:9091' }}
         run: |
@@ -136,6 +137,7 @@ jobs:
 
       - name: Push deployment metrics (if deploy workflow)
         if: contains(steps.metrics.outputs.workflow_name, 'Deploy')
+        continue-on-error: true
         env:
           PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://3.89.225.219:9091' }}
         run: |
