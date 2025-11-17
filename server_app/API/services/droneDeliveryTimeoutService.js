@@ -11,7 +11,9 @@
 
 const Order = require('../Models/Order');
 const Drone = require('../Models/Drone');
-const { sendPushNotification, sendSMS } = require('./notificationService');
+const mongoose = require('mongoose');
+const socketService = require('../../services/socketService');
+// const { sendPushNotification, sendSMS } = require('./notificationService'); // TODO: Create notificationService
 
 // Thời gian đợi khách (milliseconds) - DEMO MODE: 40 giây
 const WAITING_TIMEOUT = 40 * 1000; // 40 giây
@@ -188,6 +190,38 @@ const handleDeliveryTimeout = async(orderId, droneId) => {
         order.cancelReason = 'Customer not present at delivery location';
         await order.save();
 
+        // 🚀 EMIT EVENT NGAY TRƯỚC KHI DRONE BẮT ĐẦU BAY VỀ (khi order còn là delivery_failed)
+        const drone = await Drone.findById(droneId);
+        console.log(`🔍 [handleDeliveryTimeout] Order: ${orderId}, Drone: ${droneId}`);
+        if (drone) {
+            console.log(`✅ Drone found: ${drone.name}, homeLocation:`, drone.homeLocation?.coordinates);
+            const io = socketService.getIO();
+            if (io) {
+                console.log(`✅ Socket.IO instance available`);
+                const payload = {
+                    orderId: orderId,
+                    droneId: droneId,
+                    droneName: drone.name,
+                    currentLocation: drone.currentLocation,
+                    homeLocation: drone.homeLocation,
+                    estimatedDuration: 5,
+                    timestamp: new Date()
+                };
+                
+                // Emit to specific room
+                io.to(`order-${orderId}`).emit('drone:returning-home', payload);
+                console.log(`📡 [delivery_failed] Emitted drone:returning-home to room order-${orderId}`);
+                
+                // TEMPORARY: Also broadcast to ALL clients for debugging
+                io.emit('drone:returning-home', payload);
+                console.log(`📡 [DEBUG] Also broadcast to ALL clients`, payload);
+            } else {
+                console.error(`❌ Socket.IO instance NOT available!`);
+            }
+        } else {
+            console.error(`❌ Drone ${droneId} NOT found!`);
+        }
+
         // Gửi thông báo cho khách
         await notifyCustomer(order, 'failed');
 
@@ -228,19 +262,20 @@ const startReturningToRestaurant = async(orderId, droneId) => {
         const drone = await Drone.findById(droneId);
         if (drone) {
             drone.status = 'returning';
-            drone.destination = order.restaurant.location; // Set destination về nhà hàng
+            drone.destination = drone.homeLocation; // Set destination về HOME LOCATION
             await drone.save();
+            console.log(`✈️ Drone ${drone.name} status updated to 'returning'`);
         }
 
         // Simulate return trip (giả lập bay về)
-        // Thời gian bay về = thời gian bay đi
-        const returnTime = order.estimatedDuration || 10; // minutes
+        // Thời gian bay về = 5 giây (animation time)
+        const returnTime = 5 / 60; // 5 seconds in minutes
 
         setTimeout(async() => {
             await handleDroneReturned(orderId, droneId);
         }, returnTime * 60 * 1000); // Convert to milliseconds
 
-        console.log(`🔙 Drone returning to restaurant - Order ${orderId} - ETA ${returnTime} minutes`);
+        console.log(`🔙 Drone returning to HOME LOCATION - Order ${orderId} - ETA ${returnTime * 60} seconds`);
 
         return {
             success: true,
@@ -268,13 +303,29 @@ const handleDroneReturned = async(orderId, droneId) => {
         order.returnedAt = new Date();
         await order.save();
 
-        // Cập nhật drone
+        // Cập nhật drone - Trả về vị trí ban đầu (homeLocation)
         const drone = await Drone.findById(droneId);
         if (drone) {
-            drone.status = 'idle';
+            drone.status = 'available';
             drone.currentOrder = null;
-            drone.currentLocation = order.restaurant.location; // Đã về nhà hàng
+            // Return to home location instead of restaurant
+            drone.currentLocation = drone.homeLocation; // Trả về vị trí ban đầu
             await drone.save();
+            console.log(`🏠 Drone ${drone.name} returned to home location:`, drone.homeLocation.coordinates);
+            
+            // 🚀 Emit socket event khi drone đã về đến home
+            const io = socketService.getIO();
+            if (io) {
+                io.to(`order-${orderId}`).emit('drone:arrived-home', {
+                    orderId: orderId,
+                    droneId: droneId,
+                    droneName: drone.name,
+                    homeLocation: drone.homeLocation,
+                    status: 'available',
+                    timestamp: new Date()
+                });
+                console.log(`📡 Emitted drone:arrived-home event for order ${orderId}`);
+            }
         }
 
         // TODO: Xử lý hoàn tiền cho khách (nếu đã thanh toán)
@@ -329,14 +380,15 @@ const notifyCustomer = async(order, type) => {
         }
 
         // Send push notification
-        if (user.fcmToken) {
-            await sendPushNotification(user.fcmToken, title, message);
-        }
+        // TODO: Implement notification service
+        // if (user.fcmToken) {
+        //     await sendPushNotification(user.fcmToken, title, message);
+        // }
 
         // Send SMS (critical notifications)
-        if ((type === 'arrived' || type === 'failed') && user.phone) {
-            await sendSMS(user.phone, message);
-        }
+        // if ((type === 'arrived' || type === 'failed') && user.phone) {
+        //     await sendSMS(user.phone, message);
+        // }
 
         console.log(`📧 Notification sent to customer - Type: ${type}, Order: ${order.orderNumber}`);
     } catch (error) {

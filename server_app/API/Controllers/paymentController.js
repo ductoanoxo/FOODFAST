@@ -260,6 +260,29 @@ const vnpayReturn = asyncHandler(async (req, res) => {
                             io.to(`order-${order._id}`).emit('order-status-updated', payload)
                             io.to(`restaurant-${order.restaurant}`).emit('order:status-updated', {...payload, restaurantId: order.restaurant })
                             io.to(`restaurant-${order.restaurant}`).emit('order-status-updated', {...payload, restaurantId: order.restaurant })
+                            
+                            // 🚁 If order has drone assigned, trigger return to home animation
+                            if (order.drone) {
+                                const Drone = require('../Models/Drone')
+                                const drone = await Drone.findById(order.drone)
+                                if (drone && drone.homeLocation) {
+                                    io.to(`order-${order._id}`).emit('drone:returning-home', {
+                                        orderId: order._id,
+                                        droneId: drone._id,
+                                        droneName: drone.name,
+                                        currentLocation: drone.currentLocation,
+                                        homeLocation: drone.homeLocation,
+                                        estimatedDuration: 5,
+                                        timestamp: new Date()
+                                    })
+                                    console.log(`🚁 Emitted drone:returning-home for payment failed order ${order._id}`)
+                                    
+                                    // Update drone status
+                                    drone.status = 'returning'
+                                    drone.currentOrder = null
+                                    await drone.save()
+                                }
+                            }
                         }
                     } catch (emitErr) {
                         console.error('Failed to emit order status update after payment failure:', emitErr)
