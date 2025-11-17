@@ -181,8 +181,9 @@ const OrdersPage = () => {
     }
 
     const canCancelOrder = (order) => {
-        // Can only cancel orders that are not delivered or already cancelled
-        return !['delivered', 'cancelled'].includes(order.status)
+        // Can only cancel orders that are not delivered, already cancelled, or failed delivery
+        // Do not allow cancelling when delivery has failed (delivery_failed)
+        return !['delivered', 'cancelled', 'delivery_failed'].includes(order.status)
     }
 
     const getStatusColor = (status) => {

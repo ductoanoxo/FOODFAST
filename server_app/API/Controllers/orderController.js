@@ -951,6 +951,46 @@ const confirmDelivery = asyncHandler(async(req, res) => {
         throw new Error('Đơn hàng chưa ở trạng thái đang giao');
     }
 
+    // 🚀 EMIT drone:returning-home BEFORE updating order status (like delivery_failed)
+    // Add delay to ensure client has time to setup socket listeners
+    if (order.drone) {
+        const Drone = require('../Models/Drone');
+        const drone = await Drone.findById(order.drone._id);
+        
+        if (drone && drone.homeLocation) {
+            console.log(`🔙 Emitting drone:returning-home for delivered order ${order._id}`);
+            const socketService = req.app.get('socketService');
+            if (socketService && socketService.io) {
+                // ✅ Use customer location from order.deliveryInfo.location, NOT drone.currentLocation
+                const customerLocation = order.deliveryInfo?.location?.coordinates 
+                    ? {
+                        type: 'Point',
+                        coordinates: order.deliveryInfo.location.coordinates
+                    }
+                    : drone.currentLocation; // Fallback to drone location if no delivery info
+                
+                const payload = {
+                    orderId: order._id,
+                    droneId: drone._id,
+                    droneName: drone.name,
+                    currentLocation: customerLocation, // ✅ FIXED: Use customer location from deliveryInfo
+                    homeLocation: drone.homeLocation,
+                    estimatedDuration: 5,
+                    timestamp: new Date()
+                };
+                
+                console.log(`📍 [confirmDelivery] Drone returning from CUSTOMER location:`, customerLocation.coordinates);
+                
+                // Delay emission to ensure client listeners are ready
+                setTimeout(() => {
+                    // Emit to order room only (not broadcast to prevent duplicate events)
+                    socketService.io.to(`order-${order._id}`).emit('drone:returning-home', payload);
+                    console.log(`📡 [orderController] Emitted drone:returning-home for delivered order (delayed)`, payload);
+                }, 1000); // 1 second delay to allow client to setup listeners
+            }
+        }
+    }
+
     // Update order status to delivered
     order.status = 'delivered';
     order.deliveredAt = new Date();
@@ -1150,10 +1190,8 @@ const restaurantConfirmHandover = asyncHandler(async(req, res) => {
                                 timestamp: new Date()
                             };
                             
-                            // Emit to room FIRST
+                            // Emit to order room only (not broadcast to prevent duplicate events)
                             socketService.io.to(`order-${finalOrder._id}`).emit('drone:returning-home', payload);
-                            // Broadcast to all (for debugging)
-                            socketService.io.emit('drone:returning-home', payload);
                             console.log(`📡 [orderController] Emitted drone:returning-home`, payload);
                         }
                     }

@@ -317,12 +317,21 @@ const DroneMap = ({ order }) => {
       console.warn('⚠️ No homeLocation found for drone:', order?.drone?.name || 'Unknown')
     }
     
+    // Set initial drone location based on order status
     if (droneCoords) {
       const [lng, lat] = droneCoords
       setDroneLocation([lat, lng])
-    } else if (restaurantPos) {
-      // Start at restaurant if no drone location
-      setDroneLocation(restaurantPos)
+      console.log('📍 Setting drone location from order.drone.currentLocation:', [lat, lng])
+    } else {
+      // If order is delivered or failed, drone should be at delivery location (customer)
+      // This prevents drone from teleporting back to restaurant after delivery
+      if (order.status === 'delivered' || order.status === 'delivery_failed' || order.status === 'waiting_for_customer') {
+        console.log('📍 Order completed/waiting - setting drone location to DELIVERY position:', deliveryPos)
+        setDroneLocation(deliveryPos)
+      } else if (restaurantPos) {
+        console.log('📍 Setting drone location to RESTAURANT position:', restaurantPos)
+        setDroneLocation(restaurantPos)
+      }
     }
 
     // Connect to socket
@@ -415,7 +424,17 @@ const DroneMap = ({ order }) => {
   }
 
   const returnToBase = (targetHomeLocation = null) => {
-    if (isReturningRef.current || isSimulatingRef.current) return
+    console.log('🔵 returnToBase CALLED')
+    console.log('   targetHomeLocation param:', targetHomeLocation)
+    console.log('   droneHomeLocation state:', droneHomeLocation)
+    console.log('   restaurantPos:', restaurantPos)
+    console.log('   isReturningRef.current:', isReturningRef.current)
+    console.log('   isSimulatingRef.current:', isSimulatingRef.current)
+    
+    if (isReturningRef.current || isSimulatingRef.current) {
+      console.warn('⚠️ returnToBase BLOCKED - already returning or simulating')
+      return
+    }
     
     // Use parameter first, then state, then fallback to restaurant
     const homePos = targetHomeLocation || droneHomeLocation || restaurantPos
@@ -756,11 +775,25 @@ const DroneMap = ({ order }) => {
     
     // Listen for drone returning home (triggered by server)
     socketService.on('drone:returning-home', (data) => {
-      console.log('🔙 Server triggered drone return to home:', data)
-      console.log('   Order match:', data.orderId === order._id)
-      console.log('   Drone location:', data.homeLocation)
+      console.log('🔙 [DroneMap] Received drone:returning-home event:', data)
+      console.log('   Current order._id:', order._id)
+      console.log('   Event orderId:', data.orderId)
+      console.log('   Order match:', data.orderId === order._id, '(String match:', String(data.orderId) === String(order._id), ')')
+      console.log('   isReturningRef.current:', isReturningRef.current)
+      console.log('   isSimulatingRef.current:', isSimulatingRef.current)
       
-      if (data.orderId === order._id) {
+      // Skip if already returning or simulating
+      if (isReturningRef.current || isSimulatingRef.current) {
+        console.log('⚠️ Ignoring drone:returning-home - already in motion')
+        return
+      }
+      
+      // Convert ObjectId to string for comparison
+      const eventOrderId = String(data.orderId)
+      const currentOrderId = String(order._id)
+      
+      if (eventOrderId === currentOrderId) {
+        console.log('✅ Order IDs match! Processing drone return...')
         message.info(`🚁 ${data.droneName} đang bay về vị trí ban đầu...`, 3)
         
         // Extract homeLocation from server data and convert to [lat, lng] format
@@ -768,22 +801,28 @@ const DroneMap = ({ order }) => {
         if (data.homeLocation?.coordinates) {
           const [lng, lat] = data.homeLocation.coordinates
           targetHome = [lat, lng]
-          console.log('🎯 Using homeLocation from server:', targetHome)
+          console.log('🎯 Target homeLocation from server:', targetHome)
         } else {
           console.error('❌ No homeLocation in server data!')
+          return
         }
         
-        // Update drone location state to current location before starting animation
-        if (data.currentLocation?.coordinates) {
-          const [lng, lat] = data.currentLocation.coordinates
-          setDroneLocation([lat, lng])
-          console.log('📍 Updated drone starting position:', [lat, lng])
+        // Set drone location to delivery position (customer location) before starting return animation
+        // This ensures drone starts from customer location, not restaurant
+        if (deliveryPos) {
+          setDroneLocation(deliveryPos)
+          console.log('📍 Set drone starting position to CUSTOMER location:', deliveryPos)
+        } else {
+          console.warn('⚠️ No delivery position available, using current location')
         }
         
-        // Trigger return animation with server's homeLocation
-        setTimeout(() => {
-          returnToBase(targetHome)
-        }, 100) // Small delay to ensure state is updated
+        // Trigger return animation with server's homeLocation IMMEDIATELY (no timeout)
+        console.log('🚀 Calling returnToBase NOW with target:', targetHome)
+        returnToBase(targetHome)
+      } else {
+        console.log('❌ Order IDs do NOT match - ignoring event')
+        console.log('   Expected:', currentOrderId)
+        console.log('   Received:', eventOrderId)
       }
     })
     

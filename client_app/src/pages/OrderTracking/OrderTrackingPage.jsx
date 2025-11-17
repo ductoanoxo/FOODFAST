@@ -194,10 +194,17 @@ const OrderTrackingPage = () => {
     try {
       setConfirming(true);
       const response = await orderAPI.confirmDelivery(orderId);
+      
+      // ✅ Update order state immediately from response (no need to refetch)
+      if (response.data?.data) {
+        setOrder(response.data.data);
+      }
+      
       message.success('Đã xác nhận nhận hàng thành công!');
-      setOrder(response.data.data);
       setConfirmModalVisible(false);
-      fetchOrderTracking();
+      
+      // ❌ REMOVED: fetchOrderTracking() - causes reload and lag
+      // Socket events will handle real-time updates (drone:returning-home, order:status-updated)
     } catch (error) {
       console.error('Error confirming delivery:', error);
       message.error(error.response?.data?.message || 'Không thể xác nhận nhận hàng');
