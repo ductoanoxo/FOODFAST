@@ -417,14 +417,13 @@
                 "value": [
                   {
                     "options": {
-                      "pattern": ".*",
-                      "result": {
+                      "1": {
                         "color": "yellow",
-                        "text": "✨ MỚI NHẤT",
-                        "index": 1
+                        "index": 1,
+                        "text": "✨ MỚI NHẤT"
                       }
                     },
-                    "type": "regex"
+                    "type": "value"
                   }
                 ]
               },
@@ -510,7 +509,7 @@
         }
         ,
         {
-          "expr": "topk(1, github_workflow_timestamp_seconds)",
+          "expr": "topk(1, github_workflow_timestamp_seconds) * 0 + 1",
           "refId": "D",
           "format": "table",
           "instant": true
