@@ -62,8 +62,11 @@ jobs:
           echo "actor=$ACTOR" >> $GITHUB_OUTPUT
           # VN local time (ISO with +07:00)
           VN_ISO=$(TZ='Asia/Ho_Chi_Minh' date -d "@${UPDATED_TS}" +"%Y-%m-%dT%H:%M:%S%:z" 2>/dev/null || echo "")
+          # Convert to milliseconds for Grafana (multiply by 1000)
+          TIMESTAMP_MS=$((UPDATED_TS * 1000))
           echo "time_iso_vn=$VN_ISO" >> $GITHUB_OUTPUT
           echo "timestamp_seconds=$UPDATED_TS" >> $GITHUB_OUTPUT
+          echo "timestamp_ms=$TIMESTAMP_MS" >> $GITHUB_OUTPUT
           
           echo "📊 Workflow: $WORKFLOW_NAME"
           echo "📊 Status: $WORKFLOW_STATUS (code=$STATUS_CODE)"
@@ -88,6 +91,7 @@ jobs:
           ACTOR="${{ steps.metrics.outputs.actor }}"
           TIME_ISO_VN="${{ steps.metrics.outputs.time_iso_vn }}"
           TIMESTAMP_SECONDS="${{ steps.metrics.outputs.timestamp_seconds }}"
+          TIMESTAMP_MS="${{ steps.metrics.outputs.timestamp_ms }}"
           
           # Escape special characters for Prometheus labels
           WORKFLOW_LABEL=$(echo "$WORKFLOW_NAME" | sed 's/[^a-zA-Z0-9_]/_/g')
@@ -127,7 +131,7 @@ jobs:
           
           # HELP github_workflow_timestamp_seconds Timestamp of workflow update (epoch seconds)
           # TYPE github_workflow_timestamp_seconds gauge
-          github_workflow_timestamp_seconds{workflow="${WORKFLOW_NAME}",repo="${REPO}",branch="${BRANCH}",actor="${ACTOR}",run_id="${RUN_ID}",status="${STATUS}"} ${TIMESTAMP_SECONDS}
+          github_workflow_timestamp_seconds{workflow="${WORKFLOW_NAME}",repo="${REPO}",branch="${BRANCH}",actor="${ACTOR}",run_id="${RUN_ID}",status="${STATUS}"} ${TIMESTAMP_MS}
 
           # HELP github_workflow_time_iso VN local time (string carried as label)
           # TYPE github_workflow_time_iso gauge
