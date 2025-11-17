@@ -40,7 +40,7 @@ Workflow này tự động chạy sau mỗi workflow khác hoàn thành và expo
 
 Nhận metrics từ GitHub Actions (vì GitHub Actions không thể scraped trực tiếp).
 
-**Access Production**: <http://13.220.101.54:9091>
+**Access Production**: <http://50.19.133.198:9091>
 
 ### 3. Prometheus
 **Port**: 9090
@@ -66,7 +66,7 @@ Dashboard hiển thị:
 Thêm secret vào GitHub repository:
 
 ```
-PUSHGATEWAY_URL=http://13.220.101.54:9091
+PUSHGATEWAY_URL=http://50.19.133.198:9091
 ```
 
 *(hoặc sử dụng URL Pushgateway của bạn)*
@@ -96,7 +96,7 @@ docker run -d --name foodfast-pushgateway \
 
 ### Bước 3: Truy cập Dashboard
 
-1. Mở Grafana Production: <http://13.220.101.54:3030>
+1. Mở Grafana Production: <http://50.19.133.198:3030>
 2. Login:
    - Username: `admin`
    - Password: `admin123`
@@ -156,11 +156,11 @@ Dashboard hỗ trợ filtering:
 
 1. **Kiểm tra Pushgateway**:
    ```bash
-   curl http://13.220.101.54:9091/metrics | grep github_workflow
+   curl http://50.19.133.198:9091/metrics | grep github_workflow
    ```
 
 2. **Kiểm tra Prometheus scraping**:
-   - Mở <http://13.220.101.54:9090/targets>
+   - Mở <http://50.19.133.198:9090/targets>
    - Tìm job "pushgateway", status phải là UP
 
 3. **Kiểm tra GitHub Actions logs**:
@@ -177,10 +177,10 @@ Pushgateway giữ metrics cho đến khi:
 **Xóa metrics cũ**:
 ```bash
 # Xóa tất cả metrics
-curl -X DELETE http://13.220.101.54:9091/metrics
+curl -X DELETE http://50.19.133.198:9091/metrics
 
 # Xóa metrics của 1 job cụ thể
-curl -X DELETE http://13.220.101.54:9091/metrics/job/github_actions/instance/ci_test
+curl -X DELETE http://50.19.133.198:9091/metrics/job/github_actions/instance/ci_test
 ```
 
 ### Workflow không tự động export metrics

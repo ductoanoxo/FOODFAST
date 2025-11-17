@@ -13,9 +13,9 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Configuration
-PUSHGATEWAY_URL="http://13.220.101.54:9091"
-PROMETHEUS_URL="http://13.220.101.54:9090"
-GRAFANA_URL="http://13.220.101.54:3030"
+PUSHGATEWAY_URL="http://50.19.133.198:9091"
+PROMETHEUS_URL="http://50.19.133.198:9090"
+GRAFANA_URL="http://50.19.133.198:3030"
 REPO_OWNER="ductoanoxo"
 REPO_NAME="FOODFAST"
 

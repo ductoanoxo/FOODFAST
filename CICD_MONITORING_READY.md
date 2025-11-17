@@ -12,7 +12,7 @@ bash test-cicd-monitoring.sh
 - Đợi "Export CI/CD Metrics" workflow hoàn thành
 
 ### 3. Xem Dashboard
-- Mở: http://13.220.101.54:3030/d/foodfast-cicd
+- Mở: http://50.19.133.198:3030/d/foodfast-cicd
 - Login: `admin` / `admin123`
 - Dashboard tự động refresh mỗi 30 giây
 
@@ -49,11 +49,11 @@ CI/CD Workflows chạy (test, build, deploy)
     ↓
 Export Metrics Workflow triggers tự động
     ↓
-Push metrics → Pushgateway (http://13.220.101.54:9091)
+Push metrics → Pushgateway (http://50.19.133.198:9091)
     ↓
-Prometheus scrape mỗi 10s (http://13.220.101.54:9090)
+Prometheus scrape mỗi 10s (http://50.19.133.198:9090)
     ↓
-Grafana hiển thị real-time (http://13.220.101.54:3030)
+Grafana hiển thị real-time (http://50.19.133.198:3030)
     ↓
 Dashboard auto-refresh mỗi 30s
 ```
@@ -109,10 +109,10 @@ Script sẽ:
 | Service | URL | Credentials |
 |---------|-----|-------------|
 | GitHub Actions | https://github.com/ductoanoxo/FOODFAST/actions | - |
-| Pushgateway | http://13.220.101.54:9091 | - |
-| Prometheus | http://13.220.101.54:9090 | - |
-| Grafana | http://13.220.101.54:3030 | admin/admin123 |
-| Dashboard | http://13.220.101.54:3030/d/foodfast-cicd | admin/admin123 |
+| Pushgateway | http://50.19.133.198:9091 | - |
+| Prometheus | http://50.19.133.198:9090 | - |
+| Grafana | http://50.19.133.198:3030 | admin/admin123 |
+| Dashboard | http://50.19.133.198:3030/d/foodfast-cicd | admin/admin123 |
 
 ## 🎯 Success Indicators
 
@@ -153,10 +153,10 @@ Hệ thống hoạt động đúng khi:
 ### Dashboard không có data?
 ```bash
 # 1. Check Pushgateway
-curl http://13.220.101.54:9091/metrics | grep github_workflow
+curl http://50.19.133.198:9091/metrics | grep github_workflow
 
 # 2. Check Prometheus
-curl http://13.220.101.54:9090/api/v1/targets | grep pushgateway
+curl http://50.19.133.198:9090/api/v1/targets | grep pushgateway
 
 # 3. Restart Grafana
 docker restart foodfast-grafana
@@ -178,9 +178,9 @@ docker restart foodfast-grafana
 ## ⚙️ Configuration
 
 ### GitHub Secrets (đã setup)
-- `PUSHGATEWAY_URL` = http://13.220.101.54:9091
-- `PROMETHEUS_URL` = http://13.220.101.54:9090
-- `GRAFANA_URL` = http://13.220.101.54:3030
+- `PUSHGATEWAY_URL` = http://50.19.133.198:9091
+- `PROMETHEUS_URL` = http://50.19.133.198:9090
+- `GRAFANA_URL` = http://50.19.133.198:3030
 
 ### Metrics Format
 ```prometheus
@@ -239,7 +239,7 @@ Hệ thống CI/CD monitoring đã **HOÀN TOÀN SẴN SÀNG** để sử dụng
 ./test-cicd-monitoring.sh
 ```
 
-Sau đó mở: http://13.220.101.54:3030/d/foodfast-cicd
+Sau đó mở: http://50.19.133.198:3030/d/foodfast-cicd
 
 ---
 

@@ -307,7 +307,7 @@ docker restart foodfast_grafana
 sleep 10
 
 # Access dashboard
-open http://13.220.101.54:3030
+open http://50.19.133.198:3030
 ```
 
 ### Rollback (if needed)

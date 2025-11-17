@@ -210,7 +210,7 @@ git push origin main
 ```
 
 ### 3. Manual Import (nếu cần)
-1. Truy cập Grafana: http://13.220.101.54:3030
+1. Truy cập Grafana: http://50.19.133.198:3030
 2. Login với admin/admin123
 3. Vào **Dashboards** → **Import**
 4. Upload file `monitoring/grafana/cicd-dashboard.json`
@@ -225,17 +225,17 @@ git push origin main
 
 1. **Check Pushgateway có metrics**:
 ```bash
-curl http://13.220.101.54:9091/metrics | grep github_workflow
+curl http://50.19.133.198:9091/metrics | grep github_workflow
 ```
 
 2. **Check Prometheus scraping**:
-- Mở: http://13.220.101.54:9090/targets
+- Mở: http://50.19.133.198:9090/targets
 - Job "pushgateway" phải có status **UP**
 
 3. **Test queries trong Prometheus**:
 ```bash
 # Mở Prometheus Graph
-http://13.220.101.54:9090/graph
+http://50.19.133.198:9090/graph
 
 # Thử query
 github_workflow_run_total
@@ -244,7 +244,7 @@ rate(github_workflow_run_total[1h])
 ```
 
 4. **Access Grafana Dashboard**:
-- URL: http://13.220.101.54:3030/d/foodfast-cicd
+- URL: http://50.19.133.198:3030/d/foodfast-cicd
 - Login: admin / admin123
 - Kiểm tra tất cả 19 panels load đúng
 - Test các filters: Workflow, Branch, Actor
@@ -314,8 +314,8 @@ rate(github_workflow_run_total[1h])
 ### Problem: Dashboard không hiển thị data
 
 **Solution**:
-1. Kiểm tra Pushgateway: `curl http://13.220.101.54:9091/metrics | grep github`
-2. Kiểm tra Prometheus targets: http://13.220.101.54:9090/targets
+1. Kiểm tra Pushgateway: `curl http://50.19.133.198:9091/metrics | grep github`
+2. Kiểm tra Prometheus targets: http://50.19.133.198:9090/targets
 3. Chạy ít nhất 1 workflow trong GitHub Actions
 4. Đợi 30s để dashboard refresh
 
@@ -326,7 +326,7 @@ rate(github_workflow_run_total[1h])
 2. Check filters (Workflow/Branch/Actor) - thử chọn "All"
 3. Verify metrics tồn tại trong Prometheus:
    ```bash
-   curl -G http://13.220.101.54:9090/api/v1/query \
+   curl -G http://50.19.133.198:9090/api/v1/query \
      --data-urlencode 'query=github_workflow_run_total'
    ```
 

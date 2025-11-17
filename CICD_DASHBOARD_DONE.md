@@ -47,7 +47,7 @@
 
 ### Truy cập Dashboard
 ```
-URL: http://13.220.101.54:3030
+URL: http://50.19.133.198:3030
 Login: admin / admin123
 Dashboard: FoodFast CI/CD Pipeline - Enhanced
 ```
@@ -208,7 +208,7 @@ git push origin main
 ```
 
 ### Sau khi deploy:
-1. Login Grafana: http://13.220.101.54:3030
+1. Login Grafana: http://50.19.133.198:3030
 2. Tìm dashboard: "FoodFast CI/CD Pipeline - Enhanced"
 3. Test tất cả filters
 4. Verify tất cả 19 panels hiển thị đúng
