@@ -385,6 +385,22 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "auto"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "Duration"
             },
             "properties": [
@@ -461,7 +477,6 @@
           "id": "organize",
           "options": {
             "excludeByName": {
-              "Time": true,
               "job": true,
               "instance": true,
               "__name__": true,
@@ -472,14 +487,16 @@
               "workflow": 1,
               "branch": 2,
               "run_id": 3,
-              "Value #A": 4,
-              "Value #B": 5
+              "Time": 4,
+              "Value #A": 5,
+              "Value #B": 6
             },
             "renameByName": {
               "actor": "👤 Actor",
               "workflow": "🔧 Workflow",
               "branch": "🌿 Branch",
               "run_id": "🔢 Run ID",
+              "Time": "🕒 Time",
               "Value #A": "Status",
               "Value #B": "Duration"
             }
