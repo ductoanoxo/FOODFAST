@@ -417,17 +417,14 @@
                 "value": [
                   {
                     "options": {
-                      "0": {
-                        "text": "",
-                        "index": 0
-                      },
-                      "1": {
+                      "pattern": ".*",
+                      "result": {
                         "color": "yellow",
                         "text": "✨ MỚI NHẤT",
                         "index": 1
                       }
                     },
-                    "type": "value"
+                    "type": "regex"
                   }
                 ]
               },
@@ -511,28 +508,19 @@
           "format": "table",
           "instant": true
         }
+        ,
+        {
+          "expr": "topk(1, github_workflow_timestamp_seconds)",
+          "refId": "D",
+          "format": "table",
+          "instant": true
+        }
       ],
       "title": "📋 Workflow Runs - Chi tiết",
       "transformations": [
         {
           "id": "merge",
           "options": {}
-        },
-        {
-          "id": "calculateField",
-          "options": {
-            "alias": "is_latest",
-            "binary": {
-              "left": "Value #C",
-              "operator": "==",
-              "reducer": "max",
-              "right": "Value #C"
-            },
-            "mode": "binary",
-            "reduce": {
-              "reducer": "max"
-            }
-          }
         },
         {
           "id": "organize",
@@ -550,7 +538,7 @@
               "branch": 2,
               "run_id": 3,
               "Value #C": 4,
-              "is_latest": 5,
+              "Value #D": 5,
               "Value #A": 6,
               "Value #B": 7
             },
@@ -560,7 +548,7 @@
               "branch": "🌿 Branch",
               "run_id": "🔢 Run ID",
               "Value #C": "🕒 Time",
-              "is_latest": "🆕 Latest",
+              "Value #D": "🆕 Latest",
               "Value #A": "Status",
               "Value #B": "Duration"
             }
