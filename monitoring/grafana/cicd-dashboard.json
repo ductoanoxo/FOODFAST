@@ -385,7 +385,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Time"
+              "options": "🕒 Time"
             },
             "properties": [
               {
@@ -465,6 +465,12 @@
           "refId": "B",
           "format": "table",
           "instant": true
+        },
+        {
+          "expr": "github_workflow_timestamp_seconds",
+          "refId": "C",
+          "format": "table",
+          "instant": true
         }
       ],
       "title": "📋 Workflow Runs - Chi tiết",
@@ -480,6 +486,7 @@
               "job": true,
               "instance": true,
               "__name__": true,
+              "Time": true,
               "Value #B": false
             },
             "indexByName": {
@@ -487,7 +494,7 @@
               "workflow": 1,
               "branch": 2,
               "run_id": 3,
-              "Time": 4,
+              "Value #C": 4,
               "Value #A": 5,
               "Value #B": 6
             },
@@ -496,7 +503,7 @@
               "workflow": "🔧 Workflow",
               "branch": "🌿 Branch",
               "run_id": "🔢 Run ID",
-              "Time": "🕒 Time",
+              "Value #C": "🕒 Time",
               "Value #A": "Status",
               "Value #B": "Duration"
             }
