@@ -390,11 +390,57 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsIso"
+                "value": "dateTimeAsLocal"
               },
               {
                 "id": "custom.displayMode",
                 "value": "auto"
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "🆕 Latest"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "match": "empty",
+                      "result": {
+                        "text": "",
+                        "index": 0
+                      }
+                    },
+                    "type": "special"
+                  },
+                  {
+                    "options": {
+                      "pattern": ".*",
+                      "result": {
+                        "color": "yellow",
+                        "text": "✨ MỚI NHẤT",
+                        "index": 1
+                      }
+                    },
+                    "type": "regex"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 120
               }
             ]
           },
@@ -471,6 +517,12 @@
           "refId": "C",
           "format": "table",
           "instant": true
+        },
+        {
+          "expr": "github_workflow_timestamp_seconds == on(run_id) group_right max(github_workflow_timestamp_seconds)",
+          "refId": "D",
+          "format": "table",
+          "instant": true
         }
       ],
       "title": "📋 Workflow Runs - Chi tiết",
@@ -495,8 +547,9 @@
               "branch": 2,
               "run_id": 3,
               "Value #C": 4,
-              "Value #A": 5,
-              "Value #B": 6
+              "Value #D": 5,
+              "Value #A": 6,
+              "Value #B": 7
             },
             "renameByName": {
               "actor": "👤 Actor",
@@ -504,6 +557,7 @@
               "branch": "🌿 Branch",
               "run_id": "🔢 Run ID",
               "Value #C": "🕒 Time",
+              "Value #D": "🆕 Latest",
               "Value #A": "Status",
               "Value #B": "Duration"
             }
