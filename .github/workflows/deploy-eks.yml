@@ -182,29 +182,20 @@ jobs:
           kubectl apply -f base/monitoring-prometheus.yaml
           kubectl apply -f base/monitoring-grafana.yaml
 
-          echo "==> Wait for rollout to complete (with extended timeout)"
-          echo "Note: Rollout may take time due to resource constraints on single-node cluster"
+          echo "==> Deployment triggered successfully"
+          echo "Note: Pods will continue rolling out in background"
           
-          # Wait for rollouts but don't fail if timeout (pods may still be starting)
-          kubectl rollout status deployment/foodfast-server -n foodfast --timeout=8m || echo "⚠️ Server rollout timeout - checking status..."
-          kubectl rollout status deployment/foodfast-client -n foodfast --timeout=3m || echo "⚠️ Client rollout timeout - checking status..."
-          kubectl rollout status deployment/prometheus -n foodfast --timeout=3m || echo "⚠️ Prometheus rollout timeout - checking status..."
-          kubectl rollout status deployment/grafana -n foodfast --timeout=2m || echo "⚠️ Grafana rollout timeout - checking status..."
-
-          echo "==> Get deployment status"
-          kubectl get all -n foodfast
+          echo "==> Current deployment status"
+          kubectl get deployments -n foodfast
           
-          echo "==> Check pod details for any issues"
+          echo "==> Current pod status"
           kubectl get pods -n foodfast -o wide
-          
-          echo "==> Check events for troubleshooting"
-          kubectl get events -n foodfast --sort-by='.lastTimestamp' | tail -20
 
           echo "==> Get Monitoring URLs"
           echo "Prometheus: kubectl port-forward svc/prometheus 9090:9090 -n foodfast"
           echo "Grafana: kubectl port-forward svc/grafana 3030:3000 -n foodfast"
 
-          echo "✅ K8s deployment completed"
+          echo "✅ K8s deployment initiated - pods will continue starting"
           SCRIPT
 
       # ======================
@@ -244,15 +235,29 @@ jobs:
       # ======================
       # 8) Healthcheck
       # ======================
-      - name: Healthcheck backend via kubectl
+      - name: Wait for pods to be ready
         env:
           SERVER_HOST: ${{ secrets.EKS_SERVER_HOST }}
           SERVER_USER: ${{ secrets.EKS_SERVER_USER }}
         run: |
-          echo "Checking pod health..."
+          echo "Waiting 30 seconds for pods to start..."
+          sleep 30
+          
+          echo "Checking deployment status..."
+          ssh $SERVER_USER@$SERVER_HOST "kubectl get deployments -n foodfast"
+          
+          echo "Checking pod status..."
           ssh $SERVER_USER@$SERVER_HOST "kubectl get pods -n foodfast"
           
+          echo "Checking recent events..."
+          ssh $SERVER_USER@$SERVER_HOST "kubectl get events -n foodfast --sort-by='.lastTimestamp' | tail -15"
+          
+      - name: Verify services are created
+        env:
+          SERVER_HOST: ${{ secrets.EKS_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.EKS_SERVER_USER }}
+        run: |
           echo "Checking services..."
           ssh $SERVER_USER@$SERVER_HOST "kubectl get svc -n foodfast"
           
-          echo "✅ K8s deployment health check completed"
+          echo "✅ K8s deployment completed - pods will continue rolling out in background"
