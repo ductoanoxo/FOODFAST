@@ -2,14 +2,12 @@ name: Deploy to EKS (Kubernetes)
 
 # Auto-deploy to Kubernetes after Docker Build completes
 on:
-  # Tự động chạy sau khi build image xong - CHỈ NHÁNH develop
+  # Tự động chạy sau khi build image xong
   workflow_run:
     workflows:
       - Docker Build and Push
     types:
       - completed
-    branches:
-      - develop  # Deploy K8s từ nhánh develop
   # Cho phép deploy thủ công
   workflow_dispatch:
     inputs:
@@ -35,7 +33,7 @@ jobs:
     if: |
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'develop') ||
+       (github.event.workflow_run.head_branch == 'develop' || github.event.workflow_run.head_branch == 'main')) ||
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
@@ -58,8 +56,8 @@ jobs:
         run: |
           BRANCH_NAME=${{ github.event.workflow_run.head_branch }}
           echo "Triggering branch is: $BRANCH_NAME"
-          if [ "$BRANCH_NAME" != "develop" ]; then
-            echo "K8s deployment is only allowed from the 'develop' branch. Aborting."
+          if [ "$BRANCH_NAME" != "develop" ] && [ "$BRANCH_NAME" != "main" ]; then
+            echo "K8s deployment is only allowed from 'develop' or 'main' branch. Aborting."
             exit 1
           fi
 
