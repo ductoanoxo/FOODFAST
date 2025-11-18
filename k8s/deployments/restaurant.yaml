@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foodfast-restaurant
+  namespace: foodfast
+  labels:
+    app: foodfast-restaurant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: foodfast-restaurant
+  template:
+    metadata:
+      labels:
+        app: foodfast-restaurant
+    spec:
+      containers:
+      - name: restaurant
+        image: ghcr.io/OWNER/foodfast-restaurant:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      imagePullSecrets:
+      - name: ghcr-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foodfast-restaurant
+  namespace: foodfast
+  labels:
+    app: foodfast-restaurant
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: foodfast-restaurant

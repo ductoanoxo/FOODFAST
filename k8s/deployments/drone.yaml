@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foodfast-drone
+  namespace: foodfast
+  labels:
+    app: foodfast-drone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: foodfast-drone
+  template:
+    metadata:
+      labels:
+        app: foodfast-drone
+    spec:
+      containers:
+      - name: drone
+        image: ghcr.io/OWNER/foodfast-drone:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      imagePullSecrets:
+      - name: ghcr-secret

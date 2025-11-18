@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foodfast-client
+  namespace: foodfast
+  labels:
+    app: foodfast-client
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: foodfast-client
+  template:
+    metadata:
+      labels:
+        app: foodfast-client
+    spec:
+      containers:
+      - name: client
+        image: ghcr.io/OWNER/foodfast-client:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      imagePullSecrets:
+      - name: ghcr-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foodfast-client
+  namespace: foodfast
+  labels:
+    app: foodfast-client
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: foodfast-client
