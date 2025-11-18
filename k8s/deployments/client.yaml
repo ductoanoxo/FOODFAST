@@ -40,10 +40,11 @@ metadata:
   labels:
     app: foodfast-client
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
-  - port: 80
-    targetPort: 80
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30001
     protocol: TCP
     name: http
   selector:
