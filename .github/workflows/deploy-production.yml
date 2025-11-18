@@ -11,11 +11,9 @@ on:
       - main                      # CHỈ deploy nhánh main
   # Cho phép bấm tay để deploy lại (chỉ dành cho main)
   workflow_dispatch:
-
 env:
   REGISTRY: ghcr.io
   OWNER: ${{ github.repository_owner }}
-
 jobs:
   deploy:
     # CHỈ chạy nếu:
