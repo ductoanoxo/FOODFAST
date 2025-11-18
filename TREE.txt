@@ -457,4 +457,5 @@ Root: C:\Users\ADMIN\Desktop\FOODFAST
 
 (Excluded: node_modules, .git, dist, build, coverage, .next, .turbo, .cache, logs, public\assets)
 1231231231231231321231231212345112313112331234567111111123111112233
-ssh -i "C:\Users\ADMIN\Downloads\CNPM_AWS_SGU.pem" ubuntu@54.166.228.50
+ssh -i "C:\Users\ADMIN\Downloads\CNPM_AWS_SGU.pem" ubuntu@54.198.242.145
+ssh -i "C:\Users\ADMIN\Downloads\EKS.pem" ubuntu@100.25.98.10
