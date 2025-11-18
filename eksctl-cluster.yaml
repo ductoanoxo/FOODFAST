@@ -1,0 +1,74 @@
+# eksctl cluster config for Foodfast
+# Usage: eksctl create cluster -f eksctl-cluster.yaml
+
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: foodfast-cluster
+  region: us-east-1
+  version: "1.28"
+
+# IAM settings
+iam:
+  withOIDC: true
+
+# VPC settings (optional - eksctl will create a new VPC if not specified)
+# vpc:
+#   id: "vpc-xxxxx"
+#   subnets:
+#     public:
+#       us-east-1a: { id: subnet-xxxxx }
+#       us-east-1b: { id: subnet-xxxxx }
+
+# Managed node groups
+managedNodeGroups:
+  - name: standard-workers
+    instanceType: t3.medium
+    desiredCapacity: 3
+    minSize: 2
+    maxSize: 5
+    volumeSize: 30
+    volumeType: gp3
+    labels:
+      role: worker
+      environment: production
+    tags:
+      Project: Foodfast
+      ManagedBy: eksctl
+      Environment: production
+    iam:
+      withAddonPolicies:
+        imageBuilder: true
+        autoScaler: true
+        externalDNS: true
+        certManager: true
+        appMesh: true
+        ebs: true
+        fsx: true
+        efs: true
+        albIngress: true
+        cloudWatch: true
+
+# Addons
+addons:
+  - name: vpc-cni
+    version: latest
+  - name: coredns
+    version: latest
+  - name: kube-proxy
+    version: latest
+  - name: aws-ebs-csi-driver
+    version: latest
+    wellKnownPolicies:
+      ebsCSIController: true
+
+# CloudWatch logging
+cloudWatch:
+  clusterLogging:
+    enableTypes:
+      - api
+      - audit
+      - authenticator
+      - controllerManager
+      - scheduler
