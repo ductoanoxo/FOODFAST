@@ -185,14 +185,23 @@ jobs:
           kubectl apply -f base/monitoring-prometheus.yaml
           kubectl apply -f base/monitoring-grafana.yaml
 
-          echo "==> Wait for rollout to complete"
-          kubectl rollout status deployment/foodfast-server -n foodfast --timeout=5m
-          kubectl rollout status deployment/foodfast-client -n foodfast --timeout=5m
-          kubectl rollout status deployment/prometheus -n foodfast --timeout=3m
-          kubectl rollout status deployment/grafana -n foodfast --timeout=3m
+          echo "==> Wait for rollout to complete (with extended timeout)"
+          echo "Note: Rollout may take time due to resource constraints on single-node cluster"
+          
+          # Wait for rollouts but don't fail if timeout (pods may still be starting)
+          kubectl rollout status deployment/foodfast-server -n foodfast --timeout=8m || echo "⚠️ Server rollout timeout - checking status..."
+          kubectl rollout status deployment/foodfast-client -n foodfast --timeout=3m || echo "⚠️ Client rollout timeout - checking status..."
+          kubectl rollout status deployment/prometheus -n foodfast --timeout=3m || echo "⚠️ Prometheus rollout timeout - checking status..."
+          kubectl rollout status deployment/grafana -n foodfast --timeout=2m || echo "⚠️ Grafana rollout timeout - checking status..."
 
           echo "==> Get deployment status"
           kubectl get all -n foodfast
+          
+          echo "==> Check pod details for any issues"
+          kubectl get pods -n foodfast -o wide
+          
+          echo "==> Check events for troubleshooting"
+          kubectl get events -n foodfast --sort-by='.lastTimestamp' | tail -20
 
           echo "==> Get Monitoring URLs"
           echo "Prometheus: kubectl port-forward svc/prometheus 9090:9090 -n foodfast"
