@@ -101,6 +101,12 @@ nodes:
   - containerPort: 30003
     hostPort: 3002
     protocol: TCP
+  - containerPort: 30004
+    hostPort: 9090
+    protocol: TCP
+  - containerPort: 30005
+    hostPort: 3030
+    protocol: TCP
 EOF
 
 echo -e "${GREEN}✅ kind cluster created${NC}"

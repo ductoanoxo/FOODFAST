@@ -95,10 +95,11 @@ metadata:
   labels:
     app: grafana
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
-  - port: 3000
+  - port: 3030
     targetPort: 3000
+    nodePort: 30005
     protocol: TCP
     name: http
   selector:
