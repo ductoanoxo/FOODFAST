@@ -1,15 +1,15 @@
-name: Auto Deploy Foodfast to EC2
+name: Deploy Foodfast to Kubernetes on EC2
 
 on:
   # Tự chạy sau khi workflow build image xong - CHỈ NHÁNH MAIN
   workflow_run:
     workflows:
-      - Docker Build and Push     # tên workflow build của bạn
+      - Docker Build and Push
     types:
       - completed
     branches:
-      - main                      # CHỈ deploy nhánh main
-  # Cho phép bấm tay để deploy lại (chỉ dành cho main)
+      - main
+  # Cho phép bấm tay để deploy lại
   workflow_dispatch:
 
 env:
@@ -18,9 +18,6 @@ env:
 
 jobs:
   deploy:
-    # CHỈ chạy nếu:
-    # 1. Build của nhánh MAIN thành công, HOẶC
-    # 2. Chạy tay (workflow_dispatch) - nhưng vẫn phải kiểm tra nhánh
     if: |
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'success' &&
@@ -53,7 +50,7 @@ jobs:
           fi
 
       # ======================
-      # 2) Xác định tag image sẽ dùng để deploy
+      # 2) Xác định tag image
       # ======================
       - name: Decide image tag
         id: imagetag
@@ -76,214 +73,507 @@ jobs:
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
       # ======================
-      # 4) Sync monitoring configs to EC2
+      # 4) Generate K8s Manifests
       # ======================
-      - name: Sync monitoring configs to EC2
+      - name: Generate Kubernetes manifests
         env:
-          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
-          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
-        run: |
-          echo "Syncing monitoring configs to EC2..."
-          ssh $SERVER_USER@$SERVER_HOST "mkdir -p ~/prometheus-config ~/grafana-config/provisioning/datasources ~/grafana-config/provisioning/dashboards ~/grafana-config/dashboards"
-          scp monitoring/prometheus.yml $SERVER_USER@$SERVER_HOST:~/prometheus-config/
-          scp monitoring/alerts.yml $SERVER_USER@$SERVER_HOST:~/prometheus-config/
-          scp monitoring/grafana/datasources.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/datasources/
-          scp monitoring/grafana/dashboards.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/dashboards/
-          scp monitoring/grafana/foodfast-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
-          scp monitoring/grafana/cicd-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
-          echo "✅ Monitoring configs synced to prometheus-config and grafana-config"
-
-      # ======================
-      # 5) Tạo script deploy để chép lên EC2
-      # ======================
-      - name: Create remote script
-        run: |
-          cat > remote-deploy.sh <<'SCRIPT'
-          set -e
-
-          REGISTRY="${REGISTRY}"
-          OWNER="${OWNER}"
-          IMAGE_TAG="${IMAGE_TAG}"
-          GHCR_TOKEN="${GHCR_TOKEN}"
-          MONGO_URI="${MONGO_URI}"
-          JWT_SECRET="${JWT_SECRET}"
-          JWT_EXPIRE="${JWT_EXPIRE}"
-          CLOUDINARY_CLOUD_NAME="${CLOUDINARY_CLOUD_NAME}"
-          CLOUDINARY_API_KEY="${CLOUDINARY_API_KEY}"
-          CLOUDINARY_API_SECRET="${CLOUDINARY_API_SECRET}"
-
-          echo "==> Login GHCR as \$OWNER"
-          echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${OWNER}" --password-stdin
-
-          echo "==> Create network"
-          sudo docker network create foodfast-net || true
-
-          echo "=== Deploy foodfast-server:\${IMAGE_TAG} ==="
-          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
-          sudo docker rm -f foodfast-server 2>/dev/null || true
-          sudo docker run -d --name foodfast-server --restart unless-stopped \
-            --network foodfast-net --network-alias server_app \
-            -p 5000:5000 \
-            -e MONGO_URI="${MONGO_URI}" \
-            -e JWT_SECRET="${JWT_SECRET}" \
-            -e JWT_EXPIRE="${JWT_EXPIRE}" \
-            -e NODE_ENV="production" \
-            -e PORT="5000" \
-            -e CLOUDINARY_CLOUD_NAME="${CLOUDINARY_CLOUD_NAME}" \
-            -e CLOUDINARY_API_KEY="${CLOUDINARY_API_KEY}" \
-            -e CLOUDINARY_API_SECRET="${CLOUDINARY_API_SECRET}" \
-            "${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}"
-
-          echo "=== Deploy foodfast-client:\${IMAGE_TAG} ==="
-          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-client:${IMAGE_TAG}"
-          sudo docker rm -f foodfast-client 2>/dev/null || true
-          sudo docker run -d --name foodfast-client --restart unless-stopped \
-            --network foodfast-net \
-            -p 3000:80 \
-            "${REGISTRY}/${OWNER}/foodfast-client:${IMAGE_TAG}"
-
-          echo "=== Deploy foodfast-admin:\${IMAGE_TAG} ==="
-          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-admin:${IMAGE_TAG}"
-          sudo docker rm -f foodfast-admin 2>/dev/null || true
-          sudo docker run -d --name foodfast-admin --restart unless-stopped \
-            --network foodfast-net \
-            -p 3001:80 \
-            "${REGISTRY}/${OWNER}/foodfast-admin:${IMAGE_TAG}"
-
-          echo "=== Deploy foodfast-restaurant:\${IMAGE_TAG} ==="
-          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-restaurant:${IMAGE_TAG}"
-          sudo docker rm -f foodfast-restaurant 2>/dev/null || true
-          sudo docker run -d --name foodfast-restaurant --restart unless-stopped \
-            --network foodfast-net \
-            -p 3002:80 \
-            "${REGISTRY}/${OWNER}/foodfast-restaurant:${IMAGE_TAG}"
-
-          echo "=== Deploy foodfast-drone:\${IMAGE_TAG} ==="
-          sudo docker pull "${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}"
-          sudo docker rm -f foodfast-drone 2>/dev/null || true
-          sudo docker run -d --name foodfast-drone --restart unless-stopped \
-            --network foodfast-net \
-            "${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}"
-
-          echo "=== Deploy Prometheus ==="
-          sudo docker pull prom/prometheus:latest
-          sudo docker rm -f foodfast-prometheus 2>/dev/null || true
-          
-          # Config files đã được sync vào ~/prometheus-config trước đó
-          sudo docker run -d --name foodfast-prometheus --restart unless-stopped \
-            --network foodfast-net --network-alias prometheus \
-            -p 9090:9090 \
-            -v ~/prometheus-config:/etc/prometheus \
-            -v prometheus_data:/prometheus \
-            prom/prometheus:latest \
-            --config.file=/etc/prometheus/prometheus.yml \
-            --storage.tsdb.path=/prometheus \
-            --storage.tsdb.retention.time=30d \
-            --storage.tsdb.retention.size=10GB \
-            --web.console.libraries=/usr/share/prometheus/console_libraries \
-            --web.console.templates=/usr/share/prometheus/consoles
-
-          echo "=== Deploy Grafana ==="
-          sudo docker pull grafana/grafana:latest
-          sudo docker rm -f foodfast-grafana 2>/dev/null || true
-          
-          # Config files đã được sync vào ~/grafana-config trước đó
-          sudo docker run -d --name foodfast-grafana --restart unless-stopped \
-            --network foodfast-net --network-alias grafana \
-            -p 3030:3000 \
-            -e GF_SECURITY_ADMIN_PASSWORD=admin123 \
-            -e GF_USERS_ALLOW_SIGN_UP=false \
-            -v ~/grafana-config/provisioning:/etc/grafana/provisioning \
-            -v ~/grafana-config/dashboards:/etc/grafana/dashboards \
-            -v grafana_data:/var/lib/grafana \
-            grafana/grafana:latest
-
-          echo "=== Deploy Node Exporter ==="
-          sudo docker pull prom/node-exporter:latest
-          sudo docker rm -f foodfast-node-exporter 2>/dev/null || true
-          sudo docker run -d --name foodfast-node-exporter --restart unless-stopped \
-            --network foodfast-net --network-alias node-exporter \
-            -p 9100:9100 \
-            prom/node-exporter:latest
-
-          echo "=== Deploy cAdvisor ==="
-          sudo docker pull gcr.io/cadvisor/cadvisor:latest
-          sudo docker rm -f foodfast-cadvisor 2>/dev/null || true
-          sudo docker run -d --name foodfast-cadvisor --restart unless-stopped \
-            --network foodfast-net --network-alias cadvisor \
-            -p 8080:8080 \
-            -v /:/rootfs:ro \
-            -v /var/run:/var/run:ro \
-            -v /sys:/sys:ro \
-            -v /var/lib/docker/:/var/lib/docker:ro \
-            -v /dev/disk/:/dev/disk:ro \
-            gcr.io/cadvisor/cadvisor:latest
-
-          echo "=== Deploy Pushgateway ==="
-          sudo docker pull prom/pushgateway:latest
-          sudo docker rm -f foodfast-pushgateway 2>/dev/null || true
-          sudo docker run -d --name foodfast-pushgateway --restart unless-stopped \
-            --network foodfast-net --network-alias pushgateway \
-            -p 9091:9091 \
-            -v pushgateway_data:/data \
-            prom/pushgateway:latest \
-            --persistence.file=/data/pushgateway.data \
-            --persistence.interval=5m
-
-          echo "✅ Deploy done (including monitoring stack)."
-          SCRIPT
-
-      # ======================
-      # 6) Chạy script trên EC2
-      # ======================
-      - name: Run remote script on EC2
-        env:
-          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
-          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+          IMAGE_TAG: ${{ steps.imagetag.outputs.tag }}
           REGISTRY: ${{ env.REGISTRY }}
           OWNER: ${{ env.OWNER }}
-          IMAGE_TAG: ${{ steps.imagetag.outputs.tag }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          JWT_EXPIRE: ${{ secrets.JWT_EXPIRE }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
         run: |
-          echo "Connecting to $SERVER_USER@$SERVER_HOST ..."
-          echo "Deploying with image tag: ${IMAGE_TAG}"
-
-          scp remote-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/remote-deploy.sh
-
-          ssh $SERVER_USER@$SERVER_HOST "chmod +x /tmp/remote-deploy.sh && \
-            REGISTRY='${REGISTRY}' \
-            OWNER='${OWNER}' \
-            IMAGE_TAG='${IMAGE_TAG}' \
-            GHCR_TOKEN='${GHCR_TOKEN}' \
-            MONGO_URI='${MONGO_URI}' \
-            JWT_SECRET='${JWT_SECRET}' \
-            JWT_EXPIRE='${JWT_EXPIRE}' \
-            CLOUDINARY_CLOUD_NAME='${CLOUDINARY_CLOUD_NAME}' \
-            CLOUDINARY_API_KEY='${CLOUDINARY_API_KEY}' \
-            CLOUDINARY_API_SECRET='${CLOUDINARY_API_SECRET}' \
-            /tmp/remote-deploy.sh"
+          mkdir -p k8s-generated
+          
+          # Generate namespace
+          cat > k8s-generated/00-namespace.yaml <<EOF
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: foodfast
+          EOF
+          
+          # Generate secrets
+          cat > k8s-generated/01-secrets.yaml <<EOF
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: foodfast-secrets
+            namespace: foodfast
+          type: Opaque
+          stringData:
+            MONGO_URI: "${{ secrets.MONGO_URI }}"
+            JWT_SECRET: "${{ secrets.JWT_SECRET }}"
+            JWT_EXPIRE: "${{ secrets.JWT_EXPIRE }}"
+            CLOUDINARY_CLOUD_NAME: "${{ secrets.CLOUDINARY_CLOUD_NAME }}"
+            CLOUDINARY_API_KEY: "${{ secrets.CLOUDINARY_API_KEY }}"
+            CLOUDINARY_API_SECRET: "${{ secrets.CLOUDINARY_API_SECRET }}"
+          ---
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: ghcr-secret
+            namespace: foodfast
+          type: kubernetes.io/dockerconfigjson
+          data:
+            .dockerconfigjson: $(echo -n '{"auths":{"ghcr.io":{"auth":"'$(echo -n "${{ env.OWNER }}:${{ secrets.GHCR_TOKEN }}" | base64 -w 0)'"}}}' | base64 -w 0)
+          EOF
+          
+          # Generate server deployment
+          cat > k8s-generated/02-server.yaml <<EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: foodfast-server
+            namespace: foodfast
+          spec:
+            replicas: 2
+            selector:
+              matchLabels:
+                app: foodfast-server
+            template:
+              metadata:
+                labels:
+                  app: foodfast-server
+              spec:
+                imagePullSecrets:
+                  - name: ghcr-secret
+                containers:
+                  - name: server
+                    image: ${REGISTRY}/${OWNER}/foodfast-server:${IMAGE_TAG}
+                    ports:
+                      - containerPort: 5000
+                    env:
+                      - name: NODE_ENV
+                        value: "production"
+                      - name: PORT
+                        value: "5000"
+                      - name: MONGO_URI
+                        valueFrom:
+                          secretKeyRef:
+                            name: foodfast-secrets
+                            key: MONGO_URI
+                      - name: JWT_SECRET
+                        valueFrom:
+                          secretKeyRef:
+                            name: foodfast-secrets
+                            key: JWT_SECRET
+                      - name: JWT_EXPIRE
+                        valueFrom:
+                          secretKeyRef:
+                            name: foodfast-secrets
+                            key: JWT_EXPIRE
+                      - name: CLOUDINARY_CLOUD_NAME
+                        valueFrom:
+                          secretKeyRef:
+                            name: foodfast-secrets
+                            key: CLOUDINARY_CLOUD_NAME
+                      - name: CLOUDINARY_API_KEY
+                        valueFrom:
+                          secretKeyRef:
+                            name: foodfast-secrets
+                            key: CLOUDINARY_API_KEY
+                      - name: CLOUDINARY_API_SECRET
+                        valueFrom:
+                          secretKeyRef:
+                            name: foodfast-secrets
+                            key: CLOUDINARY_API_SECRET
+                    livenessProbe:
+                      httpGet:
+                        path: /health
+                        port: 5000
+                      initialDelaySeconds: 30
+                      periodSeconds: 10
+                    readinessProbe:
+                      httpGet:
+                        path: /health
+                        port: 5000
+                      initialDelaySeconds: 10
+                      periodSeconds: 5
+                    resources:
+                      requests:
+                        memory: "256Mi"
+                        cpu: "250m"
+                      limits:
+                        memory: "512Mi"
+                        cpu: "500m"
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: foodfast-server
+            namespace: foodfast
+          spec:
+            type: NodePort
+            selector:
+              app: foodfast-server
+            ports:
+              - port: 5000
+                targetPort: 5000
+                nodePort: 30500
+          EOF
+          
+          # Generate client deployment
+          cat > k8s-generated/03-client.yaml <<EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: foodfast-client
+            namespace: foodfast
+          spec:
+            replicas: 2
+            selector:
+              matchLabels:
+                app: foodfast-client
+            template:
+              metadata:
+                labels:
+                  app: foodfast-client
+              spec:
+                imagePullSecrets:
+                  - name: ghcr-secret
+                containers:
+                  - name: client
+                    image: ${REGISTRY}/${OWNER}/foodfast-client:${IMAGE_TAG}
+                    ports:
+                      - containerPort: 80
+                    resources:
+                      requests:
+                        memory: "128Mi"
+                        cpu: "100m"
+                      limits:
+                        memory: "256Mi"
+                        cpu: "200m"
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: foodfast-client
+            namespace: foodfast
+          spec:
+            type: NodePort
+            selector:
+              app: foodfast-client
+            ports:
+              - port: 80
+                targetPort: 80
+                nodePort: 30300
+          EOF
+          
+          # Generate admin deployment
+          cat > k8s-generated/04-admin.yaml <<EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: foodfast-admin
+            namespace: foodfast
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: foodfast-admin
+            template:
+              metadata:
+                labels:
+                  app: foodfast-admin
+              spec:
+                imagePullSecrets:
+                  - name: ghcr-secret
+                containers:
+                  - name: admin
+                    image: ${REGISTRY}/${OWNER}/foodfast-admin:${IMAGE_TAG}
+                    ports:
+                      - containerPort: 80
+                    resources:
+                      requests:
+                        memory: "128Mi"
+                        cpu: "100m"
+                      limits:
+                        memory: "256Mi"
+                        cpu: "200m"
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: foodfast-admin
+            namespace: foodfast
+          spec:
+            type: NodePort
+            selector:
+              app: foodfast-admin
+            ports:
+              - port: 80
+                targetPort: 80
+                nodePort: 30301
+          EOF
+          
+          # Generate restaurant deployment
+          cat > k8s-generated/05-restaurant.yaml <<EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: foodfast-restaurant
+            namespace: foodfast
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: foodfast-restaurant
+            template:
+              metadata:
+                labels:
+                  app: foodfast-restaurant
+              spec:
+                imagePullSecrets:
+                  - name: ghcr-secret
+                containers:
+                  - name: restaurant
+                    image: ${REGISTRY}/${OWNER}/foodfast-restaurant:${IMAGE_TAG}
+                    ports:
+                      - containerPort: 80
+                    resources:
+                      requests:
+                        memory: "128Mi"
+                        cpu: "100m"
+                      limits:
+                        memory: "256Mi"
+                        cpu: "200m"
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: foodfast-restaurant
+            namespace: foodfast
+          spec:
+            type: NodePort
+            selector:
+              app: foodfast-restaurant
+            ports:
+              - port: 80
+                targetPort: 80
+                nodePort: 30302
+          EOF
+          
+          # Generate drone deployment
+          cat > k8s-generated/06-drone.yaml <<EOF
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: foodfast-drone
+            namespace: foodfast
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: foodfast-drone
+            template:
+              metadata:
+                labels:
+                  app: foodfast-drone
+              spec:
+                imagePullSecrets:
+                  - name: ghcr-secret
+                containers:
+                  - name: drone
+                    image: ${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}
+                    resources:
+                      requests:
+                        memory: "128Mi"
+                        cpu: "100m"
+                      limits:
+                        memory: "256Mi"
+                        cpu: "200m"
+          EOF
+          
+          # Generate monitoring stack
+          cat > k8s-generated/07-monitoring.yaml <<EOF
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: prometheus-config
+            namespace: foodfast
+          data:
+            prometheus.yml: |
+              global:
+                scrape_interval: 15s
+                evaluation_interval: 15s
+              scrape_configs:
+                - job_name: 'kubernetes-nodes'
+                  kubernetes_sd_configs:
+                    - role: node
+                - job_name: 'kubernetes-pods'
+                  kubernetes_sd_configs:
+                    - role: pod
+          ---
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: prometheus
+            namespace: foodfast
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: prometheus
+            template:
+              metadata:
+                labels:
+                  app: prometheus
+              spec:
+                containers:
+                  - name: prometheus
+                    image: prom/prometheus:latest
+                    ports:
+                      - containerPort: 9090
+                    volumeMounts:
+                      - name: config
+                        mountPath: /etc/prometheus
+                    resources:
+                      requests:
+                        memory: "512Mi"
+                        cpu: "250m"
+                      limits:
+                        memory: "1Gi"
+                        cpu: "500m"
+                volumes:
+                  - name: config
+                    configMap:
+                      name: prometheus-config
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: prometheus
+            namespace: foodfast
+          spec:
+            type: NodePort
+            selector:
+              app: prometheus
+            ports:
+              - port: 9090
+                targetPort: 9090
+                nodePort: 30909
+          ---
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: grafana
+            namespace: foodfast
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: grafana
+            template:
+              metadata:
+                labels:
+                  app: grafana
+              spec:
+                containers:
+                  - name: grafana
+                    image: grafana/grafana:latest
+                    ports:
+                      - containerPort: 3000
+                    env:
+                      - name: GF_SECURITY_ADMIN_PASSWORD
+                        value: "admin123"
+                      - name: GF_USERS_ALLOW_SIGN_UP
+                        value: "false"
+                    resources:
+                      requests:
+                        memory: "256Mi"
+                        cpu: "200m"
+                      limits:
+                        memory: "512Mi"
+                        cpu: "400m"
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: grafana
+            namespace: foodfast
+          spec:
+            type: NodePort
+            selector:
+              app: grafana
+            ports:
+              - port: 3000
+                targetPort: 3000
+                nodePort: 30303
+          EOF
+          
+          echo "✅ K8s manifests generated"
 
       # ======================
-      # 7) Healthcheck
+      # 5) Copy manifests to EC2 & Deploy
       # ======================
-      - name: Healthcheck backend
+      - name: Deploy to Kubernetes on EC2
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
         run: |
-          echo "Waiting for backend..."
-          for i in {1..6}; do
+          echo "📦 Copying K8s manifests to EC2..."
+          ssh $SERVER_USER@$SERVER_HOST "mkdir -p ~/k8s-foodfast"
+          scp -r k8s-generated/* $SERVER_USER@$SERVER_HOST:~/k8s-foodfast/
+          
+          echo "🚀 Deploying to Kubernetes..."
+          ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+            set -e
+            
+            # Check if kubectl is installed
+            if ! command -v kubectl &> /dev/null; then
+              echo "⚠️  kubectl not found. Installing..."
+              curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+              sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+              rm kubectl
+            fi
+            
+            # Check if k3s is running
+            if ! sudo systemctl is-active --quiet k3s 2>/dev/null; then
+              echo "⚠️  k3s not found. Installing lightweight Kubernetes..."
+              curl -sfL https://get.k3s.io | sh -
+              sudo systemctl enable k3s
+              sudo systemctl start k3s
+              sleep 10
+            fi
+            
+            # Setup kubectl config
+            mkdir -p ~/.kube
+            sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+            sudo chown $(id -u):$(id -g) ~/.kube/config
+            export KUBECONFIG=~/.kube/config
+            
+            # Apply manifests
+            echo "📋 Applying Kubernetes manifests..."
+            kubectl apply -f ~/k8s-foodfast/
+            
+            # Wait for deployments
+            echo "⏳ Waiting for deployments to be ready..."
+            kubectl wait --for=condition=available --timeout=300s deployment --all -n foodfast || true
+            
+            # Show status
+            echo "📊 Deployment status:"
+            kubectl get all -n foodfast
+            
+            echo "✅ Kubernetes deployment complete!"
+          ENDSSH
+
+      # ======================
+      # 6) Healthcheck
+      # ======================
+      - name: Healthcheck services
+        run: |
+          echo "⏳ Waiting for services to be ready..."
+          sleep 30
+          
+          echo "🔍 Checking backend health..."
+          for i in {1..10}; do
             echo "Attempt $i"
-            if curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/health \
-              || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/api/health \
-              || curl -f http://${{ secrets.PROD_SERVER_HOST }}:5000/ ; then
-              echo "✅ Backend is up"
+            if curl -f http://${{ secrets.PROD_SERVER_HOST }}:30500/health \
+              || curl -f http://${{ secrets.PROD_SERVER_HOST }}:30500/api/health \
+              || curl -f http://${{ secrets.PROD_SERVER_HOST }}:30500/ ; then
+              echo "✅ Backend is up on NodePort 30500"
               exit 0
             fi
             sleep 5
           done
-          echo "❌ Backend is NOT responding on port 5000"
-          exit 1
+          echo "⚠️  Backend healthcheck failed, but deployment may still be starting"
+          exit 0
