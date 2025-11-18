@@ -43,7 +43,7 @@ spec:
   type: NodePort
   ports:
   - port: 3002
-    targetPort: 3002
+    targetPort: 80
     nodePort: 30003
     protocol: TCP
     name: http
