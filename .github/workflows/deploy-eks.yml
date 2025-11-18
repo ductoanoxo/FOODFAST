@@ -131,9 +131,13 @@ jobs:
 
           cd ~/foodfast-k8s
 
-          echo "==> Update kubeconfig for EKS cluster"
-          # Uncomment if using real EKS cluster:
-          # aws eks update-kubeconfig --region us-east-1 --name foodfast-cluster
+          echo "==> Configure kubectl for kind cluster"
+          export KUBECONFIG=/home/ubuntu/.kube/config
+          kubectl config use-context kind-foodfast || true
+          
+          echo "==> Verify cluster connection"
+          kubectl cluster-info
+          kubectl get nodes
 
           echo "==> Create namespace"
           kubectl apply -f base/namespace.yaml
