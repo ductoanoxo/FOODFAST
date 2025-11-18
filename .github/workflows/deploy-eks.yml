@@ -26,7 +26,67 @@ env:
   EKS_CLUSTER_NAME: foodfast-cluster  # Tên cluster EKS của bạn
 
 jobs:
+  # Build K8s-specific images with relative API URLs
+  build-k8s-images:
+    if: |
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main') ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        service:
+          - name: client_app
+            image: foodfast-client
+          - name: restaurant_app
+            image: foodfast-restaurant
+          - name: admin_app
+            image: foodfast-admin
+          - name: drone_manage
+            image: foodfast-drone
+
+    steps:
+      - name: Checkout (from workflow_run)
+        if: ${{ github.event_name == 'workflow_run' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Checkout (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push K8s-specific image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service.name }}
+          file: ./${{ matrix.service.name }}/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service.image }}:k8s-latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service.image }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service.image }}:buildcache,mode=max
+          platforms: linux/amd64
+          build-args: |
+            VITE_API_URL=/api
+            VITE_SOCKET_URL=
+
   deploy-k8s:
+    needs: build-k8s-images
     # CHỈ chạy nếu:
     # 1. Build của nhánh main thành công, HOẶC
     # 2. Chạy tay (workflow_dispatch)
@@ -67,8 +127,8 @@ jobs:
       - name: Decide image tag
         id: imagetag
         run: |
-          # Always use 'latest' tag for main branch
-          TAG="latest"
+          # Use k8s-latest tag for K8s deployment (built with relative API URLs)
+          TAG="k8s-latest"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "✅ Will deploy image tag: $TAG"
 
@@ -158,12 +218,13 @@ jobs:
 
           echo "==> Apply ConfigMap"
           kubectl apply -f base/configmap.yaml
+          kubectl apply -f base/nginx-config.yaml
 
           echo "==> Deploy applications"
           kubectl apply -f deployments/
 
-          echo "==> Update image tags to ${IMAGE_TAG}"
-          kubectl set image deployment/foodfast-server server=ghcr.io/${OWNER}/foodfast-server:${IMAGE_TAG} -n foodfast
+          echo "==> Update image tags to ${IMAGE_TAG} (K8s-specific images with relative API URLs)"
+          kubectl set image deployment/foodfast-server server=ghcr.io/${OWNER}/foodfast-server:latest -n foodfast
           kubectl set image deployment/foodfast-client client=ghcr.io/${OWNER}/foodfast-client:${IMAGE_TAG} -n foodfast
           kubectl set image deployment/foodfast-admin admin=ghcr.io/${OWNER}/foodfast-admin:${IMAGE_TAG} -n foodfast
           kubectl set image deployment/foodfast-restaurant restaurant=ghcr.io/${OWNER}/foodfast-restaurant:${IMAGE_TAG} -n foodfast
