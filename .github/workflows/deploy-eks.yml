@@ -28,12 +28,12 @@ env:
 jobs:
   deploy-k8s:
     # CHỈ chạy nếu:
-    # 1. Build của nhánh develop thành công, HOẶC
+    # 1. Build của nhánh main thành công, HOẶC
     # 2. Chạy tay (workflow_dispatch)
     if: |
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'success' &&
-       (github.event.workflow_run.head_branch == 'develop' || github.event.workflow_run.head_branch == 'main')) ||
+       github.event.workflow_run.head_branch == 'main') ||
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
@@ -56,8 +56,8 @@ jobs:
         run: |
           BRANCH_NAME=${{ github.event.workflow_run.head_branch }}
           echo "Triggering branch is: $BRANCH_NAME"
-          if [ "$BRANCH_NAME" != "develop" ] && [ "$BRANCH_NAME" != "main" ]; then
-            echo "K8s deployment is only allowed from 'develop' or 'main' branch. Aborting."
+          if [ "$BRANCH_NAME" != "main" ]; then
+            echo "K8s deployment is only allowed from 'main' branch. Aborting."
             exit 1
           fi
 
@@ -67,11 +67,8 @@ jobs:
       - name: Decide image tag
         id: imagetag
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            TAG="latest"
-          else
-            TAG="develop"
-          fi
+          # Always use 'latest' tag for main branch
+          TAG="latest"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "✅ Will deploy image tag: $TAG"
 
