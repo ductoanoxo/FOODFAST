@@ -1,5 +1,6 @@
 name: Deploy to EKS (Kubernetes)
 
+# Auto-deploy to Kubernetes after Docker Build completes
 on:
   # Tự động chạy sau khi build image xong - CHỈ NHÁNH develop
   workflow_run:
