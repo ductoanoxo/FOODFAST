@@ -142,8 +142,11 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin123
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://100.25.98.10:3030
+      - GF_SERVER_DOMAIN=100.25.98.10
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./monitoring/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
       - ./monitoring/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
       - ./monitoring/grafana/foodfast-dashboard.json:/etc/grafana/provisioning/dashboards/foodfast-dashboard.json
