@@ -9,11 +9,25 @@ data:
       scrape_interval: 15s
       evaluation_interval: 15s
     
-    # Recording rules for commonly used queries
+    # Recording rules for common queries
     rule_files:
       - '/etc/prometheus/rules/*.yml'
     
     scrape_configs:
+  
+  recording_rules.yml: |
+    groups:
+    - name: http_errors
+      interval: 30s
+      rules:
+      - record: http_errors_total:rate1m
+        expr: sum(rate(http_requests_total{status=~"5.."}[1m]))
+    
+    - name: order_metrics
+      interval: 30s
+      rules:
+      - record: orders_by_status:rate5m
+        expr: sum by (status) (rate(orders_status_total[5m]))
       # Prometheus self-monitoring
       - job_name: 'prometheus'
         static_configs:
@@ -82,26 +96,6 @@ data:
           target_label: __address__
           replacement: $1:5000
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: prometheus-rules
-  namespace: foodfast
-data:
-  recording_rules.yml: |
-    groups:
-    - name: http_errors
-      interval: 15s
-      rules:
-      - record: http:requests:rate5xx
-        expr: sum(rate(http_requests_total{status=~"5.."}[1m]))
-    
-    - name: order_metrics
-      interval: 15s
-      rules:
-      - record: orders:status:rate5m
-        expr: sum by (status) (rate(orders_status_total[5m]))
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -150,9 +144,15 @@ spec:
       - name: config
         configMap:
           name: prometheus-config
+          items:
+          - key: prometheus.yml
+            path: prometheus.yml
       - name: rules
         configMap:
-          name: prometheus-rules
+          name: prometheus-config
+          items:
+          - key: recording_rules.yml
+            path: recording_rules.yml
       - name: storage
         emptyDir: {}
 ---
