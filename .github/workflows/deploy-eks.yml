@@ -243,11 +243,22 @@ jobs:
           kubectl apply -f base/monitoring-prometheus.yaml
           kubectl apply -f base/monitoring-grafana.yaml
 
-          echo "==> Update Grafana dashboard ConfigMap"
-          kubectl create configmap grafana-dashboard-foodfast \
-            --from-file=/home/ubuntu/foodfast-k8s/base/grafana-dashboard-foodfast.json \
-            -n foodfast \
-            --dry-run=client -o yaml | kubectl apply -f -
+          echo "==> Force update Prometheus ConfigMap (includes recording rules)"
+          kubectl delete configmap prometheus-config -n foodfast --ignore-not-found=true
+          kubectl apply -f base/monitoring-prometheus.yaml
+          
+          echo "==> Restart Prometheus to reload config and rules"
+          kubectl rollout restart deployment/prometheus -n foodfast
+
+          echo "==> Update Grafana dashboard ConfigMap from latest manifest"
+          if [ -f base/grafana-dashboard-foodfast.json ]; then
+            kubectl create configmap grafana-dashboard-foodfast \
+              --from-file=base/grafana-dashboard-foodfast.json \
+              -n foodfast \
+              --dry-run=client -o yaml | kubectl apply -f -
+          else
+            echo "Warning: grafana-dashboard-foodfast.json not found, keeping existing dashboard"
+          fi
           
           echo "==> Restart Grafana to reload dashboard"
           kubectl rollout restart deployment/grafana -n foodfast
