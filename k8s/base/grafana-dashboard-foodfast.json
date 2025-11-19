@@ -638,7 +638,7 @@
   "refresh": "10s",
   "schemaVersion": 27,
   "style": "dark",
-  "tags": ["foodfast", "kubernetes", "nodejs"],
+  "tags": ["foodfast", "kubernetes", "nodejs", "auto-update-test"],
   "templating": {
     "list": []
   },
