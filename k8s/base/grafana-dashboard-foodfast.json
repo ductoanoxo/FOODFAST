@@ -277,7 +277,7 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "nodejs_eventloop_lag_seconds{job=\"foodfast-server\"}",
+          "expr": "nodejs_nodejs_eventloop_lag_seconds{job=\"foodfast-server\"}",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
