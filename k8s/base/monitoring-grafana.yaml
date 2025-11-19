@@ -1,6 +1,37 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: grafana-config
+  namespace: foodfast
+data:
+  grafana.ini: |
+    [server]
+    protocol = http
+    http_port = 3000
+    domain = 100.25.98.10:3030
+    root_url = http://100.25.98.10:3030/grafana
+    serve_from_sub_path = true
+    router_logging = false
+    
+    [security]
+    admin_user = admin
+    admin_password = admin123
+    
+    [users]
+    allow_sign_up = false
+    auto_assign_org = true
+    auto_assign_org_role = Viewer
+    
+    [auth.anonymous]
+    enabled = false
+    
+    [log]
+    mode = console
+    level = info
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: grafana-datasources
   namespace: foodfast
 data:
@@ -429,16 +460,11 @@ spec:
         ports:
         - containerPort: 3000
           name: http
-        env:
-        - name: GF_SECURITY_ADMIN_PASSWORD
-          value: admin123
-        - name: GF_USERS_ALLOW_SIGN_UP
-          value: "false"
-        - name: GF_SERVER_ROOT_URL
-          value: "%(protocol)s://%(domain)s:%(http_port)s/grafana"
         volumeMounts:
         - name: grafana-storage
           mountPath: /var/lib/grafana
+        - name: grafana-config
+          mountPath: /etc/grafana
         - name: datasources
           mountPath: /etc/grafana/provisioning/datasources
         - name: dashboards-config
@@ -455,6 +481,9 @@ spec:
       volumes:
       - name: grafana-storage
         emptyDir: {}
+      - name: grafana-config
+        configMap:
+          name: grafana-config
       - name: datasources
         configMap:
           name: grafana-datasources
