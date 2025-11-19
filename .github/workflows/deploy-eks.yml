@@ -168,6 +168,22 @@ jobs:
           echo "✅ K8s manifests synced (including monitoring dashboards)"
 
       # ======================
+      # 5.1) Apply monitoring manifests on server to ensure updates (Prometheus/Grafana)
+      # ======================
+      - name: Apply monitoring manifests on EKS server
+        env:
+          SERVER_HOST: ${{ secrets.EKS_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.EKS_SERVER_USER }}
+        run: |
+          echo "Applying monitoring manifests on remote server..."
+          # Apply Prometheus and Grafana manifests from the synced folder
+          ssh $SERVER_USER@$SERVER_HOST "kubectl apply -f ~/foodfast-k8s/base/monitoring-prometheus.yaml -n foodfast || true"
+          ssh $SERVER_USER@$SERVER_HOST "kubectl apply -f ~/foodfast-k8s/base/monitoring-grafana.yaml -n foodfast || true"
+          # Restart deployments so updated ConfigMaps are picked up
+          ssh $SERVER_USER@$SERVER_HOST "kubectl rollout restart deployment/prometheus -n foodfast || true"
+          ssh $SERVER_USER@$SERVER_HOST "kubectl rollout restart deployment/grafana -n foodfast || true"
+
+      # ======================
       # 6) Create deployment script
       # ======================
       - name: Create K8s deployment script
