@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foodfast-config
+  namespace: foodfast
+data:
+  # Environment
+  NODE_ENV: "production"
+  
+  # Server
+  PORT: "5000"
+  
+  # Client URLs (local development)
+  CLIENT_URL: "http://localhost:30000"
+  RESTAURANT_URL: "http://localhost:30001"
+  ADMIN_URL: "http://localhost:30002"
+  DRONE_URL: "http://localhost:30003"
+  
+  # API URL (NodePort cho browser access)
+  API_URL: "http://localhost:30050/api"
+  
+  # JWT
+  JWT_EXPIRE: "7d"
+  
+  # Cloudinary (nếu dùng)
+  CLOUDINARY_CLOUD_NAME: "your_cloud_name"
+  CLOUDINARY_API_KEY: "your_api_key"
+  
+  # VNPay
+  VNPAY_TMN_CODE: "1C1PQ01T"
+  VNPAY_URL: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
+  VNPAY_API: "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction"
+  VNPAY_RETURN_URL: "http://localhost:3000/payment/vnpay/return"
+  
+  # SMTP (nếu dùng)
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: "587"
+  SMTP_USER: "your_email@gmail.com"

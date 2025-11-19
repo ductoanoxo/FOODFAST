@@ -1,0 +1,41 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: foodfast-server-monitor
+  namespace: monitoring
+  labels:
+    app: foodfast
+    component: server
+    release: prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: server-app
+  namespaceSelector:
+    matchNames:
+      - foodfast
+  endpoints:
+    - port: http
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: foodfast-client-monitor
+  namespace: monitoring
+  labels:
+    app: foodfast
+    component: client
+    release: prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: client-app
+  namespaceSelector:
+    matchNames:
+      - foodfast
+  endpoints:
+    - port: http
+      interval: 30s
+      path: /metrics

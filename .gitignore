@@ -17,3 +17,14 @@ lcov-report/
 /restaurant_app/coverage/
 /admin_app/coverage/
 /drone_manage/coverage/
+
+# Kubernetes Secrets
+k8s/secret-local.yaml
+k8s/secret-aws.yaml
+k8s/secret-*.yaml
+!k8s/secret.yaml
+
+# Sensitive configs
+*.pem
+*.key
+kubeconfig

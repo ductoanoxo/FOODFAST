@@ -1,0 +1,211 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-app
+  namespace: foodfast
+  labels:
+    app: client-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: client-app
+  template:
+    metadata:
+      labels:
+        app: client-app
+    spec:
+      containers:
+        - name: client-app
+          image: ductoanoxo/foodfast-client:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          env:
+            - name: VITE_API_URL
+              value: "http://localhost:5000/api"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-svc
+  namespace: foodfast
+  labels:
+    app: client-app
+spec:
+  type: NodePort
+  selector:
+    app: client-app
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30000
+      protocol: TCP
+      name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restaurant-app
+  namespace: foodfast
+  labels:
+    app: restaurant-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: restaurant-app
+  template:
+    metadata:
+      labels:
+        app: restaurant-app
+    spec:
+      containers:
+        - name: restaurant-app
+          image: ductoanoxo/foodfast-restaurant:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          env:
+            - name: VITE_API_URL
+              value: "http://localhost:5000/api"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: restaurant-svc
+  namespace: foodfast
+  labels:
+    app: restaurant-app
+spec:
+  type: NodePort
+  selector:
+    app: restaurant-app
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30001
+      protocol: TCP
+      name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-app
+  namespace: foodfast
+  labels:
+    app: admin-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-app
+  template:
+    metadata:
+      labels:
+        app: admin-app
+    spec:
+      containers:
+        - name: admin-app
+          image: ductoanoxo/foodfast-admin:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          env:
+            - name: VITE_API_URL
+              value: "http://localhost:5000/api"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-svc
+  namespace: foodfast
+  labels:
+    app: admin-app
+spec:
+  type: NodePort
+  selector:
+    app: admin-app
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30002
+      protocol: TCP
+      name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drone-app
+  namespace: foodfast
+  labels:
+    app: drone-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drone-app
+  template:
+    metadata:
+      labels:
+        app: drone-app
+    spec:
+      containers:
+        - name: drone-app
+          image: ductoanoxo/foodfast-drone:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          env:
+            - name: VITE_API_URL
+              value: "http://localhost:5000/api"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: drone-svc
+  namespace: foodfast
+  labels:
+    app: drone-app
+spec:
+  type: NodePort
+  selector:
+    app: drone-app
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30003
+      protocol: TCP
+      name: http

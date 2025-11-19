@@ -1,0 +1,473 @@
+{
+    "annotations": {
+        "list": [{
+            "builtIn": 1,
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+        }]
+    },
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "links": [],
+    "panels": [{
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+            "id": 1,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+            },
+            "targets": [{ "expr": "sum(kube_pod_status_phase{phase=\"Running\"})", "refId": "A" }],
+            "title": "Total Pods Running",
+            "type": "stat"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "blue", "value": null }]
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+            "id": 2,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+            },
+            "targets": [{ "expr": "count(count by (namespace) (kube_pod_info))", "refId": "A" }],
+            "title": "Total Namespaces",
+            "type": "stat"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "mappings": [
+                        { "options": { "0": { "color": "red", "text": "Down" }, "1": { "color": "green", "text": "Ready" } }, "type": "value" }
+                    ],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }]
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+            "id": 3,
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+            },
+            "targets": [{ "expr": "sum(kube_node_status_condition{condition=\"Ready\", status=\"true\"})", "refId": "A" }],
+            "title": "Nodes Ready",
+            "type": "stat"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "palette-classic" },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "none",
+                        "hideFrom": { "tooltip": false, "viz": false, "legend": false },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": { "type": "linear" },
+                        "showPoints": "never",
+                        "spanNulls": true
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+            "id": 4,
+            "options": {
+                "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" },
+                "tooltip": { "mode": "multi" }
+            },
+            "targets": [
+                { "expr": "sum(kube_pod_status_phase{namespace=\"foodfast\"}) by (phase)", "legendFormat": "{{phase}}", "refId": "A" }
+            ],
+            "title": "FOODFAST Pods by Phase",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "palette-classic" },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "gradientMode": "none",
+                        "hideFrom": { "tooltip": false, "viz": false, "legend": false },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": { "type": "linear" },
+                        "showPoints": "never",
+                        "spanNulls": true
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "percentunit"
+                }
+            },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+            "id": 5,
+            "options": {
+                "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+                "tooltip": { "mode": "multi" }
+            },
+            "targets": [
+                { "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"foodfast\"}[5m])) by (pod)", "legendFormat": "{{pod}}", "refId": "A" }
+            ],
+            "title": "CPU Usage by Pod (FOODFAST)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "palette-classic" },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "gradientMode": "none",
+                        "hideFrom": { "tooltip": false, "viz": false, "legend": false },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": { "type": "linear" },
+                        "showPoints": "never",
+                        "spanNulls": true
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "bytes"
+                }
+            },
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+            "id": 6,
+            "options": {
+                "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+                "tooltip": { "mode": "multi" }
+            },
+            "targets": [
+                { "expr": "sum(container_memory_working_set_bytes{namespace=\"foodfast\"}) by (pod)", "legendFormat": "{{pod}}", "refId": "A" }
+            ],
+            "title": "Memory Usage by Pod (FOODFAST)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "custom": { "align": "auto", "displayMode": "auto" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 80 }]
+                    }
+                }
+            },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+            "id": 7,
+            "options": {
+                "showHeader": true,
+                "sortBy": [{ "desc": true, "displayName": "Restarts" }]
+            },
+            "targets": [{
+                "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"foodfast\"}) by (pod, container)",
+                "format": "table",
+                "instant": true,
+                "refId": "A"
+            }],
+            "title": "Pod Restart Count (FOODFAST)",
+            "transformations": [
+                { "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "job": true }, "indexByName": {}, "renameByName": { "Value": "Restarts", "container": "Container", "pod": "Pod" } } }
+            ],
+            "type": "table"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "palette-classic" },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "gradientMode": "none",
+                        "hideFrom": { "tooltip": false, "viz": false, "legend": false },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": { "type": "linear" },
+                        "showPoints": "never",
+                        "spanNulls": true
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+            "id": 8,
+            "options": {
+                "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom" },
+                "tooltip": { "mode": "multi" }
+            },
+            "targets": [{
+                    "expr": "kube_deployment_status_replicas_available{namespace=\"foodfast\"}",
+                    "legendFormat": "{{deployment}} - Available",
+                    "refId": "A"
+                },
+                {
+                    "expr": "kube_deployment_spec_replicas{namespace=\"foodfast\"}",
+                    "legendFormat": "{{deployment}} - Desired",
+                    "refId": "B"
+                }
+            ],
+            "title": "Deployment Replicas (FOODFAST)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "palette-classic" },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "gradientMode": "none",
+                        "hideFrom": { "tooltip": false, "viz": false, "legend": false },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": { "type": "linear" },
+                        "showPoints": "never",
+                        "spanNulls": true
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "Bps"
+                }
+            },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+            "id": 9,
+            "options": {
+                "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+                "tooltip": { "mode": "multi" }
+            },
+            "targets": [{
+                    "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"foodfast\"}[5m])) by (pod)",
+                    "legendFormat": "{{pod}} - RX",
+                    "refId": "A"
+                },
+                {
+                    "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"foodfast\"}[5m])) by (pod)",
+                    "legendFormat": "{{pod}} - TX",
+                    "refId": "B"
+                }
+            ],
+            "title": "Network I/O by Pod (FOODFAST)",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "palette-classic" },
+                    "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 10,
+                        "gradientMode": "none",
+                        "hideFrom": { "tooltip": false, "viz": false, "legend": false },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": { "type": "linear" },
+                        "showPoints": "never",
+                        "spanNulls": true
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [{ "color": "green", "value": null }]
+                    },
+                    "unit": "short"
+                }
+            },
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+            "id": 10,
+            "options": {
+                "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" },
+                "tooltip": { "mode": "multi" }
+            },
+            "targets": [
+                { "expr": "sum(kube_pod_status_phase) by (namespace, phase)", "legendFormat": "{{namespace}} - {{phase}}", "refId": "A" }
+            ],
+            "title": "All Namespaces - Pod Status",
+            "type": "timeseries"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "custom": { "align": "auto", "displayMode": "color-background" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            { "color": "green", "value": null },
+                            { "color": "yellow", "value": 50 },
+                            { "color": "red", "value": 80 }
+                        ]
+                    },
+                    "unit": "percent"
+                }
+            },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+            "id": 11,
+            "options": { "showHeader": true },
+            "targets": [{
+                "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"foodfast\"}[5m])) by (pod) * 100",
+                "format": "table",
+                "instant": true,
+                "refId": "A"
+            }],
+            "title": "Current CPU Usage % (FOODFAST)",
+            "transformations": [{
+                "id": "organize",
+                "options": {
+                    "excludeByName": { "Time": true, "__name__": true, "job": true, "namespace": true },
+                    "indexByName": {},
+                    "renameByName": { "Value": "CPU %", "pod": "Pod" }
+                }
+            }],
+            "type": "table"
+        },
+        {
+            "datasource": "Prometheus",
+            "fieldConfig": {
+                "defaults": {
+                    "color": { "mode": "thresholds" },
+                    "custom": { "align": "auto", "displayMode": "color-background" },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            { "color": "green", "value": null },
+                            { "color": "yellow", "value": 500000000 },
+                            { "color": "red", "value": 1000000000 }
+                        ]
+                    },
+                    "unit": "bytes"
+                }
+            },
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+            "id": 12,
+            "options": { "showHeader": true },
+            "targets": [{
+                "expr": "sum(container_memory_working_set_bytes{namespace=\"foodfast\"}) by (pod)",
+                "format": "table",
+                "instant": true,
+                "refId": "A"
+            }],
+            "title": "Current Memory Usage (FOODFAST)",
+            "transformations": [{
+                "id": "organize",
+                "options": {
+                    "excludeByName": { "Time": true, "__name__": true, "job": true, "namespace": true },
+                    "indexByName": {},
+                    "renameByName": { "Value": "Memory", "pod": "Pod" }
+                }
+            }],
+            "type": "table"
+        }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 27,
+    "style": "dark",
+    "tags": ["kubernetes", "foodfast"],
+    "templating": { "list": [] },
+    "time": { "from": "now-1h", "to": "now" },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Kubernetes Monitoring - FOODFAST",
+    "uid": "kubernetes-foodfast",
+    "version": 0
+}

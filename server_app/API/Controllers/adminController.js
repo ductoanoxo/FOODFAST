@@ -120,6 +120,7 @@ exports.getAvailableDrones = async(req, res) => {
 // @desc    Manually assign drone to order
 // @route   POST /api/admin/assign-drone
 // @access  Private (Admin only)
+////test
 exports.assignDrone = async(req, res) => {
     try {
         const { orderId, droneId } = req.body;

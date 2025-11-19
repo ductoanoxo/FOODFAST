@@ -9,6 +9,7 @@ const connectDB = require('./config/db');
 const { errorHandler } = require('./API/Middleware/errorMiddleware');
 const logger = require('./API/Utils/logger');
 const path = require('path');
+const { register, requestMetricsMiddleware, updateBusinessMetrics } = require('./metrics');
 
 // Load environment variables from root directory
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
@@ -37,12 +38,17 @@ app.use(
             'http://localhost:3001', // Restaurant App (production)
             'http://localhost:3002', // Admin App (production)
             'http://localhost:3003', // Drone App (production)
+            // Kubernetes NodePort URLs
+            'http://localhost:30001', // Client App (K8s NodePort)
+            'http://localhost:30002', // Restaurant App (K8s NodePort)
+            'http://localhost:30003', // Admin App (K8s NodePort)
+            'http://localhost:30004', // Drone App (K8s NodePort)
             // EC2 Production URLs
             'http://3.85.205.219:3000', // Client App on EC2
             'http://3.85.205.219:3001', // Admin App on EC2
             'http://3.85.205.219:3002', // Restaurant App on EC2
             'http://3.85.205.219:3003', // Drone App on EC2
-            // Env vars (fallback/override)ssssssss
+            // Env vars (fallback/override)
             process.env.CLIENT_URL,
             process.env.RESTAURANT_URL,
             process.env.ADMIN_URL,
@@ -53,6 +59,9 @@ app.use(
 );
 app.use(compression());
 app.use(morgan('dev'));
+
+// Prometheus metrics middleware
+app.use(requestMetricsMiddleware);
 
 // Increase body size limits to accommodate larger payloads (e.g., base64 image data).
 // NOTE: For file/image uploads it's better to use multipart/form-data with multer
@@ -76,6 +85,16 @@ app.get('/', (req, res) => {
 
 // Health check endpoints (must be before other routes for Docker health checks)
 app.use('/api', require('./API/Routers/healthRouter'));
+
+// Prometheus metrics endpoint
+app.get('/metrics', async(req, res) => {
+    try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+    } catch (err) {
+        res.status(500).end(err);
+    }
+});
 
 app.use('/api/auth', require('./API/Routers/authRouter'));
 app.use('/api/users', require('./API/Routers/userRouter'));
@@ -115,6 +134,15 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
     logger.info(`Server running on port ${PORT}`);
     console.log(`🚀 Server running on http://localhost:${PORT}`);
+
+    // Start updating business metrics every 30 seconds
+    const mongoose = require('mongoose');
+    setInterval(() => {
+        updateBusinessMetrics(mongoose);
+    }, 30000);
+
+    // Update once immediately
+    updateBusinessMetrics(mongoose);
 });
 
 // ---------------------- SOCKET.IO SETUP ---------------------- //
