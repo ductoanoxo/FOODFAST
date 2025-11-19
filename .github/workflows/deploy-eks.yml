@@ -165,7 +165,7 @@ jobs:
           echo "Syncing K8s manifests to EKS server..."
           ssh $SERVER_USER@$SERVER_HOST "mkdir -p ~/foodfast-k8s"
           scp -r k8s/* $SERVER_USER@$SERVER_HOST:~/foodfast-k8s/
-          echo "✅ K8s manifests synced"
+          echo "✅ K8s manifests synced (including monitoring dashboards)"
 
       # ======================
       # 6) Create deployment script
@@ -242,6 +242,15 @@ jobs:
           echo "==> Deploy Monitoring Stack"
           kubectl apply -f base/monitoring-prometheus.yaml
           kubectl apply -f base/monitoring-grafana.yaml
+
+          echo "==> Update Grafana dashboard ConfigMap"
+          kubectl create configmap grafana-dashboard-foodfast \
+            --from-file=/home/ubuntu/foodfast-k8s/base/grafana-dashboard-foodfast.json \
+            -n foodfast \
+            --dry-run=client -o yaml | kubectl apply -f -
+          
+          echo "==> Restart Grafana to reload dashboard"
+          kubectl rollout restart deployment/grafana -n foodfast
 
           echo "==> Deployment triggered successfully"
           echo "Note: Pods will continue rolling out in background"
