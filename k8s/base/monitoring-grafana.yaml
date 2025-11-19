@@ -435,9 +435,7 @@ spec:
         - name: GF_USERS_ALLOW_SIGN_UP
           value: "false"
         - name: GF_SERVER_ROOT_URL
-          value: "%(protocol)s://%(domain)s/grafana/"
-        - name: GF_SERVER_SERVE_FROM_SUB_PATH
-          value: "true"
+          value: "%(protocol)s://%(domain)s:%(http_port)s/grafana"
         volumeMounts:
         - name: grafana-storage
           mountPath: /var/lib/grafana
@@ -475,10 +473,11 @@ metadata:
   labels:
     app: grafana
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
-  - port: 3000
+  - port: 3030
     targetPort: 3000
+    nodePort: 30005
     protocol: TCP
     name: http
   selector:

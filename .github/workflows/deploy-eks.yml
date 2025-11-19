@@ -238,9 +238,6 @@ jobs:
 
           echo "==> Apply Ingress"
           kubectl apply -f ingress/
-          
-          echo "==> Apply Monitoring Ingress"
-          kubectl apply -f ingress/ingress-monitoring.yaml
 
           echo "==> Deploy Monitoring Stack"
           kubectl apply -f base/monitoring-prometheus.yaml
