@@ -65,7 +65,7 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "count(up{job=\"foodfast-server\"} == 1)",
+          "expr": "count(up{app=\"foodfast-server\"} == 1)",
           "refId": "A"
         }
       ],
@@ -134,8 +134,8 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "rate(nodejs_process_cpu_seconds_total{job=\"foodfast-server\"}[5m]) * 100",
-          "legendFormat": "{{instance}}",
+          "expr": "rate(nodejs_process_cpu_seconds_total{app=\"foodfast-server\"}[5m]) * 100",
+          "legendFormat": "{{kubernetes_pod_name}}",
           "refId": "A"
         }
       ],
@@ -204,8 +204,8 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "nodejs_process_resident_memory_bytes{job=\"foodfast-server\"} / 1024 / 1024",
-          "legendFormat": "{{instance}}",
+          "expr": "nodejs_process_resident_memory_bytes{app=\"foodfast-server\"} / 1024 / 1024",
+          "legendFormat": "{{kubernetes_pod_name}}",
           "refId": "A"
         }
       ],
@@ -277,8 +277,8 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "nodejs_eventloop_lag_seconds{job=\"foodfast-server\"}",
-          "legendFormat": "{{instance}}",
+          "expr": "nodejs_eventloop_lag_seconds{app=\"foodfast-server\"}",
+          "legendFormat": "{{kubernetes_pod_name}}",
           "refId": "A"
         }
       ],
@@ -358,13 +358,13 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "nodejs_process_heap_bytes{job=\"foodfast-server\"} / 1024 / 1024",
-          "legendFormat": "{{instance}} heap",
+          "expr": "nodejs_process_heap_bytes{app=\"foodfast-server\"} / 1024 / 1024",
+          "legendFormat": "{{kubernetes_pod_name}} heap",
           "refId": "A"
         },
         {
-          "expr": "nodejs_process_virtual_memory_bytes{job=\"foodfast-server\"} / 1024 / 1024",
-          "legendFormat": "{{instance}} virtual",
+          "expr": "nodejs_process_virtual_memory_bytes{app=\"foodfast-server\"} / 1024 / 1024",
+          "legendFormat": "{{kubernetes_pod_name}} virtual",
           "refId": "B"
         }
       ],
@@ -420,7 +420,7 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "up{job=\"foodfast-server\"}",
+          "expr": "up{app=\"foodfast-server\"}",
           "refId": "A"
         }
       ],
@@ -547,7 +547,7 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "count(up{job=\"foodfast-server\"} == 1)",
+          "expr": "count(up{app=\"foodfast-server\"} == 1)",
           "legendFormat": "server - available",
           "refId": "A"
         },
@@ -621,13 +621,13 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "nodejs_process_open_fds{job=\"foodfast-server\"}",
-          "legendFormat": "{{instance}} - open FDs",
+          "expr": "nodejs_process_open_fds{app=\"foodfast-server\"}",
+          "legendFormat": "{{kubernetes_pod_name}} - open FDs",
           "refId": "A"
         },
         {
-          "expr": "nodejs_process_start_time_seconds{job=\"foodfast-server\"} * 0 + 100",
-          "legendFormat": "{{instance}} - uptime indicator",
+          "expr": "nodejs_process_start_time_seconds{app=\"foodfast-server\"} * 0 + 100",
+          "legendFormat": "{{kubernetes_pod_name}} - uptime indicator",
           "refId": "B"
         }
       ],
