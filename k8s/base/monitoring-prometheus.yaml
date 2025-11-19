@@ -130,11 +130,10 @@ metadata:
   labels:
     app: prometheus
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
   - port: 9090
     targetPort: 9090
-    nodePort: 30004
     protocol: TCP
     name: http
   selector:
