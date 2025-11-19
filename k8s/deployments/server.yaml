@@ -14,10 +14,6 @@ spec:
     metadata:
       labels:
         app: foodfast-server
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "5000"
-        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: server

@@ -162,21 +162,10 @@ jobs:
           SERVER_HOST: ${{ secrets.EKS_SERVER_HOST }}
           SERVER_USER: ${{ secrets.EKS_SERVER_USER }}
         run: |
-          echo "🔄 Syncing K8s manifests to EKS server..."
+          echo "Syncing K8s manifests to EKS server..."
           ssh $SERVER_USER@$SERVER_HOST "mkdir -p ~/foodfast-k8s"
-          
-          # Delete old files to ensure clean sync
-          ssh $SERVER_USER@$SERVER_HOST "rm -rf ~/foodfast-k8s/*"
-          
-          # Sync all k8s files recursively
           scp -r k8s/* $SERVER_USER@$SERVER_HOST:~/foodfast-k8s/
-          
-          echo "✅ K8s manifests synced successfully"
-          echo "📁 Synced:"
-          echo "  - Deployments (all apps)"
-          echo "  - ConfigMaps & Secrets"
-          echo "  - HPA & Ingress"
-          echo "  - Monitoring (Prometheus, Grafana, Dashboards)"
+          echo "✅ K8s manifests synced (including monitoring dashboards)"
 
       # ======================
       # 6) Create deployment script
