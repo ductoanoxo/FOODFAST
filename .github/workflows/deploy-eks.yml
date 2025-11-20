@@ -166,6 +166,8 @@ jobs:
           ssh $SERVER_USER@$SERVER_HOST "mkdir -p ~/foodfast-k8s"
           scp -r k8s/* $SERVER_USER@$SERVER_HOST:~/foodfast-k8s/
           echo "✅ K8s manifests synced (including monitoring dashboards)"
+          echo "📊 Verifying dashboard file..."
+          ssh $SERVER_USER@$SERVER_HOST "ls -lh ~/foodfast-k8s/base/grafana-dashboard-foodfast.json"
 
       # ======================
       # 6) Create deployment script
@@ -251,17 +253,24 @@ jobs:
           kubectl rollout restart deployment/prometheus -n foodfast
 
           echo "==> Update Grafana dashboard ConfigMap from latest manifest"
+          echo "📊 Checking dashboard file..."
+          ls -lh base/grafana-dashboard-foodfast.json || echo "❌ Dashboard file not found!"
+          
           if [ -f base/grafana-dashboard-foodfast.json ]; then
+            echo "✅ Dashboard file found, updating ConfigMap..."
+            kubectl delete configmap grafana-dashboard-foodfast -n foodfast --ignore-not-found=true
             kubectl create configmap grafana-dashboard-foodfast \
-              --from-file=base/grafana-dashboard-foodfast.json \
-              -n foodfast \
-              --dry-run=client -o yaml | kubectl apply -f -
+              --from-file=grafana-dashboard-foodfast.json=base/grafana-dashboard-foodfast.json \
+              -n foodfast
+            echo "✅ Dashboard ConfigMap updated"
           else
-            echo "Warning: grafana-dashboard-foodfast.json not found, keeping existing dashboard"
+            echo "❌ Warning: grafana-dashboard-foodfast.json not found at base/, keeping existing dashboard"
           fi
           
           echo "==> Restart Grafana to reload dashboard"
           kubectl rollout restart deployment/grafana -n foodfast
+          echo "⏳ Waiting for Grafana to be ready..."
+          kubectl rollout status deployment/grafana -n foodfast --timeout=120s
 
           echo "==> Deployment triggered successfully"
           echo "Note: Pods will continue rolling out in background"
