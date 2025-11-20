@@ -152,6 +152,9 @@ spec:
           items:
           - key: recording_rules.yml
             path: recording_rules.yml
+          items:
+          - key: recording_rules.yml
+            path: recording_rules.yml
       - name: storage
         emptyDir: {}
 ---
