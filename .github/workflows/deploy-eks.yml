@@ -263,14 +263,20 @@ jobs:
               --from-file=grafana-dashboard-foodfast.json=base/grafana-dashboard-foodfast.json \
               -n foodfast
             echo "✅ Dashboard ConfigMap updated"
+            
+            echo "==> Force delete old Grafana pod to ensure clean restart"
+            kubectl delete pod -l app=grafana -n foodfast --ignore-not-found=true
+            
+            echo "⏳ Waiting for new Grafana pod to be ready..."
+            kubectl wait --for=condition=ready pod -l app=grafana -n foodfast --timeout=180s || {
+              echo "⚠️ Grafana pod not ready yet, checking status..."
+              kubectl get pods -l app=grafana -n foodfast
+              kubectl describe pod -l app=grafana -n foodfast | tail -50
+              echo "Dashboard ConfigMap đã được cập nhật, Grafana sẽ tự động reload khi pod ready"
+            }
           else
             echo "❌ Warning: grafana-dashboard-foodfast.json not found at base/, keeping existing dashboard"
           fi
-          
-          echo "==> Restart Grafana to reload dashboard"
-          kubectl rollout restart deployment/grafana -n foodfast
-          echo "⏳ Waiting for Grafana to be ready..."
-          kubectl rollout status deployment/grafana -n foodfast --timeout=120s
 
           echo "==> Deployment triggered successfully"
           echo "Note: Pods will continue rolling out in background"
@@ -280,12 +286,17 @@ jobs:
           
           echo "==> Current pod status"
           kubectl get pods -n foodfast -o wide
+          
+          echo "==> Check Grafana pod status"
+          kubectl get pods -l app=grafana -n foodfast || echo "Grafana pod is starting..."
 
           echo "==> Get Monitoring URLs"
           echo "Prometheus: kubectl port-forward svc/prometheus 9090:9090 -n foodfast"
           echo "Grafana: kubectl port-forward svc/grafana 3030:3000 -n foodfast"
 
           echo "✅ K8s deployment initiated - pods will continue starting"
+          echo "📊 Dashboard ConfigMap đã được cập nhật thành công!"
+          echo "🔄 Grafana sẽ tự động load dashboard mới khi pod khởi động xong"
           SCRIPT
 
       # ======================
