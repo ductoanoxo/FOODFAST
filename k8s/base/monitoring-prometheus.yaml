@@ -82,6 +82,15 @@ data:
           action: replace
           target_label: __address__
           replacement: $1:5000
+      
+      # Scrape kube-state-metrics for Kubernetes metrics
+      - job_name: 'kube-state-metrics'
+        static_configs:
+        - targets: ['kube-state-metrics.foodfast.svc.cluster.local:8080']
+        metric_relabel_configs:
+        - source_labels: [__name__]
+          regex: 'kube_(pod|deployment|horizontalpodautoscaler).*'
+          action: keep
   
   recording_rules.yml: |
     groups:
