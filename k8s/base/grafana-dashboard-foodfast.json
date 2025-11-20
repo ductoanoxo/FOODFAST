@@ -688,11 +688,11 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "http_5xx_errors_per_second",
+          "expr": "http_requests_per_second",
           "refId": "A"
         }
       ],
-      "title": "HTTP 5xx Errors/sec",
+      "title": "Total HTTP Requests/sec",
       "type": "stat"
     },
     {
@@ -760,12 +760,12 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "orders_by_status",
+          "expr": "http_requests_by_status",
           "legendFormat": "{{status}}",
           "refId": "A"
         }
       ],
-      "title": "Orders by Status (5m rate)",
+      "title": "HTTP Requests by Status (1m rate)",
       "type": "timeseries"
     }
   ],

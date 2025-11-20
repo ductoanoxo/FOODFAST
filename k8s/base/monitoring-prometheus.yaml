@@ -91,6 +91,18 @@ data:
       - record: http_5xx_errors_per_second
         expr: sum(rate(http_requests_total{status=~"5.."}[1m]))
       
+      # Tổng số lỗi HTTP 4xx per second (có data)
+      - record: http_4xx_errors_per_second
+        expr: sum(rate(http_requests_total{status=~"4.."}[1m]))
+      
+      # Tổng HTTP requests per second
+      - record: http_requests_per_second
+        expr: sum(rate(http_requests_total[1m]))
+      
+      # HTTP requests by status
+      - record: http_requests_by_status
+        expr: sum by (status) (rate(http_requests_total[1m]))
+      
       # Số lượng orders theo status (5 phút window)
       - record: orders_by_status
         expr: sum by (status) (rate(orders_status_total[5m]))
