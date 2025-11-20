@@ -493,11 +493,11 @@
               },
               {
                 "color": "yellow",
-                "value": 60
+                "value": 15
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 20
               }
             ]
           },
