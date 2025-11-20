@@ -43,7 +43,10 @@ import {
   getTopRestaurants,
   getOrderStatistics,
 } from '../../api/dashboardAPI'
+import socketService from '../../services/socketService'
 import './DashboardPage.css'
+
+let _dashboardAnyAttached = false
 
 const DashboardPage = () => {
   const [stats, setStats] = useState(null)
@@ -54,6 +57,70 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchDashboardData()
+
+    // Setup socket connection for real-time dashboard updates
+    const token = localStorage.getItem('admin_token')
+    if (!token) {
+      console.warn('Admin - No token found, skipping dashboard socket connection')
+      return
+    }
+
+    socketService.connect(token)
+
+    const setupListeners = () => {
+      // Attach listeners immediately; socket.io will queue them if not yet connected.
+      const handleOrderCreated = (data) => {
+        console.log('📡 Dashboard - order:created', data)
+        fetchDashboardData()
+      }
+
+      const handleOrderUpdated = (data) => {
+        console.log('📡 Dashboard - order:update or status change', data)
+        fetchDashboardData()
+      }
+
+      const handleOrderCancelled = (data) => {
+        console.log('📡 Dashboard - order:cancelled', data)
+        fetchDashboardData()
+      }
+
+      const handlePaymentRefunded = (data) => {
+        console.log('📡 Dashboard - payment:refunded', data)
+        fetchDashboardData()
+      }
+
+      const socket = socketService.getSocket()
+      if (socket) {
+        console.log('✅ Dashboard - Attaching socket listeners (immediate)')
+        socket.on('order:created', handleOrderCreated)
+        socket.on('order:update', handleOrderUpdated)
+        socket.on('order:status-updated', handleOrderUpdated)
+        socket.on('order:cancelled', handleOrderCancelled)
+        socket.on('payment:refunded', handlePaymentRefunded)
+
+        // Extra debug: log any incoming event names here as well
+        if (!_dashboardAnyAttached) {
+          _dashboardAnyAttached = true
+          socket.onAny((eventName, ...args) => {
+            console.log(`📡 [DASHBOARD SOCKET EVENT] ${eventName}:`, args[0])
+          })
+        }
+      } else {
+        // If socket not available yet, retry shortly
+        console.log('⏳ Dashboard - socket instance not ready, will retry attaching listeners')
+        setTimeout(setupListeners, 500)
+      }
+    }
+
+    setupListeners()
+
+    return () => {
+      socketService.off('order:created')
+      socketService.off('order:update')
+      socketService.off('order:status-updated')
+      socketService.off('order:cancelled')
+      socketService.off('payment:refunded')
+    }
   }, [])
 
   const fetchDashboardData = async () => {

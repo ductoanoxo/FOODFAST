@@ -8,8 +8,17 @@ const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const { errorHandler } = require('./API/Middleware/errorMiddleware');
 const logger = require('./API/Utils/logger');
-const path = require('path');
-const { register, requestMetricsMiddleware, updateBusinessMetrics } = require('./metrics');
+const path = require('path'); <<
+<<
+<<
+< HEAD
+const { register, requestMetricsMiddleware, updateBusinessMetrics } = require('./metrics'); ===
+===
+=
+const { register, metricsMiddleware, updateBusinessMetrics, updateMongoMetrics } = require('./config/metrics'); >>>
+>>>
+>
+ecfb61e53cad652278e2f825593ac8094655c47d
 
 // Load environment variables from root directory
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
@@ -44,10 +53,12 @@ app.use(
             'http://localhost:30003', // Admin App (K8s NodePort)
             'http://localhost:30004', // Drone App (K8s NodePort)
             // EC2 Production URLs
-            'http://3.85.205.219:3000', // Client App on EC2
-            'http://3.85.205.219:3001', // Admin App on EC2
-            'http://3.85.205.219:3002', // Restaurant App on EC2
-            'http://3.85.205.219:3003', // Drone App on EC2
+
+            'http://54.221.76.224:3000', // Client App on EC2
+            'http://54.221.76.224:3001', // Admin App on EC2
+            'http://54.221.76.224:3002', // Restaurant App on EC2
+            'http://54.221.76.224:3003', // Drone App on EC2
+
             // Env vars (fallback/override)
             process.env.CLIENT_URL,
             process.env.RESTAURANT_URL,
@@ -69,6 +80,20 @@ app.use(requestMetricsMiddleware);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
+
+// ---------------------- METRICS ---------------------- //
+// Metrics middleware to track HTTP requests
+app.use(metricsMiddleware);
+
+// Metrics endpoint for Prometheus
+app.get('/metrics', async(req, res) => {
+    try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+    } catch (error) {
+        res.status(500).end(error);
+    }
+});
 
 // ---------------------- STATIC FILES ---------------------- //
 // Cho phép truy cập ảnh tĩnh từ thư mục /uploads
@@ -133,7 +158,10 @@ const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
     logger.info(`Server running on port ${PORT}`);
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Server running on http://localhost:${PORT}`); <<
+    <<
+    <<
+    < HEAD
 
     // Start updating business metrics every 30 seconds
     const mongoose = require('mongoose');
@@ -142,7 +170,27 @@ const server = app.listen(PORT, () => {
     }, 30000);
 
     // Update once immediately
-    updateBusinessMetrics(mongoose);
+    updateBusinessMetrics(mongoose); ===
+    ===
+    =
+    console.log(`📊 Metrics available at http://localhost:${PORT}/metrics`);
+
+    // Update business metrics every 30 seconds
+    setInterval(async() => {
+        const mongoose = require('mongoose');
+        const models = {
+            Order: require('./API/Models/Order'),
+            Drone: require('./API/Models/Drone'),
+            User: require('./API/Models/User'),
+            Restaurant: require('./API/Models/Restaurant'),
+        };
+
+        await updateBusinessMetrics(models);
+        updateMongoMetrics(mongoose);
+    }, 30000); >>>
+    >>>
+    >
+    ecfb61e53cad652278e2f825593ac8094655c47d
 });
 
 // ---------------------- SOCKET.IO SETUP ---------------------- //

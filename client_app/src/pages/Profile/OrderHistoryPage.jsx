@@ -3,6 +3,7 @@ import { Card, Table, Tag, Button, Typography } from 'antd'
 import { EyeOutlined, ClockCircleOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, RollbackOutlined } from "@ant-design/icons"
 import { useNavigate } from 'react-router-dom'
 import { orderAPI } from '../../api/orderAPI'
+import socketService from '../../services/socketService'
 import './OrderHistoryPage.css'
 
 const { Title } = Typography
@@ -14,6 +15,64 @@ const OrderHistoryPage = () => {
 
   useEffect(() => {
     fetchOrders()
+    
+    // Connect socket for real-time updates
+    const token = localStorage.getItem('token')
+    if (!token) {
+      console.warn('No token found, skipping socket connection')
+      return
+    }
+
+    // Ensure socket is connected
+    const socket = socketService.connect(token)
+    
+    // Wait a bit for connection to establish
+    const setupListeners = () => {
+      if (!socketService.isConnected()) {
+        console.log('⏳ Waiting for socket connection...')
+        setTimeout(setupListeners, 500)
+        return
+      }
+
+      console.log('✅ Setting up real-time listeners for OrderHistory')
+      
+      // Listen for order status updates
+      const handleOrderStatusUpdate = (data) => {
+        console.log('📡 OrderHistory - Order status updated:', data)
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order._id === data.orderId || order._id === data._id
+              ? { ...order, status: data.status, paymentStatus: data.paymentStatus || order.paymentStatus }
+              : order
+          )
+        )
+      }
+      
+      // Listen for new orders
+      const handleOrderCreated = (data) => {
+        console.log('📡 OrderHistory - New order created:', data)
+        fetchOrders()
+      }
+
+      // Listen for order updates (generic)
+      const handleOrderUpdate = (data) => {
+        console.log('📡 OrderHistory - Order updated:', data)
+        fetchOrders()
+      }
+      
+      socketService.on('order:status-updated', handleOrderStatusUpdate)
+      socketService.on('order:created', handleOrderCreated)
+      socketService.on('order:update', handleOrderUpdate)
+    }
+    
+    setupListeners()
+    
+    return () => {
+      console.log('🧹 Cleaning up OrderHistory socket listeners')
+      socketService.off('order:status-updated')
+      socketService.off('order:created')
+      socketService.off('order:update')
+    }
   }, [])
 
   const fetchOrders = async () => {

@@ -11,11 +11,9 @@ on:
       - main                      # CHỈ deploy nhánh main
   # Cho phép bấm tay để deploy lại (chỉ dành cho main)
   workflow_dispatch:
-
 env:
   REGISTRY: ghcr.io
   OWNER: ${{ github.repository_owner }}
-
 jobs:
   deploy:
     # CHỈ chạy nếu:
@@ -76,7 +74,25 @@ jobs:
           ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
       # ======================
-      # 4) Tạo script deploy để chép lên EC2
+      # 4) Sync monitoring configs to EC2
+      # ======================
+      - name: Sync monitoring configs to EC2
+        env:
+          SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
+        run: |
+          echo "Syncing monitoring configs to EC2..."
+          ssh $SERVER_USER@$SERVER_HOST "mkdir -p ~/prometheus-config ~/grafana-config/provisioning/datasources ~/grafana-config/provisioning/dashboards ~/grafana-config/dashboards"
+          scp monitoring/prometheus.yml $SERVER_USER@$SERVER_HOST:~/prometheus-config/
+          scp monitoring/alerts.yml $SERVER_USER@$SERVER_HOST:~/prometheus-config/
+          scp monitoring/grafana/datasources.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/datasources/
+          scp monitoring/grafana/dashboards.yml $SERVER_USER@$SERVER_HOST:~/grafana-config/provisioning/dashboards/
+          scp monitoring/grafana/foodfast-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
+          scp monitoring/grafana/cicd-dashboard.json $SERVER_USER@$SERVER_HOST:~/grafana-config/dashboards/
+          echo "✅ Monitoring configs synced to prometheus-config and grafana-config"
+
+      # ======================
+      # 5) Tạo script deploy để chép lên EC2
       # ======================
       - name: Create remote script
         run: |
@@ -147,11 +163,76 @@ jobs:
             --network foodfast-net \
             "${REGISTRY}/${OWNER}/foodfast-drone:${IMAGE_TAG}"
 
-          echo "✅ Deploy done."
+          echo "=== Deploy Prometheus ==="
+          sudo docker pull prom/prometheus:latest
+          sudo docker rm -f foodfast-prometheus 2>/dev/null || true
+          
+          # Config files đã được sync vào ~/prometheus-config trước đó
+          sudo docker run -d --name foodfast-prometheus --restart unless-stopped \
+            --network foodfast-net --network-alias prometheus \
+            -p 9090:9090 \
+            -v ~/prometheus-config:/etc/prometheus \
+            -v prometheus_data:/prometheus \
+            prom/prometheus:latest \
+            --config.file=/etc/prometheus/prometheus.yml \
+            --storage.tsdb.path=/prometheus \
+            --storage.tsdb.retention.time=30d \
+            --storage.tsdb.retention.size=10GB \
+            --web.console.libraries=/usr/share/prometheus/console_libraries \
+            --web.console.templates=/usr/share/prometheus/consoles
+
+          echo "=== Deploy Grafana ==="
+          sudo docker pull grafana/grafana:latest
+          sudo docker rm -f foodfast-grafana 2>/dev/null || true
+          
+          # Config files đã được sync vào ~/grafana-config trước đó
+          sudo docker run -d --name foodfast-grafana --restart unless-stopped \
+            --network foodfast-net --network-alias grafana \
+            -p 3030:3000 \
+            -e GF_SECURITY_ADMIN_PASSWORD=admin123 \
+            -e GF_USERS_ALLOW_SIGN_UP=false \
+            -v ~/grafana-config/provisioning:/etc/grafana/provisioning \
+            -v ~/grafana-config/dashboards:/etc/grafana/dashboards \
+            -v grafana_data:/var/lib/grafana \
+            grafana/grafana:latest
+
+          echo "=== Deploy Node Exporter ==="
+          sudo docker pull prom/node-exporter:latest
+          sudo docker rm -f foodfast-node-exporter 2>/dev/null || true
+          sudo docker run -d --name foodfast-node-exporter --restart unless-stopped \
+            --network foodfast-net --network-alias node-exporter \
+            -p 9100:9100 \
+            prom/node-exporter:latest
+
+          echo "=== Deploy cAdvisor ==="
+          sudo docker pull gcr.io/cadvisor/cadvisor:latest
+          sudo docker rm -f foodfast-cadvisor 2>/dev/null || true
+          sudo docker run -d --name foodfast-cadvisor --restart unless-stopped \
+            --network foodfast-net --network-alias cadvisor \
+            -p 8080:8080 \
+            -v /:/rootfs:ro \
+            -v /var/run:/var/run:ro \
+            -v /sys:/sys:ro \
+            -v /var/lib/docker/:/var/lib/docker:ro \
+            -v /dev/disk/:/dev/disk:ro \
+            gcr.io/cadvisor/cadvisor:latest
+
+          echo "=== Deploy Pushgateway ==="
+          sudo docker pull prom/pushgateway:latest
+          sudo docker rm -f foodfast-pushgateway 2>/dev/null || true
+          sudo docker run -d --name foodfast-pushgateway --restart unless-stopped \
+            --network foodfast-net --network-alias pushgateway \
+            -p 9091:9091 \
+            -v pushgateway_data:/data \
+            prom/pushgateway:latest \
+            --persistence.file=/data/pushgateway.data \
+            --persistence.interval=5m
+
+          echo "✅ Deploy done (including monitoring stack)."
           SCRIPT
 
       # ======================
-      # 5) Chạy script trên EC2
+      # 6) Chạy script trên EC2
       # ======================
       - name: Run remote script on EC2
         env:
@@ -187,7 +268,7 @@ jobs:
             /tmp/remote-deploy.sh"
 
       # ======================
-      # 6) Healthcheck
+      # 7) Healthcheck
       # ======================
       - name: Healthcheck backend
         run: |

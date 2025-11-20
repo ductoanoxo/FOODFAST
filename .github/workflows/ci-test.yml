@@ -1,20 +1,18 @@
-
 name: CI - Test and Lint (Deploy Branch - Testing Conflict)
 
 on:
-    push:
-      branches:
+  push:
+    branches:
       - main
       - develop
       - DUCTOAN
       - kiet
       - deploy
-    pull_request:
-      branches:
-        - main
-        - develop
+  pull_request:
+    branches:
+      - main
+      - develop
 
-# Grant minimal permissions required for uploading SARIF/code-scanning results
 permissions:
   contents: read
   security-events: write
@@ -26,7 +24,6 @@ jobs:
     
     services:
       mongodb:
-        # Use the official MongoDB 7.0 image (alpine variant '7.0-alpine' does not exist)
         image: mongo:7.0
         ports:
           - 27017:27017
@@ -38,9 +35,18 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Dùng cho CÁCH 3 (đẩy log test lên CloudWatch)
+      - name: Configure AWS credentials (for CloudWatch)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -69,7 +75,6 @@ jobs:
           echo "=========================================="
           npm run test:unit 2>&1 | tee test-output.log
           
-          # Check for test failures from Jest output only
           if grep -q "No tests found" test-output.log || grep -q "0 tests" test-output.log; then
             echo "⚠️  No unit tests found - will add later"
             exit 0
@@ -92,7 +97,6 @@ jobs:
           echo "=========================================="
           npm run test:integration 2>&1 | tee integration-output.log
           
-          # Check for test failures from Jest output only
           if grep -q "No tests found" integration-output.log || grep -q "0 tests" integration-output.log; then
             echo "⚠️  No integration tests found - will add later"
             exit 0
@@ -113,7 +117,8 @@ jobs:
           echo "=========================================="
           echo "📊 Generating Coverage Report for Server"
           echo "=========================================="
-          npm run test:coverage || echo "⚠️  Coverage generation skipped"
+          npm run test:coverage 2>&1 | tee coverage-output.log || echo "⚠️  Coverage generation skipped"
+
 
       - name: Upload Server Coverage
         uses: codecov/codecov-action@v4
@@ -124,6 +129,112 @@ jobs:
           name: server_app-coverage
           fail_ci_if_error: false
         continue-on-error: true
+
+      # ⭐ CÁCH 1: hiện log test ngay trong tab Summary
+      - name: Add server test logs to job summary
+        if: always()
+        run: |
+          {
+            echo "## 🧪 Server tests (failed only + coverage)"
+
+            echo
+            echo "### ❌ Server Unit test failures"
+            echo '```text'
+            if [ -f server_app/test-output.log ]; then
+              CLEAN=$(cat server_app/test-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+
+              # Chỉ in block quanh các dòng FAIL
+              printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed unit tests."
+
+              echo
+              # Thêm dòng summary Test Suites / Tests / Snapshots (nếu có)
+              printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+            else
+              echo "No unit test log file found."
+            fi
+            echo '```'
+
+            echo
+            echo "### ❌ Server Integration test failures"
+            echo '```text'
+            if [ -f server_app/integration-output.log ]; then
+              CLEAN=$(cat server_app/integration-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+
+              printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed integration tests."
+
+              echo
+              printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+            else
+              echo "No integration test log file found."
+            fi
+            echo '```'
+
+            echo
+            echo "### 📊 Server coverage summary"
+            echo '```text'
+            if [ -f server_app/coverage-output.log ]; then
+              CLEAN_COV=$(cat server_app/coverage-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+              # IN FULL COVERAGE LOG, KHÔNG FILTER
+              printf "%s\n" "$CLEAN_COV"
+            else
+              echo "No coverage log file found."
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+
+      # ⭐ CÁCH 3: đẩy log test server lên CloudWatch Logs (chỉ khi FAIL)
+      - name: Push server test logs to CloudWatch (on failure)
+        if: failure()
+        run: |
+          LOG_GROUP="/ci/server-tests"
+          LOG_STREAM="${GITHUB_RUN_ID}-server"
+
+          aws logs create-log-group --log-group-name "$LOG_GROUP" 2>/dev/null || true
+          aws logs create-log-stream --log-group-name "$LOG_GROUP" --log-stream-name "$LOG_STREAM" 2>/dev/null || true
+
+          TS=$(($(date +%s%N)/1000000))
+
+          LOG_TEXT=$(
+            {
+              echo "=== Server Unit test failures ==="
+              if [ -f server_app/test-output.log ]; then
+                CLEAN=$(cat server_app/test-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed unit tests."
+                printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+              else
+                echo "No unit test log file found."
+              fi
+
+              echo
+              echo "=== Server Integration test failures ==="
+              if [ -f server_app/integration-output.log ]; then
+                CLEAN=$(cat server_app/integration-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed integration tests."
+                printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+              else
+                echo "No integration test log file found."
+              fi
+
+              echo
+              echo "=== Server Coverage summary ==="
+              if [ -f server_app/coverage-output.log ]; then
+                CLEAN_COV=$(cat server_app/coverage-output.log | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                # IN FULL COVERAGE LOG
+                printf "%s\n" "$CLEAN_COV"
+              else
+                echo "No coverage log file found."
+              fi
+            }
+          )
+
+          ESCAPED=$(python -c "import json,sys; print(json.dumps(sys.stdin.read())[1:-1])" <<< "$LOG_TEXT")
+
+          aws logs put-log-events \
+            --log-group-name "$LOG_GROUP" \
+            --log-stream-name "$LOG_STREAM" \
+            --log-events "[{\"timestamp\":$TS,\"message\":\"$ESCAPED\"}]"
+
 
   test-client-apps:
     name: Test Frontend Apps
@@ -140,6 +251,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Cho CloudWatch ở job frontend
+      - name: Configure AWS credentials (for CloudWatch)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -164,7 +283,6 @@ jobs:
           if [ -f "package.json" ] && grep -q "test:unit" package.json; then
             npm run test:unit 2>&1 | tee test-output.log
             
-            # Check for test failures from Vitest/Jest output only
             if grep -q "No test files found" test-output.log || grep -q "Test Files.*0" test-output.log || grep -q "no tests" test-output.log; then
               echo "⚠️  No unit tests found for ${{ matrix.app }} - will add later"
               exit 0
@@ -175,7 +293,6 @@ jobs:
               echo "⚠️  Some unit tests are skipped for ${{ matrix.app }}"
               echo "⚠️  Please remove .skip or implement the tests"
               grep "skipped" test-output.log
-              # Continue but warn
             fi
             echo "✅ Unit tests passed for ${{ matrix.app }}"
           else
@@ -194,7 +311,6 @@ jobs:
           if [ -f "package.json" ] && grep -q "test:integration" package.json; then
             npm run test:integration 2>&1 | tee integration-output.log
             
-            # Check for test failures from Vitest/Jest output only
             if grep -q "no tests" integration-output.log || grep -q "Test Files.*0" integration-output.log || grep -q "No test files found" integration-output.log; then
               echo "⚠️  No integration tests found for ${{ matrix.app }} - will add later"
               exit 0
@@ -210,7 +326,6 @@ jobs:
               echo "⚠️  Some integration tests are skipped for ${{ matrix.app }}"
               echo "⚠️  Please remove .skip or implement the tests"
               grep "skipped" integration-output.log
-              # Continue but warn
             fi
             echo "✅ Integration tests passed for ${{ matrix.app }}"
           else
@@ -227,10 +342,11 @@ jobs:
           echo "📊 Generating Coverage Report for ${{ matrix.app }}"
           echo "=========================================="
           if [ -f "package.json" ] && grep -q "test:coverage" package.json; then
-            npm run test:coverage || echo "⚠️  Coverage generation skipped for ${{ matrix.app }}"
+            npm run test:coverage 2>&1 | tee coverage-output.log || echo "⚠️  Coverage generation skipped for ${{ matrix.app }}"
           else
             echo "⚠️  Coverage not configured for ${{ matrix.app }}"
           fi
+
 
       - name: Upload Coverage Reports
         uses: codecov/codecov-action@v4
@@ -250,12 +366,109 @@ jobs:
         working-directory: ./${{ matrix.app }}
         run: npm run build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.app }}-build
-          path: ${{ matrix.app }}/dist
-          retention-days: 7
+      # CÁCH 1 cho frontend: hiện log trong Summary (chỉ fail + coverage)
+      - name: Add frontend test logs to job summary
+        if: always()
+        run: |
+          APP_DIR="${{ matrix.app }}"
+          {
+            echo "## 🧪 Frontend tests for ${APP_DIR} (failed only + coverage)"
+
+            echo
+            echo "### ❌ Unit test failures"
+            echo '```text'
+            if [ -f "${APP_DIR}/test-output.log" ]; then
+              CLEAN=$(cat "${APP_DIR}/test-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+
+              printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed unit tests."
+              echo
+              printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+            else
+              echo "No unit test log file found."
+            fi
+            echo '```'
+
+            echo
+            echo "### ❌ Integration test failures"
+            echo '```text'
+            if [ -f "${APP_DIR}/integration-output.log" ]; then
+              CLEAN=$(cat "${APP_DIR}/integration-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+
+              printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed integration tests."
+              echo
+              printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+            else
+              echo "No integration test log file found."
+            fi
+            echo '```'
+
+            echo
+            echo "### 📊 Coverage summary"
+            echo '```text'
+            if [ -f "${APP_DIR}/coverage-output.log" ]; then
+              CLEAN_COV=$(cat "${APP_DIR}/coverage-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+              # IN FULL COVERAGE LOG, KHÔNG FILTER
+              printf "%s\n" "$CLEAN_COV"
+            else
+              echo "No coverage log file found."
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # CÁCH 3 cho frontend: đẩy log lên CloudWatch khi FAIL (chỉ fail + coverage)
+      - name: Push frontend test logs to CloudWatch (on failure)
+        if: failure()
+        env:
+          APP_NAME: ${{ matrix.app }}
+        run: |
+          LOG_GROUP="/ci/frontend-tests"
+          LOG_STREAM="${GITHUB_RUN_ID}-${APP_NAME}"
+
+          aws logs create-log-group --log-group-name "$LOG_GROUP" 2>/dev/null || true
+          aws logs create-log-stream --log-group-name "$LOG_GROUP" --log-stream-name "$LOG_STREAM" 2>/dev/null || true
+
+          TS=$(($(date +%s%N)/1000000))
+
+          LOG_TEXT=$(
+            {
+              echo "=== Frontend (${APP_NAME}) Unit test failures ==="
+              if [ -f "${APP_NAME}/test-output.log" ]; then
+                CLEAN=$(cat "${APP_NAME}/test-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed unit tests."
+                printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+              else
+                echo "No unit test log file found."
+              fi
+
+              echo
+              echo "=== Frontend (${APP_NAME}) Integration test failures ==="
+              if [ -f "${APP_NAME}/integration-output.log" ]; then
+                CLEAN=$(cat "${APP_NAME}/integration-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                printf "%s\n" "$CLEAN" | grep -A50 '^FAIL ' || echo "No failed integration tests."
+                printf "%s\n" "$CLEAN" | grep -E 'Test Suites:|Tests:|Snapshots:' || true
+              else
+                echo "No integration test log file found."
+              fi
+
+              echo
+              echo "=== Frontend (${APP_NAME}) Coverage summary ==="
+              if [ -f "${APP_NAME}/coverage-output.log" ]; then
+                CLEAN_COV=$(cat "${APP_NAME}/coverage-output.log" | tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[mK]//g')
+                # IN FULL COVERAGE LOG
+                printf "%s\n" "$CLEAN_COV"
+              else
+                echo "No coverage log file found."
+              fi
+            }
+          )
+
+          ESCAPED=$(python -c "import json,sys; print(json.dumps(sys.stdin.read())[1:-1])" <<< "$LOG_TEXT")
+
+          aws logs put-log-events \
+            --log-group-name "$LOG_GROUP" \
+            --log-stream-name "$LOG_STREAM" \
+            --log-events "[{\"timestamp\":$TS,\"message\":\"$ESCAPED\"}]"
+
 
   security-scan:
     name: Security Scan
@@ -275,10 +488,6 @@ jobs:
 
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        # Only attempt upload when workflow runs in the repository (not a fork),
-        # otherwise the runner's token may not have permission and you'll seedssssss
-        # 'Resource not accessible by integration'. Keep 'always()' to allow
-        # the step to be evaluated for post-job/cleanup semantics.
         if: always() && github.repository == github.event.repository.full_name
         with:
           sarif_file: 'trivy-results.sarif'

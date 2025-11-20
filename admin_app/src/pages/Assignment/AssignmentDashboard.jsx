@@ -30,6 +30,9 @@ const AssignmentDashboard = () => {
     return () => {
       socketService.off('order:ready-for-assignment');
       socketService.off('assignment:success');
+      socketService.off('order:status-updated');
+      socketService.off('order:created');
+      socketService.off('drone:status-update');
     };
   }, []);
 
@@ -51,25 +54,83 @@ const AssignmentDashboard = () => {
   };
 
   const initializeSocket = () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      console.warn('Assignment - No token found')
+      return
+    }
 
     socketService.connect(token);
 
-    // Listen for new orders
-    socketService.onOrderReady((data) => {
-      message.info(`🆕 New order ready for assignment: ${data.orderId}`);
-      fetchData();
-    });
+    // Setup listeners after connection
+    const setupListeners = () => {
+      if (!socketService.isConnected()) {
+        console.log('⏳ Assignment - Waiting for socket connection...')
+        setTimeout(setupListeners, 500)
+        return
+      }
 
-    // Listen for successful assignments
-    socketService.onAssignmentSuccess((data) => {
-      message.success(`✅ Order assigned to drone successfully!`);
-      fetchData();
-    });
-  };
+      console.log('✅ Assignment - Setting up real-time listeners')
 
-  const handleDragEnd = (result) => {
+      // Listen for new orders
+      socketService.onOrderReady((data) => {
+        console.log('📡 Assignment - New order ready:', data)
+        message.info(`🆕 New order ready for assignment: ${data.orderId}`);
+        fetchData();
+      });
+
+      // Listen for successful assignments
+      socketService.onAssignmentSuccess((data) => {
+        console.log('📡 Assignment - Assignment success:', data)
+        message.success(`✅ Order assigned to drone successfully!`);
+        fetchData();
+      });
+      
+      // Listen for order status updates
+      const handleOrderStatusUpdate = (data) => {
+        console.log('📡 Assignment - Order status updated:', data);
+        // Refresh data when order status changes
+        // If order becomes 'ready', it should appear in pending list
+        // If order changes from 'ready' to another status, it should be removed
+        fetchData();
+      }
+      
+      // Listen for drone status updates
+      const handleDroneStatusUpdate = (data) => {
+        console.log('📡 Assignment - Drone status updated:', data);
+        // Update drone availability
+        setAvailableDrones(prev => 
+          prev.map(d => 
+            d._id === data.droneId 
+              ? { ...d, status: data.status, batteryLevel: data.batteryLevel || d.batteryLevel }
+              : d
+          )
+        );
+        // Refresh if drone becomes unavailable
+        if (data.status !== 'available' && data.status !== 'idle') {
+          fetchData();
+        }
+      }
+      
+            // Listen for new orders created
+            const handleOrderCreated = () => {
+                console.log('📡 Assignment - New order created');
+                fetchData();
+            }
+
+            const socket = socketService.getSocket();
+            if (socket) {
+                socket.on('order:status-updated', handleOrderStatusUpdate);
+                socket.on('order:created', handleOrderCreated);
+                socketService.onDroneStatusUpdate(handleDroneStatusUpdate);
+                console.log('✅ Assignment - Event listeners attached successfully');
+            } else {
+                console.error('❌ Assignment - Socket instance not available');
+            }
+        }
+
+        setupListeners()
+    };  const handleDragEnd = (result) => {
     const { source, destination, draggableId } = result;
 
     // Dropped outside valid area

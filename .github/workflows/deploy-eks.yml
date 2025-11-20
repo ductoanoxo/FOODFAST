@@ -1,0 +1,344 @@
+name: Deploy to EKS (Kubernetes)
+
+# Auto-deploy to Kubernetes after Docker Build completes
+on:
+  # Tự động chạy sau khi build image xong
+  workflow_run:
+    workflows:
+      - Docker Build and Push
+    types:
+      - completed
+  # Cho phép deploy thủ công
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: ${{ github.repository_owner }}
+  EKS_CLUSTER_NAME: foodfast-cluster  # Tên cluster EKS của bạn
+
+jobs:
+  # Build K8s-specific images with relative API URLs
+  build-k8s-images:
+    if: |
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main') ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        service:
+          - name: client_app
+            image: foodfast-client
+          - name: restaurant_app
+            image: foodfast-restaurant
+          - name: admin_app
+            image: foodfast-admin
+          - name: drone_manage
+            image: foodfast-drone
+
+    steps:
+      - name: Checkout (from workflow_run)
+        if: ${{ github.event_name == 'workflow_run' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Checkout (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push K8s-specific image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service.name }}
+          file: ./${{ matrix.service.name }}/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service.image }}:k8s-latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service.image }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service.image }}:buildcache,mode=max
+          platforms: linux/amd64
+          build-args: |
+            VITE_API_URL=/api
+            VITE_SOCKET_URL=
+
+  deploy-k8s:
+    needs: build-k8s-images
+    # CHỈ chạy nếu:
+    # 1. Build của nhánh main thành công, HOẶC
+    # 2. Chạy tay (workflow_dispatch)
+    if: |
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main') ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      # ======================
+      # 1) Checkout
+      # ======================
+      - name: Checkout (from workflow_run)
+        if: ${{ github.event_name == 'workflow_run' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Checkout (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/checkout@v4
+
+      - name: Verify branch
+        if: github.event_name == 'workflow_run'
+        run: |
+          BRANCH_NAME=${{ github.event.workflow_run.head_branch }}
+          echo "Triggering branch is: $BRANCH_NAME"
+          if [ "$BRANCH_NAME" != "main" ]; then
+            echo "K8s deployment is only allowed from 'main' branch. Aborting."
+            exit 1
+          fi
+
+      # ======================
+      # 2) Xác định image tag
+      # ======================
+      - name: Decide image tag
+        id: imagetag
+        run: |
+          # Use k8s-latest tag for K8s deployment (built with relative API URLs)
+          TAG="k8s-latest"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "✅ Will deploy image tag: $TAG"
+
+      # ======================
+      # 3) SSH Setup
+      # ======================
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.EKS_SSH_KEY }}
+
+      - name: Add EKS server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.EKS_SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      # ======================
+      # 4) Replace placeholders in K8s manifests
+      # ======================
+      - name: Update K8s manifests with actual values
+        run: |
+          # Replace OWNER placeholder in all manifest files
+          find k8s/ -type f -name "*.yaml" -exec sed -i "s/OWNER/${{ env.OWNER }}/g" {} +
+          echo "✅ Updated manifests with owner: ${{ env.OWNER }}"
+
+      # ======================
+      # 5) Sync K8s manifests to EKS server
+      # ======================
+      - name: Sync K8s manifests to EKS server
+        env:
+          SERVER_HOST: ${{ secrets.EKS_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.EKS_SERVER_USER }}
+        run: |
+          echo "Syncing K8s manifests to EKS server..."
+          ssh $SERVER_USER@$SERVER_HOST "mkdir -p ~/foodfast-k8s"
+          scp -r k8s/* $SERVER_USER@$SERVER_HOST:~/foodfast-k8s/
+          echo "✅ K8s manifests synced (including monitoring dashboards)"
+
+      # ======================
+      # 6) Create deployment script
+      # ======================
+      - name: Create K8s deployment script
+        run: |
+          cat > k8s-deploy.sh <<'SCRIPT'
+          set -e
+
+          IMAGE_TAG="${IMAGE_TAG}"
+          GHCR_TOKEN="${GHCR_TOKEN}"
+          OWNER="${OWNER}"
+          MONGO_URI="${MONGO_URI}"
+          JWT_SECRET="${JWT_SECRET}"
+          JWT_EXPIRE="${JWT_EXPIRE}"
+          CLOUDINARY_CLOUD_NAME="${CLOUDINARY_CLOUD_NAME}"
+          CLOUDINARY_API_KEY="${CLOUDINARY_API_KEY}"
+          CLOUDINARY_API_SECRET="${CLOUDINARY_API_SECRET}"
+
+          cd ~/foodfast-k8s
+
+          echo "==> Configure kubectl for kind cluster"
+          export KUBECONFIG=/home/ubuntu/.kube/config
+          kubectl config use-context kind-foodfast || true
+          
+          echo "==> Verify cluster connection"
+          kubectl cluster-info
+          kubectl get nodes
+
+          echo "==> Create namespace"
+          kubectl apply -f base/namespace.yaml
+
+          echo "==> Create GHCR image pull secret"
+          kubectl delete secret ghcr-secret -n foodfast --ignore-not-found=true
+          kubectl create secret docker-registry ghcr-secret \
+            --docker-server=ghcr.io \
+            --docker-username="${OWNER}" \
+            --docker-password="${GHCR_TOKEN}" \
+            --namespace=foodfast
+
+          echo "==> Create secrets from GitHub Secrets"
+          kubectl delete secret foodfast-secrets -n foodfast --ignore-not-found=true
+          kubectl create secret generic foodfast-secrets \
+            --from-literal=MONGO_URI="${MONGO_URI}" \
+            --from-literal=JWT_SECRET="${JWT_SECRET}" \
+            --from-literal=CLOUDINARY_CLOUD_NAME="${CLOUDINARY_CLOUD_NAME}" \
+            --from-literal=CLOUDINARY_API_KEY="${CLOUDINARY_API_KEY}" \
+            --from-literal=CLOUDINARY_API_SECRET="${CLOUDINARY_API_SECRET}" \
+            --namespace=foodfast
+
+          echo "==> Apply ConfigMap"
+          kubectl apply -f base/configmap.yaml
+          kubectl apply -f base/nginx-config.yaml
+
+          echo "==> Deploy applications"
+          kubectl apply -f deployments/
+
+          echo "==> Update image tags to ${IMAGE_TAG} (K8s-specific images with relative API URLs)"
+          kubectl set image deployment/foodfast-server server=ghcr.io/${OWNER}/foodfast-server:latest -n foodfast
+          kubectl set image deployment/foodfast-client client=ghcr.io/${OWNER}/foodfast-client:${IMAGE_TAG} -n foodfast
+          kubectl set image deployment/foodfast-admin admin=ghcr.io/${OWNER}/foodfast-admin:${IMAGE_TAG} -n foodfast
+          kubectl set image deployment/foodfast-restaurant restaurant=ghcr.io/${OWNER}/foodfast-restaurant:${IMAGE_TAG} -n foodfast
+          kubectl set image deployment/foodfast-drone drone=ghcr.io/${OWNER}/foodfast-drone:${IMAGE_TAG} -n foodfast
+
+          echo "==> Restart deployments to pull new images"
+          kubectl rollout restart deployment -n foodfast
+
+          echo "==> Apply HPA"
+          kubectl apply -f hpa/
+
+          echo "==> Apply Ingress"
+          kubectl apply -f ingress/
+
+          echo "==> Deploy Monitoring Stack"
+          kubectl apply -f base/monitoring-prometheus.yaml
+          kubectl apply -f base/monitoring-grafana.yaml
+
+          echo "==> Force update Prometheus ConfigMap (includes recording rules)"
+          kubectl delete configmap prometheus-config -n foodfast --ignore-not-found=true
+          kubectl apply -f base/monitoring-prometheus.yaml
+          
+          echo "==> Restart Prometheus to reload config and rules"
+          kubectl rollout restart deployment/prometheus -n foodfast
+
+          echo "==> Update Grafana dashboard ConfigMap from latest manifest"
+          if [ -f base/grafana-dashboard-foodfast.json ]; then
+            kubectl create configmap grafana-dashboard-foodfast \
+              --from-file=base/grafana-dashboard-foodfast.json \
+              -n foodfast \
+              --dry-run=client -o yaml | kubectl apply -f -
+          else
+            echo "Warning: grafana-dashboard-foodfast.json not found, keeping existing dashboard"
+          fi
+          
+          echo "==> Restart Grafana to reload dashboard"
+          kubectl rollout restart deployment/grafana -n foodfast
+
+          echo "==> Deployment triggered successfully"
+          echo "Note: Pods will continue rolling out in background"
+          
+          echo "==> Current deployment status"
+          kubectl get deployments -n foodfast
+          
+          echo "==> Current pod status"
+          kubectl get pods -n foodfast -o wide
+
+          echo "==> Get Monitoring URLs"
+          echo "Prometheus: kubectl port-forward svc/prometheus 9090:9090 -n foodfast"
+          echo "Grafana: kubectl port-forward svc/grafana 3030:3000 -n foodfast"
+
+          echo "✅ K8s deployment initiated - pods will continue starting"
+          SCRIPT
+
+      # ======================
+      # 7) Run deployment on EKS server
+      # ======================
+      - name: Deploy to Kubernetes
+        env:
+          SERVER_HOST: ${{ secrets.EKS_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.EKS_SERVER_USER }}
+          IMAGE_TAG: ${{ steps.imagetag.outputs.tag }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          OWNER: ${{ env.OWNER }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRE: ${{ secrets.JWT_EXPIRE }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+        run: |
+          echo "Connecting to $SERVER_USER@$SERVER_HOST ..."
+          echo "Deploying to K8s with image tag: ${IMAGE_TAG}"
+
+          scp k8s-deploy.sh $SERVER_USER@$SERVER_HOST:/tmp/k8s-deploy.sh
+
+          ssh $SERVER_USER@$SERVER_HOST "chmod +x /tmp/k8s-deploy.sh && \
+            IMAGE_TAG='${IMAGE_TAG}' \
+            GHCR_TOKEN='${GHCR_TOKEN}' \
+            OWNER='${OWNER}' \
+            MONGO_URI='${MONGO_URI}' \
+            JWT_SECRET='${JWT_SECRET}' \
+            JWT_EXPIRE='${JWT_EXPIRE}' \
+            CLOUDINARY_CLOUD_NAME='${CLOUDINARY_CLOUD_NAME}' \
+            CLOUDINARY_API_KEY='${CLOUDINARY_API_KEY}' \
+            CLOUDINARY_API_SECRET='${CLOUDINARY_API_SECRET}' \
+            /tmp/k8s-deploy.sh"
+
+      # ======================
+      # 8) Healthcheck
+      # ======================
+      - name: Wait for pods to be ready
+        env:
+          SERVER_HOST: ${{ secrets.EKS_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.EKS_SERVER_USER }}
+        run: |
+          echo "Waiting 30 seconds for pods to start..."
+          sleep 30
+          
+          echo "Checking deployment status..."
+          ssh $SERVER_USER@$SERVER_HOST "kubectl get deployments -n foodfast"
+          
+          echo "Checking pod status..."
+          ssh $SERVER_USER@$SERVER_HOST "kubectl get pods -n foodfast"
+          
+          echo "Checking recent events..."
+          ssh $SERVER_USER@$SERVER_HOST "kubectl get events -n foodfast --sort-by='.lastTimestamp' | tail -15"
+          
+      - name: Verify services are created
+        env:
+          SERVER_HOST: ${{ secrets.EKS_SERVER_HOST }}
+          SERVER_USER: ${{ secrets.EKS_SERVER_USER }}
+        run: |
+          echo "Checking services..."
+          ssh $SERVER_USER@$SERVER_HOST "kubectl get svc -n foodfast"
+          
+          echo "✅ K8s deployment completed - pods will continue rolling out in background"
