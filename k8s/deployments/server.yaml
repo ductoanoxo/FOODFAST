@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foodfast-server
+  namespace: foodfast
+  labels:
+    app: foodfast-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: foodfast-server
+  template:
+    metadata:
+      labels:
+        app: foodfast-server
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: server
+        image: ghcr.io/OWNER/foodfast-server:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: foodfast-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: foodfast-config
+              key: PORT
+        - name: JWT_EXPIRE
+          valueFrom:
+            configMapKeyRef:
+              name: foodfast-config
+              key: JWT_EXPIRE
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: foodfast-secrets
+              key: MONGO_URI
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: foodfast-secrets
+              key: JWT_SECRET
+        - name: CLOUDINARY_CLOUD_NAME
+          valueFrom:
+            secretKeyRef:
+              name: foodfast-secrets
+              key: CLOUDINARY_CLOUD_NAME
+        - name: CLOUDINARY_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: foodfast-secrets
+              key: CLOUDINARY_API_KEY
+        - name: CLOUDINARY_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: foodfast-secrets
+              key: CLOUDINARY_API_SECRET
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      imagePullSecrets:
+      - name: ghcr-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foodfast-server
+  namespace: foodfast
+  labels:
+    app: foodfast-server
+spec:
+  type: NodePort
+  ports:
+  - port: 5000
+    targetPort: 5000
+    nodePort: 30000
+    protocol: TCP
+    name: http
+  selector:
+    app: foodfast-server

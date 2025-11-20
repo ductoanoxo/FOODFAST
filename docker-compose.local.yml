@@ -1,0 +1,180 @@
+version: '3.8'
+
+services:
+  # Backend Server
+  server_app:
+    build: ./server_app
+    container_name: foodfast_server
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb+srv://toantra349:toantoan123@ktpm.dwb8wtz.mongodb.net/FOODFASTDRONEDELIVERY?retryWrites=true&w=majority&appName=KTPM
+      - JWT_SECRET=your_jwt_secret_key_here_change_in_production
+      - JWT_EXPIRE=7d
+      - CLIENT_URL=http://localhost:3000
+      - RESTAURANT_URL=http://localhost:3001
+      - ADMIN_URL=http://localhost:3002
+      - DRONE_URL=http://localhost:3003
+      - VNPAY_TMN_CODE=1C1PQ01T
+      - VNPAY_HASH_SECRET=VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L
+      - VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+      - VNPAY_RETURN_URL=http://localhost:3000/payment/vnpay/return
+      - VNPAY_API=https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    networks:
+      - foodfast_network
+
+  # Client App - LOCAL
+  client_app:
+    build:
+      context: ./client_app
+      args:
+        VITE_API_URL: http://localhost:5000/api
+        VITE_SOCKET_URL: http://localhost:5000
+    container_name: foodfast_client
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - server_app
+    networks:
+      - foodfast_network
+
+  # Restaurant App - LOCAL
+  restaurant_app:
+    build:
+      context: ./restaurant_app
+      args:
+        VITE_API_URL: http://localhost:5000/api
+        VITE_SOCKET_URL: http://localhost:5000
+    container_name: foodfast_restaurant
+    restart: always
+    ports:
+      - "3001:80"
+    depends_on:
+      - server_app
+    networks:
+      - foodfast_network
+
+  # Admin App - LOCAL
+  admin_app:
+    build:
+      context: ./admin_app
+      args:
+        VITE_API_URL: http://localhost:5000/api
+        VITE_SOCKET_URL: http://localhost:5000
+    container_name: foodfast_admin
+    restart: always
+    ports:
+      - "3002:80"
+    depends_on:
+      - server_app
+    networks:
+      - foodfast_network
+
+  # Drone Management App - LOCAL
+  drone_manage:
+    build:
+      context: ./drone_manage
+      args:
+        VITE_API_URL: http://localhost:5000/api
+        VITE_SOCKET_URL: http://localhost:5000
+    container_name: foodfast_drone
+    restart: always
+    ports:
+      - "3003:80"
+    depends_on:
+      - server_app
+    networks:
+      - foodfast_network
+
+  # Prometheus - Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: foodfast_prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - foodfast_network
+
+  # Grafana - Metrics Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: foodfast_grafana
+    restart: always
+    ports:
+      - "3030:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./monitoring/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./monitoring/grafana:/etc/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - foodfast_network
+
+  # Node Exporter - System Metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: foodfast_node_exporter
+    restart: always
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - foodfast_network
+
+  # cAdvisor - Container Metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: foodfast_cadvisor
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    networks:
+      - foodfast_network
+
+volumes:
+  mongodb_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  foodfast_network:
+    driver: bridge
+  

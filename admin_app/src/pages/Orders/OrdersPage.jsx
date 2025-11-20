@@ -19,6 +19,7 @@ import {
 } from 'antd'
 import { EyeOutlined, CloseCircleOutlined, EnvironmentOutlined, DollarCircleOutlined, WarningOutlined } from '@ant-design/icons'
 import { getAllOrders, cancelOrder } from '../../api/orderAPI'
+import socketService from '../../services/socketService'
 import './OrdersPage.css'
 
 const { Option } = Select
@@ -38,6 +39,85 @@ const OrdersPage = () => {
 
     useEffect(() => {
         fetchOrders()
+        
+        // Connect socket for real-time updates
+        const token = localStorage.getItem('admin_token')
+        if (!token) {
+            console.warn('Admin - No token found, skipping socket connection')
+            return
+        }
+
+        socketService.connect(token)
+        
+        // Setup listeners after connection
+        const setupListeners = () => {
+            if (!socketService.isConnected()) {
+                console.log('⏳ Admin - Waiting for socket connection...')
+                setTimeout(setupListeners, 500)
+                return
+            }
+
+            console.log('✅ Admin - Setting up real-time listeners for orders')
+            
+            // Listen for order status updates
+            const handleOrderStatusUpdate = (data) => {
+                console.log('📡 Admin - Order status updated:', data)
+                setOrders(prevOrders => 
+                    prevOrders.map(order => 
+                        order._id === data.orderId || order._id === data._id
+                            ? { ...order, status: data.status, paymentStatus: data.paymentStatus || order.paymentStatus }
+                            : order
+                    )
+                )
+            }
+            
+            // Listen for new orders
+            const handleOrderCreated = (data) => {
+                console.log('📡 Admin - New order created:', data)
+                message.info('🆕 Đơn hàng mới!')
+                fetchOrders()
+            }
+            
+            // Listen for order cancellations
+            const handleOrderCancelled = (data) => {
+                console.log('📡 Admin - Order cancelled:', data)
+                setOrders(prevOrders => 
+                    prevOrders.map(order => 
+                        order._id === data.orderId
+                            ? { ...order, status: 'cancelled', cancelReason: data.reason }
+                            : order
+                    )
+                )
+            }
+
+            // Generic order update
+            const handleOrderUpdate = (data) => {
+                console.log('📡 Admin - Order updated:', data)
+                fetchOrders()
+            }
+            
+            // Use socketService.on() method directly
+            const socket = socketService.getSocket()
+            if (socket) {
+                socket.on('order:status-updated', handleOrderStatusUpdate)
+                socket.on('order:created', handleOrderCreated)
+                socket.on('order:cancelled', handleOrderCancelled)
+                socket.on('order:update', handleOrderUpdate)
+                console.log('✅ Admin - Event listeners attached successfully')
+            } else {
+                console.error('❌ Admin - Socket instance not available')
+            }
+        }
+
+        setupListeners()
+        
+        return () => {
+            console.log('🧹 Admin - Cleaning up order listeners')
+            socketService.off('order:status-updated')
+            socketService.off('order:created')
+            socketService.off('order:cancelled')
+            socketService.off('order:update')
+        }
     }, [statusFilter])
 
     const fetchOrders = async () => {
@@ -101,8 +181,9 @@ const OrdersPage = () => {
     }
 
     const canCancelOrder = (order) => {
-        // Can only cancel orders that are not delivered or already cancelled
-        return !['delivered', 'cancelled'].includes(order.status)
+        // Can only cancel orders that are not delivered, already cancelled, or failed delivery
+        // Do not allow cancelling when delivery has failed (delivery_failed)
+        return !['delivered', 'cancelled', 'delivery_failed'].includes(order.status)
     }
 
     const getStatusColor = (status) => {

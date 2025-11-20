@@ -489,6 +489,24 @@ const createOrder = asyncHandler(async(req, res) => {
         console.error('Failed to emit new-order:', e)
     }
 
+    // Emit order:created event for real-time updates to all connected clients
+    try {
+        const createdPayload = {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            totalAmount: order.totalAmount,
+            timestamp: new Date(),
+        }
+        
+        console.log('📡 [SERVER] Emitting order:created globally:', createdPayload)
+        io.emit('order:created', createdPayload)
+        io.to('admin-room').emit('order:created', createdPayload)
+        console.log('✅ Emitted order:created event globally and to admin-room')
+    } catch (e) {
+        console.error('Failed to emit order:created:', e)
+    }
+
     res.status(201).json({
         success: true,
         data: order,
@@ -542,7 +560,7 @@ const getOrderById = asyncHandler(async(req, res) => {
         .populate('items.product', 'name image price')
         .populate('restaurant', 'name image address phone')
         .populate('user', 'name phone email')
-        .populate('drone', 'name model currentLocation')
+        .populate('drone', 'name model currentLocation homeLocation batteryLevel status')
 
     if (!order) {
         res.status(404)
@@ -678,13 +696,25 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
         // ✅ Use consistent event naming: emit both colon and hyphen variants for compatibility
     const payload = {
         orderId: order._id,
+        _id: order._id,
         orderNumber: order.orderNumber,
         status: order.status,
         timestamp: now,
+        confirmedAt: order.confirmedAt,
+        preparingAt: order.preparingAt,
+        readyAt: order.readyAt,
+        deliveringAt: order.deliveringAt,
+        arrivedAt: order.arrivedAt,
+        deliveredAt: order.deliveredAt,
+        cancelledAt: order.cancelledAt,
+        timeoutAt: order.timeoutAt,
+        returnedAt: order.returnedAt,
+        cancelReason: order.cancelReason,
+        paymentStatus: order.paymentStatus,
         ...(refundInfo && { refundInfo }), // Include refund info if cancellation happened
     }
 
-    // Emit with colon format
+    // Emit to specific rooms
     io.to(`order-${order._id}`).emit('order:status-updated', payload)
     io.to(`restaurant-${order.restaurant}`).emit('order:status-updated', {...payload, restaurantId: order.restaurant })
 
@@ -694,9 +724,21 @@ const updateOrderStatus = asyncHandler(async(req, res) => {
         io.to(`restaurant-${order.restaurant}`).emit('order:cancelled', {...payload, restaurantId: order.restaurant })
     }
 
-    // Also emit hyphen variant for older clients that still listen to 'order-status-updated'
+    // Also emit hyphen variant for older clients
     io.to(`order-${order._id}`).emit('order-status-updated', payload)
     io.to(`restaurant-${order.restaurant}`).emit('order-status-updated', {...payload, restaurantId: order.restaurant })
+    
+    // Emit globally for all connected clients (admin dashboards, user order history)
+    console.log(`📡 [SERVER] Emitting order:status-updated globally:`, payload)
+    io.emit('order:status-updated', payload)
+    
+    // Also emit to admin-room specifically
+    io.to('admin-room').emit('order:status-updated', payload)
+    
+    if (status === 'cancelled') {
+        io.emit('order:cancelled', payload)
+        io.to('admin-room').emit('order:cancelled', payload)
+    }
 
     res.json({
         success: true,
@@ -711,7 +753,7 @@ const trackOrder = asyncHandler(async(req, res) => {
     const order = await Order.findById(req.params.id)
         .populate('items.product', 'name image')
         .populate('restaurant', 'name address location') // ✅ Added location for map
-        .populate('drone', 'name currentLocation batteryLevel')
+        .populate('drone', 'name currentLocation homeLocation batteryLevel status model serialNumber')
 
     if (!order) {
         res.status(404)
@@ -811,8 +853,18 @@ const cancelOrder = asyncHandler(async(req, res) => {
             timestamp: now,
         }
 
+        // Emit to specific order room
         io.to(`order-${order._id}`).emit('order:status-updated', cancelPayload)
         io.to(`order-${order._id}`).emit('order:cancelled', cancelPayload)
+        
+        // Emit globally for admin and user dashboards
+        console.log(`📡 [SERVER] Emitting order cancelled globally:`, cancelPayload)
+        io.emit('order:status-updated', cancelPayload)
+        io.emit('order:cancelled', cancelPayload)
+        
+        // Also emit to admin-room specifically
+        io.to('admin-room').emit('order:status-updated', cancelPayload)
+        io.to('admin-room').emit('order:cancelled', cancelPayload)
 
         if (order.restaurant && order.restaurant._id) {
             io.to(`restaurant-${order.restaurant._id}`).emit('order:cancelled', {
@@ -821,6 +873,29 @@ const cancelOrder = asyncHandler(async(req, res) => {
                 cancelledBy: 'customer',
                 customerName: order.user.name
             })
+        }
+        
+        // 🚁 If order has drone assigned, trigger return to home animation
+        if (order.drone) {
+            const Drone = require('../Models/Drone')
+            const drone = await Drone.findById(order.drone)
+            if (drone && drone.homeLocation) {
+                io.to(`order-${order._id}`).emit('drone:returning-home', {
+                    orderId: order._id,
+                    droneId: drone._id,
+                    droneName: drone.name,
+                    currentLocation: drone.currentLocation,
+                    homeLocation: drone.homeLocation,
+                    estimatedDuration: 5,
+                    timestamp: new Date()
+                })
+                console.log(`🚁 Emitted drone:returning-home for cancelled order ${order._id}`)
+                
+                // Update drone status
+                drone.status = 'returning'
+                drone.currentOrder = null
+                await drone.save()
+            }
         }
     } catch (e) {
         console.error('Failed to emit cancel event:', e)
@@ -876,10 +951,70 @@ const confirmDelivery = asyncHandler(async(req, res) => {
         throw new Error('Đơn hàng chưa ở trạng thái đang giao');
     }
 
+    // 🚀 EMIT drone:returning-home BEFORE updating order status (like delivery_failed)
+    // Add delay to ensure client has time to setup socket listeners
+    if (order.drone) {
+        const Drone = require('../Models/Drone');
+        const drone = await Drone.findById(order.drone._id);
+        
+        if (drone && drone.homeLocation) {
+            console.log(`🔙 Emitting drone:returning-home for delivered order ${order._id}`);
+            const socketService = req.app.get('socketService');
+            if (socketService && socketService.io) {
+                // ✅ Use customer location from order.deliveryInfo.location, NOT drone.currentLocation
+                const customerLocation = order.deliveryInfo?.location?.coordinates 
+                    ? {
+                        type: 'Point',
+                        coordinates: order.deliveryInfo.location.coordinates
+                    }
+                    : drone.currentLocation; // Fallback to drone location if no delivery info
+                
+                const payload = {
+                    orderId: order._id,
+                    droneId: drone._id,
+                    droneName: drone.name,
+                    currentLocation: customerLocation, // ✅ FIXED: Use customer location from deliveryInfo
+                    homeLocation: drone.homeLocation,
+                    estimatedDuration: 5,
+                    timestamp: new Date()
+                };
+                
+                console.log(`📍 [confirmDelivery] Drone returning from CUSTOMER location:`, customerLocation.coordinates);
+                
+                // Delay emission to ensure client listeners are ready
+                setTimeout(() => {
+                    // Emit to order room only (not broadcast to prevent duplicate events)
+                    socketService.io.to(`order-${order._id}`).emit('drone:returning-home', payload);
+                    console.log(`📡 [orderController] Emitted drone:returning-home for delivered order (delayed)`, payload);
+                }, 1000); // 1 second delay to allow client to setup listeners
+            }
+        }
+    }
+
     // Update order status to delivered
     order.status = 'delivered';
     order.deliveredAt = new Date();
     await order.save();
+
+    // Emit order status update globally
+    const io = req.app.get('io');
+    if (io) {
+        const deliveryPayload = {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            status: 'delivered',
+            deliveredAt: order.deliveredAt,
+            timestamp: new Date(),
+        };
+        
+        // Emit to order room
+        io.to(`order-${order._id}`).emit('order:status-updated', deliveryPayload);
+        io.to(`order-${order._id}`).emit('delivery:complete', deliveryPayload);
+        
+        // Emit globally
+        io.emit('order:status-updated', deliveryPayload);
+        io.emit('delivery:complete', deliveryPayload);
+    }
 
     // Update drone status to available and clear current order
     if (order.drone) {
@@ -1041,6 +1176,26 @@ const restaurantConfirmHandover = asyncHandler(async(req, res) => {
                     // Timeout: Chuyển drone về available
                     console.log(`❌ Order ${order._id} TIMEOUT! Drone về trạng thái sẵn sàng`);
 
+                    // 🚀 EMIT drone:returning-home TRƯỚC KHI save order status
+                    if (finalOrder.drone && finalOrder.drone.homeLocation) {
+                        console.log(`🔙 Emitting drone:returning-home for order ${finalOrder._id}`);
+                        if (socketService && socketService.io) {
+                            const payload = {
+                                orderId: finalOrder._id,
+                                droneId: finalOrder.drone._id,
+                                droneName: finalOrder.drone.name,
+                                currentLocation: finalOrder.drone.currentLocation,
+                                homeLocation: finalOrder.drone.homeLocation,
+                                estimatedDuration: 5,
+                                timestamp: new Date()
+                            };
+                            
+                            // Emit to order room only (not broadcast to prevent duplicate events)
+                            socketService.io.to(`order-${finalOrder._id}`).emit('drone:returning-home', payload);
+                            console.log(`📡 [orderController] Emitted drone:returning-home`, payload);
+                        }
+                    }
+
                     finalOrder.status = 'delivery_failed';
                     finalOrder.cancelReason = 'Không gặp người nhận sau 40 giây';
                     await finalOrder.save();
@@ -1057,18 +1212,24 @@ const restaurantConfirmHandover = asyncHandler(async(req, res) => {
                         }
                     }
 
-                    // Emit socket event
+                    // Emit socket event WITH DRONE INFO
                     if (socketService && socketService.io) {
-                        socketService.io.emit('order:status-updated', {
+                        const eventPayload = {
                             orderId: finalOrder._id,
                             status: 'delivery_failed',
-                            message: 'Giao hàng thất bại - Không gặp người nhận'
-                        });
-                        socketService.io.to(`order-${finalOrder._id}`).emit('order:status-updated', {
-                            orderId: finalOrder._id,
-                            status: 'delivery_failed',
-                            message: 'Giao hàng thất bại - Không gặp người nhận'
-                        });
+                            message: 'Giao hàng thất bại - Không gặp người nhận',
+                            // Include drone homeLocation for client animation
+                            drone: finalOrder.drone ? {
+                                _id: finalOrder.drone._id,
+                                name: finalOrder.drone.name,
+                                currentLocation: finalOrder.drone.currentLocation,
+                                homeLocation: finalOrder.drone.homeLocation
+                            } : null
+                        };
+                        
+                        socketService.io.emit('order:status-updated', eventPayload);
+                        socketService.io.to(`order-${finalOrder._id}`).emit('order:status-updated', eventPayload);
+                        console.log('📡 Emitted order:status-updated with drone info:', eventPayload);
                     }
                 } catch (error) {
                     console.error('❌ Error in timeout handler:', error);

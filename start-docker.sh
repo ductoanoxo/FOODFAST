@@ -29,7 +29,7 @@ echo "This may take 5-10 minutes on first run..."
 echo ""
 
 # Build and run all services
-docker compose up -d --build
+docker-compose -f docker-compose.local.yml up -d --build
 
 # Check if successful
 if [ $? -eq 0 ]; then
