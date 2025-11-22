@@ -21,6 +21,44 @@
   🎥 <i>Click vào ảnh để xem video demo trên YouTube</i>
 </p>
 
+
+
+---
+## Solution Alignment 
+<h3 align="center">Solution Alignment</h3>
+<p align="center">
+  <img src="asset/readme/Solution_Alignment.png" alt="Solution Alignment" width="600">
+</p>
+
+### 🧩 Overview (Solution Alignment)
+
+Sơ đồ bên trên thể hiện kiến trúc tổng thể của hệ thống:
+
+- **Frontend**  
+  - Deploy trên **Vercel**  
+  - Gọi API đến backend  
+
+- **Backend (Node.js)**  
+  - Lưu trữ mã nguồn trên **GitHub**  
+  - Đóng gói bằng **Docker**  
+  - Image được đẩy lên registry để **Kubernetes** pull về  
+
+- **Hạ tầng & Deploy**  
+  - **Kubernetes** chạy trên **AWS** để triển khai backend  
+  - CI/CD sử dụng GitHub Actions → build → push image → deploy  
+
+- **Database**  
+  - **MongoDB** dùng để lưu trữ dữ liệu ứng dụng  
+  - Backend kết nối trực tiếp tới MongoDB  
+
+- **Payment Integration**  
+  - Tích hợp **VNPAY** để xử lý giao dịch thanh toán  
+
+- **Monitoring**  
+  - **Prometheus** thu thập metrics  
+  - **Grafana** trực quan hóa và theo dõi trạng thái hệ thống  
+
+
 ---
 
 ## ☁️ **Công cụ & Hạ tầng**
@@ -476,15 +514,25 @@ docker-compose up -d
 ## 🗄️ Database Schema
 
 ### Collections chính
-- **users** - Thông tin người dùng
-- **restaurants** - Nhà hàng/cửa hàng
-- **products** - Món ăn/sản phẩm
-- **orders** - Đơn hàng
-- **drones** - Thông tin drone
-- **deliveries** - Lịch sử giao hàng
-- **reviews** - Đánh giá
-- **notifications** - Thông báo
 
+- **users** - Thông tin người dùng (`User.js`)
+- **restaurants** - Thông tin nhà hàng / cửa hàng (`Restaurant.js`)
+- **products** - Danh sách món ăn / sản phẩm (`Product.js`)
+- **categories** - Phân loại món / danh mục (`Category.js`)
+- **orders** - Đơn hàng chính (`Order.js`)
+- **order_audits** - Lịch sử / audit thay đổi đơn hàng (`OrderAudit.js`)
+- **drones** - Thông tin drone (`Drone.js`)
+- **reviews** - Đánh giá sản phẩm / nhà hàng (`Review.js`)
+- **promotions** - Các chương trình khuyến mãi (`Promotion.js`)
+- **promo_usages** - Theo dõi việc sử dụng khuyến mãi (`PromoUsage.js`)
+- **vouchers** - Mã giảm giá / voucher (`Voucher.js`)
+- **voucher_usages** - Theo dõi việc sử dụng voucher (`VoucherUsage.js`)
+
+### ERD 
+<h3 align="center">ERD cho toàn bộ hệ thống</h3>
+<p align="center">
+  <img src="asset/readme/ERD.png" alt="ERD Diagram" width="600">
+</p>
 ## 🔐 Authentication
 
 Hệ thống sử dụng JWT (JSON Web Token) cho authentication:
@@ -916,6 +964,3 @@ Hãy truy cập link để tham khảo chi tiết từng phần!
   Made with by <b>FOODFAST Team SGU</b>
 </p>
 
-
-# Test dashboard update Sat, Nov 15, 2025 12:41:29 PM
-# Testing Deploy EKS workflow trigger
