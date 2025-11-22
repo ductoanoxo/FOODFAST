@@ -37,6 +37,7 @@
 <p align="center">
   <img src="asset/readme/reactjs.png" alt="ReactJS" width="110" style="margin:15px;">
   <img src="asset/readme/mern.jpg" alt="MERN Stack" width="110" style="margin:15px;">
+  <img src="asset/readme/socket.png" alt="MERN Stack" width="110" style="margin:15px;">
 </p>
 
 ---
@@ -46,6 +47,7 @@
   <img src="asset/readme/nodejs.png" alt="NodeJS" width="110" style="margin:15px;">
   <img src="asset/readme/mongodb.png" alt="MongoDB" width="110" style="margin:15px;">
   <img src="asset/readme/docker.png" alt="Docker" width="110" style="margin:15px;">
+  <img src="asset/readme/kubernetes.png" alt="Docker" width="110" style="margin:15px;">
   <img src="asset/readme/cloudinary.png" alt="Cloudinary" width="110" style="margin:15px;">
 </p>
 
@@ -57,6 +59,8 @@
   <img src="asset/readme/awsec2.jpg" alt="AWS EC2" width="110" style="margin:15px;">
   <img src="asset/readme/github-actions.png" alt="GitHub Actions" width="110" style="margin:15px;">
   <img src="asset/readme/railway.png" alt="Railway" width="110" style="margin:15px;">
+  <img src="asset/readme/prometheus.jpg" alt="Railway" width="110" style="margin:15px;">
+  <img src="asset/readme/grafana.jpg" alt="Railway" width="110" style="margin:15px;">
 </p>
 
 ---
