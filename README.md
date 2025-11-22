@@ -772,14 +772,7 @@ cd client_app
 npm test
 ```
 
-## 📝 License
 
-MIT License - Copyright (c) 2025
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-
-## 👥 Đóng góp
-
-Mọi đóng góp đều được chào đón! Vui lòng tạo Pull Request hoặc Issue.
 
 ## DEPLOY BẰNG VERCEL ( CHO FRONTEND ) + RAILWAY ( CHO BACKEND ) 
 
@@ -1155,6 +1148,15 @@ Hãy truy cập link để tham khảo chi tiết từng phần!
   💬 Mọi thắc mắc hoặc góp ý vui lòng liên hệ qua GitHub để được hỗ trợ nhanh nhất.
 </p>
 
+---
+## 📝 License
+
+MIT License - Copyright (c) 2025
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+## 👥 Đóng góp
+
+Mọi đóng góp đều được chào đón! Vui lòng tạo Pull Request hoặc Issue.
 ---
 
 <p align="center">
