@@ -533,6 +533,7 @@ docker-compose up -d
 <p align="center">
   <img src="asset/readme/ERD.png" alt="ERD Diagram" width="600">
 </p>
+
 ## 🔐 Authentication
 
 Hệ thống sử dụng JWT (JSON Web Token) cho authentication:
