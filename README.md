@@ -542,26 +542,222 @@ Hệ thống sử dụng JWT (JSON Web Token) cho authentication:
 
 ## 📡 API Endpoints
 
-### Auth
-- `POST /api/auth/register` - Đăng ký
-- `POST /api/auth/login` - Đăng nhập
-- `POST /api/auth/logout` - Đăng xuất
-- `POST /api/auth/refresh` - Refresh token
+### 🔐 Authentication (`/api/auth`)
 
-### Products
-- `GET /api/products` - Lấy danh sách món ăn
-- `GET /api/products/:id` - Chi tiết món ăn
-- `POST /api/products` - Tạo món ăn mới
+- `POST /api/auth/register` - Đăng ký tài khoản mới  
+- `POST /api/auth/login` - Đăng nhập  
+- `POST /api/auth/logout` - Đăng xuất _(protected)_  
+- `GET /api/auth/me` - Lấy thông tin profile hiện tại _(protected)_  
+- `GET /api/auth/profile` - Lấy profile _(protected)_  
+- `PUT /api/auth/profile` - Cập nhật profile _(protected)_  
 
-### Orders
-- `POST /api/orders` - Tạo đơn hàng
-- `GET /api/orders/:id` - Chi tiết đơn hàng
-- `PATCH /api/orders/:id/status` - Cập nhật trạng thái
+---
 
-### Drones
-- `GET /api/drones` - Danh sách drone
-- `GET /api/drones/:id/location` - Vị trí drone
-- `PATCH /api/drones/:id/assign` - Gán drone cho đơn hàng
+### 👥 Users (`/api/users`)
+
+- `GET /api/users/check-email` - Kiểm tra email đã tồn tại  
+- `GET /api/users/stats` - Thống kê người dùng _(admin)_  
+- `GET /api/users` - Lấy danh sách users _(admin)_  
+- `GET /api/users/:id` - Lấy thông tin user _(admin)_  
+- `PUT /api/users/:id` - Cập nhật user _(admin)_  
+- `DELETE /api/users/:id` - Xóa user _(admin)_  
+- `GET /api/users/:id/orders` - Lấy đơn hàng của user _(protected)_  
+
+---
+
+### 🍕 Products (`/api/products`)
+
+- `GET /api/products/popular` - Lấy sản phẩm phổ biến  
+- `GET /api/products/restaurant` - Lấy sản phẩm theo nhà hàng _(restaurant/admin)_  
+- `GET /api/products` - Lấy danh sách sản phẩm  
+- `POST /api/products` - Tạo sản phẩm mới _(restaurant/admin, upload image)_  
+- `GET /api/products/:id` - Lấy chi tiết sản phẩm  
+- `PUT /api/products/:id` - Cập nhật sản phẩm _(restaurant/admin, upload image)_  
+- `DELETE /api/products/:id` - Xóa sản phẩm _(restaurant/admin)_  
+
+---
+
+### 📂 Categories (`/api/categories`)
+
+- `GET /api/categories` - Lấy danh sách categories  
+- `POST /api/categories` - Tạo category _(admin/restaurant)_  
+- `GET /api/categories/restaurant/with-products` - Lấy categories kèm products _(restaurant)_  
+- `GET /api/categories/:id` - Lấy category theo id  
+- `PUT /api/categories/:id` - Cập nhật category _(admin/restaurant)_  
+- `DELETE /api/categories/:id` - Xóa category _(admin/restaurant)_  
+- `GET /api/categories/:id/products` - Lấy sản phẩm theo category  
+
+---
+
+### 🏪 Restaurants (`/api/restaurants`)
+
+- `GET /api/restaurants/nearby` - Lấy nhà hàng gần vị trí  
+- `GET /api/restaurants` - Lấy danh sách nhà hàng  
+- `POST /api/restaurants` - Tạo nhà hàng _(admin)_  
+- `POST /api/restaurants/create-with-account` - Tạo nhà hàng kèm tài khoản _(admin)_  
+- `GET /api/restaurants/:id` - Lấy chi tiết nhà hàng  
+- `PUT /api/restaurants/:id` - Cập nhật nhà hàng _(restaurant/admin, upload image)_  
+- `DELETE /api/restaurants/:id` - Xóa nhà hàng _(admin)_  
+- `GET /api/restaurants/:id/menu` - Lấy menu nhà hàng  
+- `GET /api/restaurants/:id/orders` - Lấy đơn hàng nhà hàng _(restaurant/admin)_  
+- `PATCH /api/restaurants/:id/toggle-status` - Bật/tắt trạng thái _(restaurant/admin)_  
+- `GET /api/restaurants/:id/stats` - Thống kê nhà hàng _(restaurant/admin)_  
+
+---
+
+### 📦 Orders (`/api/orders`)
+
+- `POST /api/orders/calculate-fee` - Tính phí giao hàng _(protected)_  
+- `GET /api/orders/history` - Lịch sử đơn hàng _(protected)_  
+- `GET /api/orders/restaurant` - Đơn hàng theo nhà hàng _(restaurant/admin)_  
+- `GET /api/orders` - Lấy danh sách đơn hàng _(protected)_  
+- `POST /api/orders` - Tạo đơn hàng mới _(protected)_  
+- `GET /api/orders/:id` - Chi tiết đơn hàng _(protected)_  
+- `PATCH /api/orders/:id/status` - Cập nhật trạng thái đơn _(restaurant/admin)_  
+- `PATCH /api/orders/:id/cancel` - Hủy đơn hàng _(protected)_  
+- `POST /api/orders/:id/confirm-delivery` - Xác nhận giao hàng _(protected)_  
+- `POST /api/orders/:id/restaurant-confirm-handover` - Xác nhận bàn giao _(restaurant)_  
+- `GET /api/orders/:id/track` - Theo dõi đơn hàng _(protected)_  
+
+---
+
+### 🚁 Drones (`/api/drones`)
+
+- `GET /api/drones/simulations` - Lấy simulations đang chạy _(admin)_  
+- `GET /api/drones/nearby` - Lấy drone gần _(admin)_  
+- `GET /api/drones` - Lấy danh sách drone  
+- `POST /api/drones` - Tạo drone _(admin)_  
+- `GET /api/drones/:id` - Chi tiết drone  
+- `PUT /api/drones/:id` - Cập nhật drone _(drone/admin)_  
+- `DELETE /api/drones/:id` - Xóa drone _(admin)_  
+- `PATCH /api/drones/:id/location` - Cập nhật vị trí _(drone/admin)_  
+- `PATCH /api/drones/:id/status` - Cập nhật trạng thái _(drone/admin)_  
+- `PATCH /api/drones/:id/battery` - Cập nhật pin _(drone/admin)_  
+- `POST /api/drones/:id/assign` - Gán drone cho đơn _(admin)_  
+- `POST /api/drones/:id/start-delivery` - Bắt đầu giao hàng simulation _(admin/drone)_  
+- `POST /api/drones/:id/stop-delivery` - Dừng simulation _(admin)_  
+- `GET /api/drones/:id/stats` - Thống kê drone _(admin)_  
+
+---
+
+### 💳 Payment (`/api/payment`)
+
+- `POST /api/payment/vnpay/create` - Tạo giao dịch VNPay _(protected)_  
+- `GET /api/payment/vnpay/return` - Callback VNPay  
+- `GET /api/payment/vnpay/ipn` - IPN VNPay  
+- `POST /api/payment/vnpay/querydr` - Truy vấn giao dịch VNPay _(protected)_  
+- `POST /api/payment/vnpay/refund` - Hoàn tiền VNPay _(protected)_  
+- `POST /api/payment/momo/create` - Tạo giao dịch Momo _(protected)_  
+- `POST /api/payment/momo/callback` - Callback Momo  
+- `GET /api/payment/methods` - Lấy danh sách phương thức thanh toán  
+- `GET /api/payment/:orderId` - Thông tin thanh toán đơn hàng _(protected)_  
+
+---
+
+### ⭐ Reviews (`/api/reviews`)
+
+- `POST /api/reviews` - Tạo đánh giá _(protected)_  
+- `GET /api/reviews/product/:productId` - Đánh giá sản phẩm  
+- `GET /api/reviews/user/:userId` - Đánh giá của user  
+- `GET /api/reviews/restaurant/:restaurantId` - Đánh giá nhà hàng  
+- `PUT /api/reviews/:id` - Cập nhật đánh giá _(protected)_  
+- `DELETE /api/reviews/:id` - Xóa đánh giá _(protected)_  
+
+---
+
+### 📤 Upload (`/api/upload`)
+
+- `POST /api/upload/image` - Upload 1 ảnh _(protected)_  
+- `POST /api/upload/images` - Upload nhiều ảnh _(protected)_  
+- `DELETE /api/upload/:publicId` - Xóa ảnh _(admin)_  
+
+---
+
+### 🎟️ Vouchers (`/api/vouchers`)
+
+- `GET /api/vouchers/public/:restaurantId` - Lấy voucher công khai  
+- `POST /api/vouchers/validate` - Validate voucher _(protected)_  
+- `GET /api/vouchers` - Danh sách voucher _(protected)_  
+- `POST /api/vouchers` - Tạo voucher _(protected)_  
+- `GET /api/vouchers/:id` - Chi tiết voucher _(protected)_  
+- `PUT /api/vouchers/:id` - Cập nhật voucher _(protected)_  
+- `DELETE /api/vouchers/:id` - Xóa voucher _(protected)_  
+- `GET /api/vouchers/:id/stats` - Thống kê voucher _(protected)_  
+
+---
+
+### 🎁 Promotions (`/api/promotions`)
+
+- `GET /api/promotions/active/:restaurantId` - Khuyến mãi đang hoạt động  
+- `GET /api/promotions/products/:restaurantId` - Sản phẩm có khuyến mãi  
+- `GET /api/promotions` - Danh sách khuyến mãi _(restaurant)_  
+- `POST /api/promotions` - Tạo khuyến mãi _(restaurant)_  
+- `PUT /api/promotions/:id` - Cập nhật khuyến mãi _(restaurant)_  
+- `DELETE /api/promotions/:id` - Xóa khuyến mãi _(restaurant)_  
+- `PATCH /api/promotions/:id/toggle` - Bật/tắt khuyến mãi _(restaurant)_  
+
+---
+
+### 💰 Refunds (`/api/refunds`)
+
+- `GET /api/refunds/stats` - Thống kê refund _(admin)_  
+- `GET /api/refunds` - Danh sách refund requests _(admin)_  
+- `POST /api/refunds/:orderId/process` - Xử lý refund thủ công _(admin)_  
+- `GET /api/refunds/:orderId/logs` - Logs refund _(admin)_  
+
+---
+
+### 👨‍💼 Admin (`/api/admin`)
+
+- `GET /api/admin/orders/pending` - Đơn hàng chờ xử lý _(admin)_  
+- `GET /api/admin/drones/available` - Drone sẵn sàng _(admin)_  
+- `GET /api/admin/drones/performance` - Hiệu suất drone _(admin)_  
+- `POST /api/admin/assign-drone` - Gán drone _(admin)_  
+- `POST /api/admin/reassign-order` - Gán lại đơn _(admin)_  
+- `GET /api/admin/fleet/stats` - Thống kê fleet _(admin)_  
+- `GET /api/admin/fleet/map` - Bản đồ fleet _(admin)_  
+
+---
+
+### 📊 Dashboard (`/api/dashboard`)
+
+- `GET /api/dashboard/stats` - Số liệu dashboard _(admin)_  
+- `GET /api/dashboard/recent-orders` - Đơn hàng gần đây _(admin)_  
+- `GET /api/dashboard/top-restaurants` - Top nhà hàng _(admin)_  
+- `GET /api/dashboard/order-stats` - Thống kê đơn hàng _(admin)_  
+
+---
+
+### 🗺️ Map (`/api/map`)
+
+- `GET /api/map/geocode` - Chuyển địa chỉ sang tọa độ  
+- `GET /api/map/reverse-geocode` - Chuyển tọa độ sang địa chỉ  
+- `GET /api/map/distance` - Tính khoảng cách  
+- `GET /api/map/autocomplete` - Autocomplete địa chỉ  
+- `GET /api/map/place/:placeId` - Thông tin địa điểm  
+
+---
+
+### 🏥 Health Check (`/api/health`)
+
+- `GET /api/health` - Health check tổng quát  
+- `GET /api/health/ready` - Readiness probe  
+- `GET /api/health/live` - Liveness probe  
+
+---
+
+### 🧪 Drone Simulation (`/api/drone-sim`)
+
+- `POST /api/drone-sim/arrive/:orderId` - Simulate drone arrival  
+- `POST /api/drone-sim/confirm/:orderId` - Simulate customer confirmation  
+- `GET /api/drone-sim/status/:orderId` - Delivery status  
+
+---
+
+### 📈 Metrics
+
+- `GET /metrics` - Prometheus metrics  
+
 
 ## 🧪 Testing
 
