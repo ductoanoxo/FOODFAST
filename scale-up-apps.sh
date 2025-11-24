@@ -11,8 +11,8 @@ echo "📊 Current Status:"
 ssh -i "$KEY" $SERVER 'kubectl get deployments -n foodfast | grep foodfast-'
 echo ""
 
-echo "🔧 Ensuring server has only 1 pod (for resource availability)..."
-ssh -i "$KEY" $SERVER 'kubectl scale deployment foodfast-server --replicas=1 -n foodfast'
+echo "🔧 Scaling server to 2 pods..."
+ssh -i "$KEY" $SERVER 'kubectl scale deployment foodfast-server --replicas=2 -n foodfast'
 echo ""
 
 echo "⬆️  Scaling up all apps to 1 replica..."
