@@ -78,7 +78,7 @@ jobs:
       - name: Push metrics to Pushgateway
         continue-on-error: true
         env:
-          PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://54.242.98.148:9091' }}
+          PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://34.228.60.243:9091' }}
         run: |
           WORKFLOW_NAME="${{ steps.metrics.outputs.workflow_name }}"
           STATUS="${{ steps.metrics.outputs.status }}"
@@ -157,7 +157,7 @@ jobs:
         if: contains(steps.metrics.outputs.workflow_name, 'Deploy')
         continue-on-error: true
         env:
-          PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://54.242.98.148:9091' }}
+          PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL || 'http://34.228.60.243:9091' }}
         run: |
           WORKFLOW_NAME="${{ steps.metrics.outputs.workflow_name }}"
           STATUS="${{ steps.metrics.outputs.status }}"
@@ -198,12 +198,12 @@ jobs:
           - **Branch**: ${{ steps.metrics.outputs.branch }}
           - **Run**: #${{ steps.metrics.outputs.run_number }}
           - **Actor**: ${{ steps.metrics.outputs.actor }}
-          - **Pushgateway**: ${PUSHGATEWAY_URL:-http://54.242.98.148:9091}
+          - **Pushgateway**: ${PUSHGATEWAY_URL:-http://34.228.60.243:9091}
           
           ### 🔗 Quick Links
-          - [Prometheus](${{ secrets.PROMETHEUS_URL || 'http://54.242.98.148:9090' }})
-          - [Grafana Dashboard](${{ secrets.GRAFANA_URL || 'http://54.242.98.148:3030' }}/d/cicd-metrics/cicd-pipeline-metrics)
-          - [Pushgateway Metrics](${{ secrets.PUSHGATEWAY_URL || 'http://54.242.98.148:9091' }}/metrics)
+          - [Prometheus](${{ secrets.PROMETHEUS_URL || 'http://34.228.60.243:9090' }})
+          - [Grafana Dashboard](${{ secrets.GRAFANA_URL || 'http://34.228.60.243:3030' }}/d/cicd-metrics/cicd-pipeline-metrics)
+          - [Pushgateway Metrics](${{ secrets.PUSHGATEWAY_URL || 'http://34.228.60.243:9091' }}/metrics)
           
           Metrics are now available in real-time on Grafana! 📈
           EOF

@@ -14,7 +14,7 @@ const getBaseUrl = () => {
     }
     // Production server
     if (process.env.NODE_ENV === 'production') {
-        return 'http://54.242.98.148:3000/payment/vnpay/return'
+        return 'http://34.228.60.243:3000/payment/vnpay/return'
     }
     // Local development
     return 'http://localhost:3000/payment/vnpay/return'

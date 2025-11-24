@@ -70,7 +70,7 @@ spec:
         - name: GF_USERS_ALLOW_SIGN_UP
           value: "false"
         - name: GF_SERVER_ROOT_URL
-          value: "http://100.25.98.10:3030"
+          value: "http://3.236.196.130:3030"
         - name: GF_SERVER_SERVE_FROM_SUB_PATH
           value: "false"
         volumeMounts:
