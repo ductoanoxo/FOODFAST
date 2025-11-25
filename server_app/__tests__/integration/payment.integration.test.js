@@ -84,7 +84,7 @@ describe('💳 PAYMENT - INTEGRATION (VNPay return & IPN)', () => {
         // Build signature as controller does
         const qs = require('qs');
         const crypto = require('crypto');
-        const vnp_HashSecret = process.env.VNPAY_HASH_SECRET || 'VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L';
+        const vnp_HashSecret = process.env.VNPAY_HASH_SECRET || 'PGN8FTCJ7F18Z7IZVM1SLFOMFEA1RDQQ';
         const sorted = Object.keys(vnp_Params).sort().reduce((acc, k) => { acc[k] = vnp_Params[k]; return acc }, {});
         const signData = qs.stringify(sorted, { encode: false });
         const hmac = crypto.createHmac('sha512', vnp_HashSecret);
@@ -146,7 +146,7 @@ describe('💳 PAYMENT - INTEGRATION (VNPay return & IPN)', () => {
 
         const qs = require('qs');
         const crypto = require('crypto');
-        const vnp_HashSecret = process.env.VNPAY_HASH_SECRET || 'VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L';
+        const vnp_HashSecret = process.env.VNPAY_HASH_SECRET || 'PGN8FTCJ7F18Z7IZVM1SLFOMFEA1RDQQ';
         const sorted = Object.keys(vnp_Params).sort().reduce((acc, k) => { acc[k] = vnp_Params[k]; return acc }, {});
         const signData = qs.stringify(sorted, { encode: false });
         const hmac = crypto.createHmac('sha512', vnp_HashSecret);
@@ -330,7 +330,7 @@ describe('💳 PAYMENT - INTEGRATION (VNPay return & IPN)', () => {
         };
         const qs = require('qs');
         const crypto = require('crypto');
-        const vnp_HashSecret = process.env.VNPAY_HASH_SECRET || 'VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L';
+        const vnp_HashSecret = process.env.VNPAY_HASH_SECRET || 'PGN8FTCJ7F18Z7IZVM1SLFOMFEA1RDQQ';
         const sorted = Object.keys(vnp_Params).sort().reduce((acc, k) => { acc[k] = vnp_Params[k]; return acc }, {});
         const signData = qs.stringify(sorted, { encode: false });
         const hmac = crypto.createHmac('sha512', vnp_HashSecret);
@@ -365,7 +365,7 @@ describe('💳 PAYMENT - INTEGRATION (VNPay return & IPN)', () => {
 
         const qs = require('qs');
         const crypto = require('crypto');
-        const vnp_HashSecret = process.env.VNPAY_HASH_SECRET || 'VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L';
+        const vnp_HashSecret = process.env.VNPAY_HASH_SECRET || 'PGN8FTCJ7F18Z7IZVM1SLFOMFEA1RDQQ';
         const sorted = Object.keys(vnp_Params).sort().reduce((acc, k) => { acc[k] = vnp_Params[k]; return acc }, {});
         const signData = qs.stringify(sorted, { encode: false });
         const hmac = crypto.createHmac('sha512', vnp_HashSecret);
@@ -385,7 +385,7 @@ describe('💳 PAYMENT - INTEGRATION (VNPay return & IPN)', () => {
         };
         const qs = require('qs');
         const crypto = require('crypto');
-        const vnp_HashSecret = process.env.VNPAY_HASH_SECRET || 'VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L';
+        const vnp_HashSecret = process.env.VNPAY_HASH_SECRET || 'PGN8FTCJ7F18Z7IZVM1SLFOMFEA1RDQQ';
         const sorted = Object.keys(vnp_Params).sort().reduce((acc, k) => { acc[k] = vnp_Params[k]; return acc }, {});
         const signData = qs.stringify(sorted, { encode: false });
         const hmac = crypto.createHmac('sha512', vnp_HashSecret);

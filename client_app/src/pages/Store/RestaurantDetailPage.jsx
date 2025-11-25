@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons'
 import { restaurantAPI } from '../../api'
 import ProductCard from '../../components/Product/ProductCard'
+import ReviewList from '../../components/Product/ReviewList'
 import './RestaurantDetailPage.css'
 
 const { Title, Text, Paragraph } = Typography
@@ -272,6 +273,12 @@ const RestaurantDetailPage = () => {
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           )}
+        </div>
+
+        {/* Restaurant Reviews Section */}
+        <Divider />
+        <div className="reviews-section">
+          <ReviewList restaurantId={id} type="restaurant" />
         </div>
       </div>
     </div>
