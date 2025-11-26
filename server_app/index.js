@@ -48,19 +48,10 @@ app.use(
             'http://localhost:30003', // Admin App (K8s NodePort)
             'http://localhost:30004', // Drone App (K8s NodePort)
             // EC2 Production URLs
-<<<<<<< HEAD
-
-            'http://54.221.76.224:3000', // Client App on EC2
-            'http://54.221.76.224:3001', // Admin App on EC2
-            'http://54.221.76.224:3002', // Restaurant App on EC2
-            'http://54.221.76.224:3003', // Drone App on EC2
-
-=======
             'http://54.91.2.188:3000', // Client App on EC2
             'http://54.91.2.188:3001', // Admin App on EC2
             'http://54.91.2.188:3002', // Restaurant App on EC2
             'http://54.91.2.188:3003', // Drone App on EC2
->>>>>>> 47d9852bfc8353ee065fca66f00765f591fc0f7a
             // Env vars (fallback/override)
             process.env.CLIENT_URL,
             process.env.RESTAURANT_URL,
