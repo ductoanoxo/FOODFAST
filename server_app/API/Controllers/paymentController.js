@@ -14,7 +14,7 @@ const getBaseUrl = () => {
     }
     // Production server
     if (process.env.NODE_ENV === 'production') {
-        return 'http://54.221.76.224:3000/payment/vnpay/return'
+        return 'http://54.91.2.188:3000/payment/vnpay/return'
     }
     // Local development
     return 'http://localhost:3000/payment/vnpay/return'
@@ -22,8 +22,8 @@ const getBaseUrl = () => {
 
 // VNPay Configuration
 const vnpayConfig = {
-    vnp_TmnCode: process.env.VNPAY_TMN_CODE || '1C1PQ01T',
-    vnp_HashSecret: process.env.VNPAY_HASH_SECRET || 'VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L',
+    vnp_TmnCode: process.env.VNPAY_TMN_CODE || 'SVUPM77I',
+    vnp_HashSecret: process.env.VNPAY_HASH_SECRET || 'PGN8FTCJ7F18Z7IZVM1SLFOMFEA1RDQQ',
     vnp_Url: process.env.VNPAY_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
     vnp_ReturnUrl: getBaseUrl(),
     vnp_Api: process.env.VNPAY_API || 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',

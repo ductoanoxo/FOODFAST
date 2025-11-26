@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Card, List, Rate, Avatar, Typography, Button, Empty, Spin, Progress, Row, Col, message } from 'antd'
+import { Card, List, Rate, Avatar, Typography, Button, Empty, Spin, Progress, Row, Col, message, Modal } from 'antd'
 import { UserOutlined, StarFilled } from '@ant-design/icons'
 import { reviewAPI } from '../../api'
 import dayjs from 'dayjs'
@@ -12,7 +12,7 @@ dayjs.locale('vi')
 
 const { Text, Title, Paragraph } = Typography
 
-const ReviewList = ({ productId }) => {
+const ReviewList = ({ productId, restaurantId, type = 'product' }) => {
     const [reviews, setReviews] = useState([])
     const [loading, setLoading] = useState(false)
     const [stats, setStats] = useState({
@@ -20,20 +20,29 @@ const ReviewList = ({ productId }) => {
         totalReviews: 0,
         distribution: [0, 0, 0, 0, 0]
     })
+    // Lightbox state
+    const [previewVisible, setPreviewVisible] = useState(false)
+    const [previewImage, setPreviewImage] = useState('')
 
     useEffect(() => {
-        if (productId) {
+        if (productId || restaurantId) {
             loadReviews()
         }
-    }, [productId])
+    }, [productId, restaurantId])
 
     const loadReviews = async () => {
         try {
             setLoading(true)
-            const response = await reviewAPI.getProductReviews(productId)
+            let response
+            
+            if (type === 'restaurant' && restaurantId) {
+                response = await reviewAPI.getRestaurantReviews(restaurantId)
+            } else if (productId) {
+                response = await reviewAPI.getProductReviews(productId)
+            }
             
             // Response từ axios interceptor đã extract data
-            if (response.success) {
+            if (response && response.success) {
                 const reviewsData = response.data || []
                 setReviews(reviewsData)
                 calculateStats(reviewsData)
@@ -125,7 +134,9 @@ const ReviewList = ({ productId }) => {
 
     return (
         <div className="review-list-container">
-            <Title level={4}>Đánh giá sản phẩm</Title>
+            <Title level={4}>
+                {type === 'restaurant' ? 'Đánh giá nhà hàng' : 'Đánh giá sản phẩm'}
+            </Title>
             
             {stats.totalReviews > 0 && renderStatsCard()}
 
@@ -164,18 +175,51 @@ const ReviewList = ({ productId }) => {
                                 {review.comment}
                             </Paragraph>
 
+                            {/* Phản hồi của nhà hàng */}
+                            {review.restaurantReply && (
+                                <div className="review-reply" style={{ marginTop: 12 }}>
+                                    <Card size="small" type="inner" className="reply-card" style={{ background: '#fffbe6', borderLeft: '4px solid #faad14' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                                            <Avatar style={{ backgroundColor: '#faad14', marginRight: 8 }} icon={<UserOutlined />} />
+                                            <Text strong style={{ color: '#faad14', fontSize: 15 }}>
+                                                Phản hồi từ nhà hàng
+                                            </Text>
+                                        </div>
+                                        <Paragraph style={{ marginBottom: 0, marginLeft: 36 }}>
+                                            {review.restaurantReply}
+                                        </Paragraph>
+                                    </Card>
+                                </div>
+                            )}
+
                             {review.images && review.images.length > 0 && (
                                 <div className="review-images">
                                     {review.images.map((img, idx) => (
-                                        <img 
-                                            key={idx} 
-                                            src={img} 
+                                        <img
+                                            key={idx}
+                                            src={img}
                                             alt={`review-${idx}`}
                                             className="review-image"
+                                            style={{ cursor: 'pointer', maxWidth: 80, maxHeight: 80, margin: '4px', borderRadius: 6, boxShadow: '0 2px 8px #eee' }}
+                                            onClick={() => {
+                                                setPreviewImage(img)
+                                                setPreviewVisible(true)
+                                            }}
                                         />
                                     ))}
                                 </div>
                             )}
+            {/* Lightbox modal for image preview */}
+            <Modal
+                open={previewVisible}
+                footer={null}
+                onCancel={() => setPreviewVisible(false)}
+                centered
+                bodyStyle={{ padding: 0, textAlign: 'center', background: '#000' }}
+                width={500}
+            >
+                <img alt="review-preview" src={previewImage} style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 8 }} />
+            </Modal>
 
                             {review.isVerified && (
                                 <div className="verified-badge">

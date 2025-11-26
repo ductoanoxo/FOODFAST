@@ -16,13 +16,34 @@ spec:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 20
   - type: Resource
     resource:
       name: memory
       target:
         type: Utilization
-        averageUtilization: 80
+        averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 60  # Scale down after 60s stable (default 300s)
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 15
+      - type: Pods
+        value: 1
+        periodSeconds: 15
+      selectPolicy: Max
+    scaleUp:
+      stabilizationWindowSeconds: 0   # Scale up immediately
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+      - type: Pods
+        value: 2
+        periodSeconds: 15
+      selectPolicy: Max
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -42,4 +63,4 @@ spec:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 20

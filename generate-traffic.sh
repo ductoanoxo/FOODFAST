@@ -20,4 +20,4 @@ while [ $count -lt 1000 ]; do
 done
 
 wait
-echo "Completed! Generated 800 requests total."
+echo "Completed! Generated 4000 requests total."

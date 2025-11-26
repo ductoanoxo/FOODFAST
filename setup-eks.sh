@@ -4,7 +4,7 @@
 # FOODFAST EKS CLUSTER SETUP SCRIPT
 # ==============================================
 # This script sets up an EKS cluster for FoodFast application
-# Run this on your EKS server (100.25.98.10)
+# Run this on your EKS server (3.236.196.130)
 # ==============================================
 
 set -e
@@ -165,7 +165,7 @@ echo ""
 echo "Next Steps:"
 echo "  1. Update your GitHub Secrets with:"
 echo "     - EKS_SSH_KEY: SSH private key for this server"
-echo "     - EKS_SERVER_HOST: 100.25.98.10"
+echo "     - EKS_SERVER_HOST: 3.236.196.130"
 echo "     - EKS_SERVER_USER: ubuntu"
 echo ""
 echo "  2. Update DNS records to point to Load Balancer"

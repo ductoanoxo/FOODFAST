@@ -33,8 +33,8 @@ services:
       - RESTAURANT_URL=http://localhost:3001
       - ADMIN_URL=http://localhost:3002
       - DRONE_URL=http://localhost:3003
-      - VNPAY_TMN_CODE=1C1PQ01T
-      - VNPAY_HASH_SECRET=VTN3PF8TMIMQNLDOYTM93JOE4XI8C62L
+      - VNPAY_TMN_CODE=SVUPM77I
+      - VNPAY_HASH_SECRET=PGN8FTCJ7F18Z7IZVM1SLFOMFEA1RDQQ
       - VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
       - VNPAY_RETURN_URL=http://localhost:3000/payment/vnpay/return
       - VNPAY_API=https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
@@ -50,8 +50,8 @@ services:
     build:
       context: ./client_app
       args:
-        VITE_API_URL: http://54.221.76.224:5000/api
-        VITE_SOCKET_URL: http://54.221.76.224:5000
+        VITE_API_URL: http://54.91.2.188:5000/api
+        VITE_SOCKET_URL: http://54.91.2.188:5000
     container_name: foodfast_client
     restart: always
     ports:
@@ -66,8 +66,8 @@ services:
     build:
       context: ./restaurant_app
       args:
-        VITE_API_URL: http://54.221.76.224:5000/api
-        VITE_SOCKET_URL: http://54.221.76.224:5000
+        VITE_API_URL: http://54.91.2.188:5000/api
+        VITE_SOCKET_URL: http://54.91.2.188:5000
     container_name: foodfast_restaurant
     restart: always
     ports:
@@ -82,8 +82,8 @@ services:
     build:
       context: ./admin_app
       args:
-        VITE_API_URL: http://54.221.76.224:5000/api
-        VITE_SOCKET_URL: http://54.221.76.224:5000
+        VITE_API_URL: http://54.91.2.188:5000/api
+        VITE_SOCKET_URL: http://54.91.2.188:5000
     container_name: foodfast_admin
     restart: always
     ports:
@@ -98,8 +98,8 @@ services:
     build:
       context: ./drone_manage
       args:
-        VITE_API_URL: http://54.221.76.224:5000/api
-        VITE_SOCKET_URL: http://54.221.76.224:5000
+        VITE_API_URL: http://54.91.2.188:5000/api
+        VITE_SOCKET_URL: http://54.91.2.188:5000
     container_name: foodfast_drone
     restart: always
     ports:

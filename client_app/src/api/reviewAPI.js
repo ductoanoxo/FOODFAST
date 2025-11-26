@@ -9,6 +9,10 @@ export const reviewAPI = {
     getProductReviews: (productId) => 
         axiosInstance.get(`/reviews/product/${productId}`),
     
+    // Lấy đánh giá theo nhà hàng
+    getRestaurantReviews: (restaurantId) => 
+        axiosInstance.get(`/reviews/restaurant/${restaurantId}`),
+    
     // Lấy đánh giá của user
     getUserReviews: (userId) => 
         axiosInstance.get(`/reviews/user/${userId}`),
