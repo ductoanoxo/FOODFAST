@@ -8,17 +8,12 @@ const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const { errorHandler } = require('./API/Middleware/errorMiddleware');
 const logger = require('./API/Utils/logger');
-const path = require('path'); <<
-<<
-<<
-< HEAD
-const { register, requestMetricsMiddleware, updateBusinessMetrics } = require('./metrics'); ===
-===
-=
-const { register, metricsMiddleware, updateBusinessMetrics, updateMongoMetrics } = require('./config/metrics'); >>>
->>>
->
-ecfb61e53cad652278e2f825593ac8094655c47d
+const path = require('path');
+
+
+const { requestMetricsMiddleware } = require('./metrics');
+const { register, metricsMiddleware, updateBusinessMetrics, updateMongoMetrics } = require('./config/metrics');
+
 
 // Load environment variables from root directory
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
@@ -158,10 +153,8 @@ const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
     logger.info(`Server running on port ${PORT}`);
-    console.log(`🚀 Server running on http://localhost:${PORT}`); <<
-    <<
-    <<
-    < HEAD
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+
 
     // Start updating business metrics every 30 seconds
     const mongoose = require('mongoose');
@@ -170,9 +163,8 @@ const server = app.listen(PORT, () => {
     }, 30000);
 
     // Update once immediately
-    updateBusinessMetrics(mongoose); ===
-    ===
-    =
+    updateBusinessMetrics(mongoose);
+
     console.log(`📊 Metrics available at http://localhost:${PORT}/metrics`);
 
     // Update business metrics every 30 seconds
@@ -187,10 +179,8 @@ const server = app.listen(PORT, () => {
 
         await updateBusinessMetrics(models);
         updateMongoMetrics(mongoose);
-    }, 30000); >>>
-    >>>
-    >
-    ecfb61e53cad652278e2f825593ac8094655c47d
+    }, 30000);
+
 });
 
 // ---------------------- SOCKET.IO SETUP ---------------------- //
