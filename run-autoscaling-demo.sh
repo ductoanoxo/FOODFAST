@@ -29,7 +29,7 @@ POD=$(kubectl get pod -n foodfast -l app=foodfast-server -o jsonpath='{.items[0]
 echo "Target: $SERVICE_IP"
 echo "Pod: $POD"
 
-# Create load generator
+# Create load generator (keeps existing busybox wget job)
 cat <<YAML | kubectl apply -f -
 apiVersion: v1
 kind: Pod
@@ -57,8 +57,13 @@ YAML
 echo "✅ Load generator created"
 
 # Inject CPU stress
-kubectl exec -n foodfast $POD -- /bin/sh -c "nohup sh -c 'while true; do echo stress | md5sum; done' >/dev/null 2>&1 &" || true
-echo "✅ CPU stress injected"
+# Inject CPU stress into ALL server pods so load is applied evenly
+PODS=$(kubectl get pod -n foodfast -l app=foodfast-server -o jsonpath='{.items[*].metadata.name}')
+for p in $PODS; do
+  echo "Injecting CPU stress into pod: $p"
+  kubectl exec -n foodfast $p -- /bin/sh -c "nohup sh -c 'while true; do echo stress | md5sum; done' >/dev/null 2>&1 &" || true
+done
+echo "✅ CPU stress injected into $PODS"
 EOF
 
 echo ""
@@ -93,11 +98,20 @@ done
 echo "🧹 Step 5: Cleanup"
 echo "------------------"
 ssh -i "$KEY" $SERVER bash << 'EOF'
-POD=$(kubectl get pod -n foodfast -l app=foodfast-server -o jsonpath='{.items[0].metadata.name}')
-kubectl exec -n foodfast $POD -- pkill -f "md5sum" 2>/dev/null || true
+PODS=$(kubectl get pod -n foodfast -l app=foodfast-server -o jsonpath='{.items[*].metadata.name}')
+for p in $PODS; do
+  echo "Stopping CPU stress in pod: $p"
+  kubectl exec -n foodfast $p -- pkill -f "md5sum" 2>/dev/null || true
+done
+
+# Remove load generator and any pending pods
 kubectl delete pod autoscaling-demo -n foodfast --ignore-not-found=true
 kubectl delete pod -n foodfast --field-selector=status.phase==Pending --ignore-not-found=true
+
 echo "✅ Cleanup done"
+
+# Wait for metrics windows (Prometheus scrape + HPA stabilization) to settle before final check
+sleep 70
 EOF
 
 echo ""
