@@ -3,7 +3,7 @@
 echo "💥 CPU STRESS TEST - Force Autoscaling"
 echo "======================================="
 
-ssh -i "C:\Users\ADMIN\Downloads\EKS.pem" -o StrictHostKeyChecking=no ubuntu@3.236.196.130 << 'ENDSSH'
+ssh -i "C:\Users\ADMIN\Downloads\EKS.pem" -o StrictHostKeyChecking=no ubuntu@98.81.112.203 << 'ENDSSH'
 
 echo "📊 Before Stress:"
 kubectl get hpa foodfast-server-hpa -n foodfast
@@ -53,4 +53,4 @@ kubectl get pods -n foodfast -l app=foodfast-server
 ENDSSH
 
 echo ""
-echo "✅ Check Grafana: http://3.236.196.130:3030"
+echo "✅ Check Grafana: http://98.81.112.203:3030"

@@ -456,7 +456,7 @@ Root: C:\Users\ADMIN\Desktop\FOODFAST
 └── UNIT_TESTS_GUIDE.md
 
 (Excluded: node_modules, .git, dist, build, coverage, .next, .turbo, .cache, logs, public\assets)
-12312312312312313212312312123451123131123312345671111111231111122332
+1231231231231231321231231212345112313112331234567111111123111112233211
 
-ssh -i "C:\Users\ADMIN\Downloads\CNPM_AWS_SGU.pem" ubuntu@54.91.2.188
-ssh -i "C:\Users\ADMIN\Downloads\EKS.pem" ubuntu@3.236.196.130
+ssh -i "C:\Users\ADMIN\Downloads\CNPM_AWS_SGU.pem" ubuntu@3.81.226.86
+ssh -i "C:\Users\ADMIN\Downloads\EKS.pem" ubuntu@98.81.112.203

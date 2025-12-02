@@ -50,8 +50,8 @@ services:
     build:
       context: ./client_app
       args:
-        VITE_API_URL: http://54.91.2.188:5000/api
-        VITE_SOCKET_URL: http://54.91.2.188:5000
+        VITE_API_URL: http://3.81.226.86:5000/api
+        VITE_SOCKET_URL: http://3.81.226.86:5000
     container_name: foodfast_client
     restart: always
     ports:
@@ -66,8 +66,8 @@ services:
     build:
       context: ./restaurant_app
       args:
-        VITE_API_URL: http://54.91.2.188:5000/api
-        VITE_SOCKET_URL: http://54.91.2.188:5000
+        VITE_API_URL: http://3.81.226.86:5000/api
+        VITE_SOCKET_URL: http://3.81.226.86:5000
     container_name: foodfast_restaurant
     restart: always
     ports:
@@ -82,8 +82,8 @@ services:
     build:
       context: ./admin_app
       args:
-        VITE_API_URL: http://54.91.2.188:5000/api
-        VITE_SOCKET_URL: http://54.91.2.188:5000
+        VITE_API_URL: http://3.81.226.86:5000/api
+        VITE_SOCKET_URL: http://3.81.226.86:5000
     container_name: foodfast_admin
     restart: always
     ports:
@@ -98,8 +98,8 @@ services:
     build:
       context: ./drone_manage
       args:
-        VITE_API_URL: http://54.91.2.188:5000/api
-        VITE_SOCKET_URL: http://54.91.2.188:5000
+        VITE_API_URL: http://3.81.226.86:5000/api
+        VITE_SOCKET_URL: http://3.81.226.86:5000
     container_name: foodfast_drone
     restart: always
     ports:
