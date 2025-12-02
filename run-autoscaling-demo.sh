@@ -4,7 +4,7 @@ echo "🚀 FOODFAST AUTOSCALING DEMO"
 echo "============================"
 echo ""
 
-SERVER="ubuntu@3.236.196.130"
+SERVER="ubuntu@98.81.112.203"
 KEY="/c/Users/ADMIN/Downloads/EKS.pem"
 
 echo "📊 Step 1: Preparing Environment"
@@ -122,5 +122,5 @@ ssh -i "$KEY" $SERVER 'kubectl get hpa -n foodfast && echo "" && kubectl get pod
 
 echo ""
 echo "✅ DEMO COMPLETED!"
-echo "📊 View on Grafana: http://3.236.196.130:3030"
+echo "📊 View on Grafana: http://98.81.112.203:3030"
 echo ""
