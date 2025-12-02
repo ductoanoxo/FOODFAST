@@ -20,7 +20,7 @@ class SocketService {
             auth: {
                 token: token,
             },
-            transports: ['websocket', 'polling'],
+            transports: ['polling', 'websocket'], // Polling first for K8s NodePort compatibility
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,

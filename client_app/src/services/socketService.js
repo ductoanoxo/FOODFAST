@@ -19,7 +19,9 @@ class SocketService {
       },
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5
+      reconnectionAttempts: 5,
+      // Force polling for K8s NodePort compatibility (WebSocket upgrade không work qua TCP port forwarding)
+      transports: ['polling', 'websocket']
     })
 
     this.socket.on('connect', () => {

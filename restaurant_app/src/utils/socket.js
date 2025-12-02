@@ -48,7 +48,7 @@ export const initSocket = () => {
         reconnectionAttempts: Infinity,
         reconnectionDelay: 500,
         timeout: 10000,
-        transports: ['websocket'],
+        transports: ['polling', 'websocket'], // Polling first for K8s NodePort compatibility
     });
 
     socket.on('connect', () => {
