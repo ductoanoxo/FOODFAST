@@ -82,8 +82,8 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service.image }}:buildcache,mode=max
           platforms: linux/amd64
           build-args: |
-            VITE_API_URL=http://98.81.112.203:30000/api
-            VITE_SOCKET_URL=http://98.81.112.203:30000
+            VITE_API_URL=http://98.81.112.203:5000/api
+            VITE_SOCKET_URL=http://98.81.112.203:5000
 
   deploy-k8s:
     needs: build-k8s-images
