@@ -7,6 +7,11 @@ metadata:
     app: foodfast-server
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1  # Cho phép 1 pod down để giải phóng CPU
+      maxSurge: 0        # Không tạo thêm pod mới cho đến khi pod cũ terminated
   selector:
     matchLabels:
       app: foodfast-server
