@@ -83,7 +83,7 @@ jobs:
           platforms: linux/amd64
           build-args: |
             VITE_API_URL=/api
-            VITE_SOCKET_URL=
+            VITE_SOCKET_URL=http://98.81.112.203:5000
 
   deploy-k8s:
     needs: build-k8s-images
