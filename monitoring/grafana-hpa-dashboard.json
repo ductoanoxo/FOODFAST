@@ -1,0 +1,292 @@
+{
+  "dashboard": {
+    "title": "HPA Metrics - Server App",
+    "panels": [
+      {
+        "id": 1,
+        "title": "CPU Usage vs Target (HPA Style)",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "100 * sum(rate(container_cpu_usage_seconds_total{namespace=\"foodfast\",pod=~\"server-app-.*\",container!=\"POD\",container!=\"\"}[3m])) / sum(kube_pod_container_resource_requests{namespace=\"foodfast\",resource=\"cpu\",pod=~\"server-app-.*\"})",
+            "legendFormat": "CPU Usage %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "green" },
+                { "value": 30, "color": "yellow" },
+                { "value": 50, "color": "red" }
+              ]
+            },
+            "unit": "percent",
+            "decimals": 1
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "text": {
+            "titleSize": 16,
+            "valueSize": 40
+          },
+          "colorMode": "value",
+          "graphMode": "area"
+        }
+      },
+      {
+        "id": 2,
+        "title": "Memory Usage vs Target (HPA Style)",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+        "targets": [
+          {
+            "expr": "100 * sum(container_memory_working_set_bytes{namespace=\"foodfast\",pod=~\"server-app-.*\",container!=\"POD\"}) / sum(kube_pod_container_resource_requests{namespace=\"foodfast\",resource=\"memory\",pod=~\"server-app-.*\"})",
+            "legendFormat": "Memory Usage %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "green" },
+                { "value": 50, "color": "yellow" },
+                { "value": 70, "color": "red" }
+              ]
+            },
+            "unit": "percent",
+            "decimals": 1
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "text": {
+            "titleSize": 16,
+            "valueSize": 40
+          },
+          "colorMode": "value",
+          "graphMode": "area"
+        }
+      },
+      {
+        "id": 3,
+        "title": "Pod Replicas",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "count(kube_pod_status_phase{namespace=\"foodfast\",pod=~\"server-app-.*\",phase=\"Running\"})",
+            "legendFormat": "Running Pods"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 2, "color": "green" }
+              ]
+            },
+            "unit": "short"
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "colorMode": "value"
+        }
+      },
+      {
+        "id": 4,
+        "title": "HPA Table (Like kubectl get hpa)",
+        "type": "table",
+        "gridPos": { "h": 6, "w": 24, "x": 0, "y": 4 },
+        "targets": [
+          {
+            "expr": "100 * sum(rate(container_cpu_usage_seconds_total{namespace=\"foodfast\",pod=~\"server-app-.*\",container!=\"POD\"}[3m])) / sum(kube_pod_container_resource_requests{namespace=\"foodfast\",resource=\"cpu\",pod=~\"server-app-.*\"})",
+            "legendFormat": "CPU %",
+            "format": "table",
+            "instant": true
+          },
+          {
+            "expr": "100 * sum(container_memory_working_set_bytes{namespace=\"foodfast\",pod=~\"server-app-.*\",container!=\"POD\"}) / sum(kube_pod_container_resource_requests{namespace=\"foodfast\",resource=\"memory\",pod=~\"server-app-.*\"})",
+            "legendFormat": "Memory %",
+            "format": "table",
+            "instant": true
+          },
+          {
+            "expr": "count(kube_pod_status_phase{namespace=\"foodfast\",pod=~\"server-app-.*\",phase=\"Running\"})",
+            "legendFormat": "Replicas",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "merge",
+            "options": {}
+          }
+        ],
+        "options": {
+          "showHeader": true
+        },
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "CPU %" },
+              "properties": [
+                { "id": "unit", "value": "percent" },
+                { "id": "decimals", "value": 1 },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "mode": "absolute",
+                    "steps": [
+                      { "value": 0, "color": "green" },
+                      { "value": 30, "color": "yellow" },
+                      { "value": 50, "color": "red" }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": { "id": "byName", "options": "Memory %" },
+              "properties": [
+                { "id": "unit", "value": "percent" },
+                { "id": "decimals", "value": 1 }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 5,
+        "title": "CPU Usage Over Time",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+        "targets": [
+          {
+            "expr": "100 * sum(rate(container_cpu_usage_seconds_total{namespace=\"foodfast\",pod=~\"server-app-.*\",container!=\"POD\"}[3m])) / sum(kube_pod_container_resource_requests{namespace=\"foodfast\",resource=\"cpu\",pod=~\"server-app-.*\"})",
+            "legendFormat": "CPU Usage %"
+          },
+          {
+            "expr": "30",
+            "legendFormat": "CPU Target (30%)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "percent"
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "CPU Target (30%)" },
+              "properties": [
+                { "id": "custom.lineStyle", "value": { "dash": [10, 10] } },
+                { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 6,
+        "title": "Memory Usage Over Time",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+        "targets": [
+          {
+            "expr": "100 * sum(container_memory_working_set_bytes{namespace=\"foodfast\",pod=~\"server-app-.*\",container!=\"POD\"}) / sum(kube_pod_container_resource_requests{namespace=\"foodfast\",resource=\"memory\",pod=~\"server-app-.*\"})",
+            "legendFormat": "Memory Usage %"
+          },
+          {
+            "expr": "50",
+            "legendFormat": "Memory Target (50%)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            },
+            "unit": "percent"
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "Memory Target (50%)" },
+              "properties": [
+                { "id": "custom.lineStyle", "value": { "dash": [10, 10] } },
+                { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 7,
+        "title": "Pod Count Over Time",
+        "type": "timeseries",
+        "gridPos": { "h": 6, "w": 24, "x": 0, "y": 18 },
+        "targets": [
+          {
+            "expr": "count(kube_pod_status_phase{namespace=\"foodfast\",pod=~\"server-app-.*\",phase=\"Running\"})",
+            "legendFormat": "Running Pods"
+          },
+          {
+            "expr": "2",
+            "legendFormat": "Min Pods"
+          },
+          {
+            "expr": "10",
+            "legendFormat": "Max Pods"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "stepAfter",
+              "fillOpacity": 20
+            },
+            "unit": "short"
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byRegexp", "options": "/Min|Max/" },
+              "properties": [
+                { "id": "custom.lineStyle", "value": { "dash": [5, 10] } },
+                { "id": "custom.fillOpacity", "value": 0 }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "time": {
+      "from": "now-15m",
+      "to": "now"
+    },
+    "refresh": "5s"
+  }
+}
