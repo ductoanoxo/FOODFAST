@@ -111,7 +111,29 @@ kubectl delete pod -n foodfast --field-selector=status.phase==Pending --ignore-n
 echo "✅ Cleanup done"
 
 # Wait for metrics windows (Prometheus scrape + HPA stabilization) to settle before final check
+echo "⏳ Waiting for metrics to stabilize (70s)..."
 sleep 70
+
+echo ""
+echo "⏱️  Waiting for server pods to scale down to 2..."
+for i in {1..24}; do  # 24 x 5s = 2 minutes max wait
+  REPLICAS=$(kubectl get hpa foodfast-server-hpa -n foodfast --no-headers | awk '{print $7}')
+  RUNNING=$(kubectl get pods -n foodfast -l app=foodfast-server --field-selector=status.phase==Running --no-headers | wc -l)
+  
+  echo "Check $i/24: $RUNNING running pods, HPA target: $REPLICAS replicas"
+  
+  if [ "$RUNNING" -le 2 ] && [ "$REPLICAS" -le 2 ]; then
+    echo "✅ Server scaled down to 2 pods!"
+    break
+  fi
+  
+  sleep 5
+done
+
+echo ""
+echo "🚀 Scaling up other apps..."
+kubectl scale deployment foodfast-admin foodfast-client foodfast-drone foodfast-restaurant --replicas=1 -n foodfast
+echo "✅ Admin, Client, Drone, Restaurant scaled to 1 replica each"
 EOF
 
 echo ""
