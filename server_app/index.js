@@ -39,10 +39,10 @@ app.use(
             'http://localhost:3002', // Admin App (production)
             'http://localhost:3003', // Drone App (production)
             // EC2 Production URLs
-            'http://98.81.191.255:3000', // Client App on EC2
-            'http://98.81.191.255:3001', // Admin App on EC2
-            'http://98.81.191.255:3002', // Restaurant App on EC2
-            'http://98.81.191.255:3003', // Drone App on EC2
+            'http://3.80.219.114:3000', // Client App on EC2
+            'http://3.80.219.114:3001', // Admin App on EC2
+            'http://3.80.219.114:3002', // Restaurant App on EC2
+            'http://3.80.219.114:3003', // Drone App on EC2
             // K8s Cluster URLs
             'http://98.81.112.203:3000', // Client App on K8s
             'http://98.81.112.203:3001', // Admin App on K8s

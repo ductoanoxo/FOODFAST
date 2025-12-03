@@ -191,7 +191,7 @@ GitHub → GitHub Actions (CI/Test) → Docker Build & Push (GHCR)
 ## 🌐 Hạ tầng triển khai
 
 - **Máy chủ Production:** AWS EC2  
-  🌍 **Public IP (hiện tại):** `98.81.191.255`  
+  🌍 **Public IP (hiện tại):** `3.80.219.114`  
 - **Registry:** GitHub Container Registry (**GHCR**)  
 - **CI/CD Pipeline:** GitHub Actions (3 workflow chính)  
 - **Runtime:** Docker + Docker Compose  
@@ -209,10 +209,10 @@ GitHub → GitHub Actions (CI/Test) → Docker Build & Push (GHCR)
 
 | Ứng dụng | Mô tả | URL |
 |----------|--------|------|
-| 👥 **Client (Người dùng)** | Đặt món, thanh toán, theo dõi đơn hàng | [http://98.81.191.255:3000](http://98.81.191.255:3000) |
-| 🍴 **Restaurant (Nhà hàng)** | Quản lý đơn hàng, menu, doanh thu | [http://98.81.191.255:3001](http://98.81.191.255:3001) |
-| 🧑‍💼 **Admin Dashboard** | Quản trị hệ thống toàn bộ | [http://98.81.191.255:3002](http://98.81.191.255:3002) |
-| ⚙️ **Backend API** | REST API trung tâm | [http://98.81.191.255:5000](http://98.81.191.255:5000) |
+| 👥 **Client (Người dùng)** | Đặt món, thanh toán, theo dõi đơn hàng | [http://3.80.219.114:3000](http://3.80.219.114:3000) |
+| 🍴 **Restaurant (Nhà hàng)** | Quản lý đơn hàng, menu, doanh thu | [http://3.80.219.114:3001](http://3.80.219.114:3001) |
+| 🧑‍💼 **Admin Dashboard** | Quản trị hệ thống toàn bộ | [http://3.80.219.114:3002](http://3.80.219.114:3002) |
+| ⚙️ **Backend API** | REST API trung tâm | [http://3.80.219.114:5000](http://3.80.219.114:5000) |
 
 **📍 Healthcheck Endpoints:**  
 - `/health`  
@@ -240,7 +240,7 @@ GitHub → GitHub Actions (CI/Test) → Docker Build & Push (GHCR)
   ```
 - **Trigger:** Tự động chạy khi `ci-test.yml` hoàn tất thành công.  
 - **Lưu ý:**  
-  - Không nên hard-code IP (`http://98.81.191.255:5000`) trong build args.  
+  - Không nên hard-code IP (`http://3.80.219.114:5000`) trong build args.  
   - Thay thế bằng domain hoặc biến môi trường (`API_URL` từ secrets).
 
 ---
@@ -291,7 +291,7 @@ GitHub → GitHub Actions (CI/Test) → Docker Build & Push (GHCR)
 SSH vào server (Windows PowerShell hoặc WSL):
 
 ```bash
-ssh -i "C:/Users/ADMIN/Downloads/CNPM_AWS_SGU.pem" ubuntu@98.81.191.255
+ssh -i "C:/Users/ADMIN/Downloads/CNPM_AWS_SGU.pem" ubuntu@3.80.219.114
 ```
 
 Sau khi đăng nhập:
